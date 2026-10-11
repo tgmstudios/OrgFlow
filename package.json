@@ -1,24 +1,6 @@
 {
   "name": "c0mpiled",
-  "version": "0.1.0",
   "private": true,
-  "type": "module",
-  "module": "src/index.ts",
-  "scripts": {
-    "dev": "bun --watch src/index.ts",
-    "start": "bun src/index.ts",
-    "build": "bun build src/index.ts --outdir dist --target bun",
-    "lint": "eslint .",
-    "test": "bun test",
-    "typecheck": "bun check"
-  },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "eslint": "^9.13.0"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  },
   "dependencies": {
     "@aws-app-monetization/monetize-skill": "^0.1.1790609029"
   }

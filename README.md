@@ -1,21 +1,10 @@
 # c0mpiled
 
-To install dependencies:
+- `landing/` — TypeScript (Bun)
+- `frontend/` — TypeScript (Bun)
+- `app/` — no TS scaffold yet
+- `backend/` — TypeScript (Bun)
 
-```bash
-bun install
-```
+Each TS folder was created with `bun init`. Run `bun install` / `bun run index.ts` / `bun check` from inside the relevant folder.
 
-To run:
-
-```bash
-bun run src/index.ts
-```
-
-To type check:
-
-```bash
-bun check
-```
-
-This project was created using `bun init` in bun v1.4.3. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+The root `package.json` only tracks the `@aws-app-monetization/monetize-skill` tooling package (installed via `npm`, not part of the app).
