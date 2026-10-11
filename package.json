@@ -2,7 +2,7 @@
   "name": "c0mpiled",
   "private": true,
   "dependencies": {
-    "@aws-app-monetization/monetize-skill": "^0.1.1790609029"
+    "@aws-app-monetization/monetize-skill": "^0.1.1791678431"
   },
   "scripts": {
     "dev": "bun run dev.ts",
