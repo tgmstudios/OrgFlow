@@ -863,13 +863,13 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
       ? [
           "Walk me through how we thank a major donor…",
           "Turn our volunteer onboarding into a checklist…",
-          "Capture the grant reporting process from Maya…",
+          "Capture how Maria welcomes a first-time volunteer…",
         ]
       : [
-          "Who handles the quarterly grant report?",
-          "Where is the donor stewardship overview?",
-          "What happens in a new hire's first week?",
+          "When should a new volunteer arrive?",
+          "Who takes over from Maria Reyes?",
           "How do we schedule volunteers each month?",
+          "Who handles the quarterly grant report?",
         ],
     !!input || composerFocus || !!messages.length || tab !== "chat",
   );

@@ -67,13 +67,13 @@ The `demo-content/` package contains complete, nonidentifying nonprofit document
 PDFs, CSVs, email examples, a calendar and a verified 90-second ad handoff.
 It is not a customer dataset.
 
-On the `feat/orgflow-demo-showcase` branch, an admin of a newly registered
+An admin of a newly registered
 `Centre Valley Community Pantry (OrgFlow Showcase)` organization can visit
 Organization and choose **Load showcase files and staff**. This imports linked
 original documents and searchable synthetic source text, plus role ownership,
 reporting lines, successors and draft playbooks. It never touches the shared demo
 or another organization's data and does not connect a Google account.
 
-The feature must be reviewed and deployed before it is available live. Google Drive
+Google Drive
 and Gmail integration require separate OAuth authorization and indexing consent.
 Instructions: [Website import and access](demo-content/00_START_HERE/WEBSITE_IMPORT_AND_ACCESS.md).

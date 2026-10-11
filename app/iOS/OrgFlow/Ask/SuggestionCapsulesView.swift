@@ -5,12 +5,24 @@ nonisolated struct Suggestion: Hashable, Sendable {
     let text: String
     /// Set for a suggested playbook: tapping drafts it from the candidate's evidence.
     var candidateID: String?
+    /// Set for Handoff's transfer actions instead of a narration topic.
+    var action: SuggestionAction?
 
     static let defaults: [Suggestion] = [
         Suggestion(symbol: "person.badge.plus", text: "Onboard a new team member"),
         Suggestion(symbol: "arrow.triangle.branch", text: "Find our donor follow-up process"),
         Suggestion(symbol: "arrow.left.arrow.right", text: "Prepare a role handoff"),
     ]
+}
+
+/// What a Handoff capsule does when it isn't a narration topic.
+nonisolated enum SuggestionAction: Hashable, Sendable {
+    /// Plan a gap-driven voice interview with this person.
+    case planInterview(personID: String)
+    /// Show the interview plan that's loaded for the next call.
+    case showInterviewPlan
+    /// Open the knowledge map.
+    case knowledgeMap
 }
 
 /// A horizontally scrolling row of glass capsules, suspended just above the composer.

@@ -85,12 +85,12 @@ final class AskScreenCoordinator {
 
     // MARK: - Live interview (ElevenLabs)
 
-    /// Capture and Handoff talk with OrgFlow's voice agent unless the person chose dictation. Ask dictates.
+    /// Every mode talks with OrgFlow's voice agent unless the person chose to dictate or type.
     var voiceStyle: VoiceStyle = VoiceStyle.saved {
         didSet { VoiceStyle.saved = voiceStyle }
     }
 
-    var usesInterview: Bool { mode != .ask && voiceStyle == .conversation }
+    var usesInterview: Bool { voiceStyle == .conversation }
 
     @ObservationIgnored private var interview: VoiceInterviewSession?
     /// The latest line of the live call, for captions.
@@ -100,6 +100,20 @@ final class AskScreenCoordinator {
     @ObservationIgnored var onInterviewFinished: ((String) -> Void)?
     /// The next submitted narration came from an interview transcript.
     @ObservationIgnored private var draftIsInterview = false
+    /// A gap-driven plan for the next Handoff call; OrgFlow's voice agent receives its brief on connect.
+    private(set) var interviewPlan: InterviewPlan?
+
+    /// Switches to Handoff with a planned interview, talking with OrgFlow, ready to start.
+    func loadInterviewPlan(_ plan: InterviewPlan) {
+        if mode != .handoff { setMode(.handoff) }
+        guard mode == .handoff else { return }
+        voiceStyle = .conversation
+        interviewPlan = plan
+    }
+
+    func clearInterviewPlan() {
+        interviewPlan = nil
+    }
 
     /// Knot input: the interview's voices while talking with OrgFlow, otherwise the microphone.
     func currentVoiceFeatures() -> AudioFeatureSnapshot {
@@ -116,6 +130,12 @@ final class AskScreenCoordinator {
         interview = session
         draftBeforeVoice = draft.isEmpty ? "" : draft.trimmingCharacters(in: .whitespacesAndNewlines) + "\n"
         state = .interviewing(.connecting)
+        switch mode {
+        case .handoff: session.initialContext = interviewPlan?.agentBrief
+        case .ask: session.initialContext = await Self.askBrief()
+        case .capture: break
+        }
+        guard interview === session else { return }
         session.onPhase = { [weak self] phase in
             guard let self, interview === session else { return }
             switch phase {
@@ -156,18 +176,64 @@ final class AskScreenCoordinator {
         }
     }
 
-    /// Ends the call and hands its transcript on to be drafted.
+    /// Ends the call. Ask keeps the spoken exchange as the conversation; Capture and Handoff hand the
+    /// transcript on to be drafted.
     func finishInterview() async {
         guard let session = interview else { return }
         interview = nil
         let text = await session.finish()
         interviewCaption = nil
         state = isEditing ? .typing : .idle
-        // Only draft when the person actually said something.
+        // Only keep or draft a call where the person actually said something.
         guard session.lines.contains(where: { !$0.fromAgent }) else { return }
+        if mode == .ask {
+            recordSpokenExchanges(session.lines)
+            return
+        }
+        interviewPlan = nil
         let combined = (draftBeforeVoice + text).trimmingCharacters(in: .whitespacesAndNewlines)
         draftIsInterview = true
         onInterviewFinished?(combined)
+    }
+
+    /// Each thing the person said becomes a question, with OrgFlow's spoken reply as its answer.
+    private func recordSpokenExchanges(_ lines: [VoiceInterviewSession.Line]) {
+        var exchanges: [ConversationEntry] = []
+        for line in lines {
+            if !line.fromAgent {
+                if let last = exchanges.last, last.answer.isEmpty {
+                    exchanges[exchanges.count - 1] = ConversationEntry(id: last.id, prompt: last.prompt + " " + line.text, mode: .ask, fromInterview: true, answer: "", status: .complete)
+                } else {
+                    exchanges.append(ConversationEntry(id: UUID(), prompt: line.text, mode: .ask, fromInterview: true, status: .complete))
+                }
+            } else if !exchanges.isEmpty {
+                let answer = exchanges[exchanges.count - 1].answer
+                exchanges[exchanges.count - 1].answer = answer.isEmpty ? line.text : answer + "\n\n" + line.text
+            }
+        }
+        guard !exchanges.isEmpty else { return }
+        UserDefaults.standard.set(true, forKey: Self.hasAskedKey)
+        entries.append(contentsOf: exchanges)
+        persistConversation()
+    }
+
+    /// Grounds a spoken Ask in approved knowledge: published playbooks, sent to the voice agent as
+    /// context once the call connects. Drafts are never included.
+    private static func askBrief() async -> String? {
+        guard let workspace = try? await OrgFlowAPI.shared.workspace() else { return nil }
+        let published = workspace.articles.filter { $0.hasPublishedVersion || !$0.isDraft }
+        var brief = [
+            "The person is asking questions about how their organization works. Answer from the organization's approved playbooks below, and say which playbook you used.",
+            "If the playbooks don't cover the question, say so plainly and suggest capturing it in OrgFlow. Never invent steps, names or dates. Keep spoken answers short.",
+            "Approved playbooks:",
+        ].joined(separator: "\n")
+        for article in published {
+            let text = (article.publishedContent ?? article.content)?.plainText ?? ""
+            let entry = "\n\n## \(article.displayTitle)\n" + String(text.prefix(1500))
+            guard brief.count + entry.count < 12000 else { break }
+            brief += entry
+        }
+        return published.isEmpty ? nil : brief
     }
 
     func setInterviewMuted(_ muted: Bool) {
@@ -418,6 +484,7 @@ final class AskScreenCoordinator {
         if state.isInterviewing { Task { await finishInterview() } }
         if isConversationActive { newConversation() }
         mode = newMode
+        interviewPlan = nil
         resetCapture()
     }
 

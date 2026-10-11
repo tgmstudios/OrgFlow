@@ -12,6 +12,8 @@ enum ContinuityTheme {
         static let paleTeal = UIColor(hex: 0xD8F0EE)
         static let paleLavender = UIColor(hex: 0xF1EDFA)
         static let hairline = UIColor(hex: 0xDFE5E4)
+        /// OrgFlow's primary purple (the web's `--primary`), for selected voice controls.
+        static let primary = UIColor(hex: 0x7753CE)
     }
 
     enum Font {

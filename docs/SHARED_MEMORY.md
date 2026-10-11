@@ -94,11 +94,10 @@ Deployment
 - "Only Capture in scope" for the hackathon -> Connect, Capture, Ask and Transfer all have implementations.
 - Luminal Flash as a documentation-only plan -> implemented adapter (agent.ts, luminal.ts).
 
-## Showcase import work in progress (feature branch, NOT deployed)
+## Showcase (merged into main 2026-10-11)
 
-- The separate `feat/orgflow-demo-showcase` branch adds an isolated admin-confirmed showcase installer, synthetic sources with links to original PDFs/Docs/CSV, a five-person owner/successor/supervisor map, and a People "Reports to" field with same-org/cycle validation. It never connects or uploads to the user's personal Google account. New procedures start as drafts.
-- The loader works only for an organization named `Centre Valley Community Pantry (OrgFlow Showcase)` and refuses the shared default workspace. Source documents are original fictional training content. See `demo-content/00_START_HERE/WEBSITE_IMPORT_AND_ACCESS.md` for exact verification and permissions.
-- Verified locally with memory-backed HTTP calls, dataset content checks, source owner reassignment, isolation across organizations, preserved edits on reimport, typechecks and tests. **Not yet production deployed or OAuth connected.** New Google account selection requires user confirmation.
+- `feat/orgflow-demo-showcase` is merged: `demo-content/` (fictional Centre Valley Community Pantry corpus), an admin-confirmed importer (Organization > Showcase library) that only runs for an organization named `Centre Valley Community Pantry (OrgFlow Showcase)` and refuses the shared workspace, and a People "Reports to" field (same-org, no cycles). Deploy syncs `demo-content/`. See `demo-content/00_START_HERE/WEBSITE_IMPORT_AND_ACCESS.md`.
+- Shared demo workspace seed (`backend/samples.ts`, meta `samples-v2`): the story is Maria Reyes (Volunteer Coordinator, leaving 2026-10-31, successor Jordan Lee, both reporting to Sam Rivera); Maya Chen was removed from the demo seed and her sample playbooks moved to Priya Patel. Eleven of Maria's showcase documents and emails are indexed with owners, and five PDFs appear in Files. The upgrade only changes untouched sample records. Verified on an in-memory store (fresh and upgrade); not yet verified against production PostgreSQL. The showcase importer still includes Maya as a second leaving person.
 
 ## Handoff notes
 

@@ -6,13 +6,16 @@ import UIKit
 /// playbook draft) and Handoff (narrate a role into a handoff and onboarding guide).
 final class AskViewController: UIViewController {
     private let coordinator: AskScreenCoordinator
+    /// Opens the Knowledge map tab ("Who owns what" in Handoff).
+    var onShowKnowledgeMap: (() -> Void)?
+    /// After signing in, so the other tabs can reload.
+    var onSignedIn: (() -> Void)?
 
     // Header
     private let wordmark = UILabel()
     private let workspaceLabel = UILabel()
     private let historyButton = UIButton(configuration: .glass())
     private let newPromptButton = UIButton(configuration: .glass())
-    private let libraryButton = UIButton(configuration: .glass())
 
     // Landing
     private let greetingLabel = UILabel()
@@ -74,6 +77,9 @@ final class AskViewController: UIViewController {
     private var askSuggestions = Suggestion.defaults
     /// Recurring workflows found in indexed email and documents, offered in Capture.
     private var candidates: [PlaybookCandidate] = []
+    /// The organization's people, for Handoff's interview capsules.
+    private var people: [Person] = []
+    private var appliedPlanTitle: String?
     private var hasAppeared = false
     private let draftingIndicator = UIActivityIndicatorView(style: .medium)
 
@@ -103,6 +109,7 @@ final class AskViewController: UIViewController {
     private func loadSuggestions() async {
         guard coordinator.user != nil,
               let workspace = try? await OrgFlowAPI.shared.workspace() else { return }
+        setPeople(workspace.people)
         setCandidates(workspace.suggestedCandidates)
         guard let generated = await SuggestionGenerator.suggestions(for: workspace.summary) else { return }
         askSuggestions = generated
@@ -112,7 +119,79 @@ final class AskViewController: UIViewController {
     /// Refreshes only the suggested playbooks (cheap; no on-device generation).
     private func loadCandidates() async {
         guard coordinator.user != nil, let workspace = try? await OrgFlowAPI.shared.workspace() else { return }
+        setPeople(workspace.people)
         setCandidates(workspace.suggestedCandidates)
+    }
+
+    private func setPeople(_ new: [Person]) {
+        guard new != people else { return }
+        people = new
+        if coordinator.mode == .handoff { suggestions.setSuggestions(capsules(for: .handoff), animated: true) }
+    }
+
+    /// Handoff's transfer actions: the loaded interview plan, or interviews with people who are
+    /// leaving, then the knowledge map.
+    private func handoffCapsules() -> [Suggestion] {
+        var capsules: [Suggestion] = []
+        if let plan = coordinator.interviewPlan {
+            capsules.append(Suggestion(symbol: "list.bullet.clipboard", text: "Interview plan · \(plan.questions.count) questions", action: .showInterviewPlan))
+        } else {
+            for person in people.filter({ $0.isDeparting && !$0.hasLeft }).prefix(2) {
+                capsules.append(Suggestion(symbol: "waveform", text: "Plan \(person.firstName)'s handoff interview", action: .planInterview(personID: person.id)))
+            }
+        }
+        if coordinator.user != nil {
+            capsules.append(Suggestion(symbol: "point.3.connected.trianglepath.dotted", text: "Who owns what", action: .knowledgeMap))
+        }
+        return capsules
+    }
+
+    private func perform(_ action: SuggestionAction) {
+        switch action {
+        case .planInterview(let personID):
+            UIImpactFeedbackGenerator(style: .light, view: view).impactOccurred()
+            draftingIndicator.startAnimating()
+            InterviewPlanViewController.present(personID: personID, from: presenter, onLoaded: { [weak self] in
+                self?.draftingIndicator.stopAnimating()
+            }, onStart: { [weak self] plan in
+                self?.beginInterview(plan)
+            })
+        case .showInterviewPlan:
+            guard let plan = coordinator.interviewPlan else { return }
+            let controller = InterviewPlanViewController(plan: plan)
+            controller.onStart = { [weak self] plan in self?.beginInterview(plan) }
+            controller.onRemove = { [weak self] in
+                self?.coordinator.clearInterviewPlan()
+                self?.presenter.dismiss(animated: true)
+            }
+            controller.sheetPresentationController?.prefersGrabberVisible = true
+            presenter.present(controller, animated: true)
+        case .knowledgeMap:
+            if let onShowKnowledgeMap {
+                onShowKnowledgeMap()
+                return
+            }
+            let map = KnowledgeMapViewController(workspace: nil)
+            map.onStartInterview = { [weak self] plan in self?.beginInterview(plan) }
+            map.onSignInRequested = { [weak self] in self?.presentSignIn() }
+            presenter.present(UINavigationController(rootViewController: map), animated: true)
+        }
+    }
+
+    /// Closes whatever is showing, loads the plan into Handoff and starts the call with OrgFlow.
+    func beginInterview(_ plan: InterviewPlan) {
+        let start = { [weak self] in
+            guard let self else { return }
+            coordinator.loadInterviewPlan(plan)
+            guard coordinator.interviewPlan != nil, !coordinator.state.isInterviewing else { return }
+            dismissHint()
+            startTalking()
+        }
+        if presentedViewController != nil {
+            dismiss(animated: true, completion: start)
+        } else {
+            start()
+        }
     }
 
     private func setCandidates(_ new: [PlaybookCandidate]) {
@@ -124,7 +203,7 @@ final class AskViewController: UIViewController {
         switch mode {
         case .ask: askSuggestions
         case .capture: candidates.prefix(3).map { Suggestion(symbol: "sparkles", text: $0.title, candidateID: $0.id) } + Self.starters(for: .capture)
-        case .handoff: Self.starters(for: .handoff)
+        case .handoff: handoffCapsules() + Self.starters(for: .handoff)
         }
     }
 
@@ -175,23 +254,18 @@ final class AskViewController: UIViewController {
         return top
     }
 
-    private func presentSignIn() {
+    func presentSignIn() {
         guard !(presenter is SignInViewController) else { return }
         let signIn = SignInViewController()
         signIn.onSignedIn = { [weak self] user in
             guard let self else { return }
             coordinator.didSignIn(user)
+            onSignedIn?()
             Task { await self.loadSuggestions() }
         }
         signIn.sheetPresentationController?.detents = [.large()]
         signIn.sheetPresentationController?.prefersGrabberVisible = true
         presenter.present(signIn, animated: true)
-    }
-
-    private func presentLibrary() {
-        let library = LibraryViewController(workspace: nil)
-        library.onSignInRequested = { [weak self] in self?.presentSignIn() }
-        presenter.present(UINavigationController(rootViewController: library), animated: true)
     }
 
     private func presentArticle(id: String) {
@@ -222,7 +296,12 @@ final class AskViewController: UIViewController {
         let copy: (headline: String, subtitle: String, placeholder: String) = switch mode {
         case .ask: ("Knowledge\nmoves forward.", "Ask what your organization already knows.", "Ask OneFlow anything…")
         case .capture: ("Show how the\nwork gets done.", "Talk through a process. OneFlow drafts the playbook, and your team approves it.", "Describe a process…")
-        case .handoff: ("Leave it in\ngood hands.", "Walk through your role. OneFlow drafts a handoff and onboarding guide for whoever's next.", "Describe your role…")
+        case .handoff:
+            if let plan = coordinator.interviewPlan {
+                ("Leave it in\ngood hands.", "\(plan.title) is ready: \(plan.questions.count) questions, gaps first. Start talking and OneFlow leads.", "Describe your role…")
+            } else {
+                ("Leave it in\ngood hands.", "Walk through your role. OneFlow drafts a handoff and onboarding guide for whoever's next.", "Describe your role…")
+            }
         }
         let update = {
             let attributes = self.headlineLabel.attributedText?.attributes(at: 0, effectiveRange: nil) ?? [:]
@@ -293,7 +372,6 @@ final class AskViewController: UIViewController {
         configureCircleButton(historyButton, symbol: "clock.arrow.circlepath")
         historyButton.showsMenuAsPrimaryAction = true
         configureCircleButton(newPromptButton, symbol: "square.and.pencil")
-        configureCircleButton(libraryButton, symbol: "books.vertical")
         newPromptButton.alpha = 0
         newPromptButton.isHidden = true
 
@@ -303,7 +381,7 @@ final class AskViewController: UIViewController {
         let brand = UIStackView(arrangedSubviews: [names])
         brand.spacing = 10
         brand.alignment = .center
-        let trailing = UIStackView(arrangedSubviews: [newPromptButton, libraryButton, historyButton])
+        let trailing = UIStackView(arrangedSubviews: [newPromptButton, historyButton])
         trailing.spacing = 10
 
         for sub in [brand, trailing] {
@@ -521,7 +599,7 @@ final class AskViewController: UIViewController {
             let selected = style == coordinator.voiceStyle
             var config: UIButton.Configuration = selected ? .prominentGlass() : .glass()
             config.cornerStyle = .capsule
-            config.baseBackgroundColor = selected ? ContinuityTheme.Color.ink : nil
+            config.baseBackgroundColor = selected ? ContinuityTheme.Color.primary : nil
             config.baseForegroundColor = selected ? .white : ContinuityTheme.Color.secondaryInk
             config.image = UIImage(systemName: style == .conversation ? "bubble.left.and.text.bubble.right" : "text.cursor",
                                    withConfiguration: UIImage.SymbolConfiguration(pointSize: 12, weight: .semibold))
@@ -533,7 +611,6 @@ final class AskViewController: UIViewController {
     }
 
     private func voiceLayout() -> VoiceLayout {
-        guard coordinator.mode != .ask else { return .hidden }
         if coordinator.state.isInterviewing { return .talking }
         if coordinator.state.isCapturing { return .hidden }
         return coordinator.voiceStyle == .conversation ? .talkIdle : .dictation
@@ -547,10 +624,10 @@ final class AskViewController: UIViewController {
             muteButton.configuration?.image = UIImage(systemName: muted ? "mic.slash.fill" : "mic.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: 14, weight: .semibold))
             muteButton.configuration?.attributedTitle = AttributedString(muted ? "Unmute" : "Mute", attributes: AttributeContainer([.font: ContinuityTheme.Font.text(16, weight: .semibold)]))
             muteButton.isEnabled = phase != .connecting
-            captionLabel.text = coordinator.interviewCaption ?? (phase == .connecting ? "Connecting to OrgFlow…" : nil)
+            captionLabel.text = coordinator.interviewCaption ?? (phase == .connecting ? "Connecting to OneFlow…" : nil)
             captionLabel.textColor = coordinator.interviewCaptionFromAgent ? ContinuityTheme.Color.ink : ContinuityTheme.Color.teal
         }
-        hintLabel.text = coordinator.usesInterview ? "Tap to talk with OrgFlow  ·  Drag to turn" : "Hold to speak  ·  Drag to turn"
+        hintLabel.text = coordinator.usesInterview ? "Tap to talk with OneFlow  ·  Drag to turn" : "Hold to speak  ·  Drag to turn"
         guard layout != appliedVoiceLayout else { return }
         let first = appliedVoiceLayout == nil
         appliedVoiceLayout = layout
@@ -627,7 +704,9 @@ final class AskViewController: UIViewController {
 
         suggestions.onSelect = { [weak self] suggestion in
             guard let self else { return }
-            if let candidateID = suggestion.candidateID {
+            if let action = suggestion.action {
+                perform(action)
+            } else if let candidateID = suggestion.candidateID {
                 confirmDraft(candidateID: candidateID)
             } else if coordinator.mode == .ask {
                 composer.text = suggestion.text
@@ -657,7 +736,6 @@ final class AskViewController: UIViewController {
         swipe.delegate = self
         view.addGestureRecognizer(swipe)
 
-        libraryButton.addAction(UIAction { [weak self] _ in self?.presentLibrary() }, for: .primaryActionTriggered)
 
         conversationView.onRetry = { [weak self] id in self?.coordinator.retry(id) }
         conversationView.onOpenCitation = { [weak self] citation in
@@ -738,7 +816,7 @@ final class AskViewController: UIViewController {
                 suggestions.setSuggestions(capsules(for: coordinator.mode), animated: true)
             }
         } else {
-            UIAction(title: "Sign in to OrgFlow", image: UIImage(systemName: "person.crop.circle")) { [weak self] _ in
+            UIAction(title: "Sign in to OneFlow", image: UIImage(systemName: "person.crop.circle")) { [weak self] _ in
                 self?.presentSignIn()
             }
         }
@@ -766,7 +844,7 @@ final class AskViewController: UIViewController {
         let kind = coordinator.mode == .handoff ? "handoff guide" : "playbook"
         let alert = UIAlertController(
             title: "Share with the drafting AI?",
-            message: "Your narration is sent to OrgFlow's drafting AI to write a \(kind) draft. Nothing is published until someone approves it.",
+            message: "Your narration is sent to OneFlow's drafting AI to write a \(kind) draft. Nothing is published until someone approves it.",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
@@ -787,6 +865,11 @@ final class AskViewController: UIViewController {
         if coordinator.mode != appliedMode {
             applyMode(coordinator.mode, animated: appliedMode != nil)
             appliedMode = coordinator.mode
+        }
+        let planTitle = coordinator.interviewPlan?.title
+        if planTitle != appliedPlanTitle {
+            appliedPlanTitle = planTitle
+            applyMode(coordinator.mode, animated: true)
         }
 
         // Transcript is shown live while capturing; once finalized it becomes editable draft text.
@@ -894,9 +977,9 @@ final class AskViewController: UIViewController {
             if heldToTalk { return speech ? "Listening · release to finish" : "Listening · keep holding" }
             return speech ? "Listening · hearing you" : "Listening"
         case .transcribing: return "Finishing transcript"
-        case .interviewing(.connecting): return "Connecting to OrgFlow…"
-        case .interviewing(.listening(let muted)): return muted ? "Muted · tap Unmute to keep talking" : "OrgFlow is listening · tap Done when finished"
-        case .interviewing(.agentSpeaking): return "OrgFlow is speaking"
+        case .interviewing(.connecting): return "Connecting to OneFlow…"
+        case .interviewing(.listening(let muted)): return muted ? "Muted · tap Unmute to keep talking" : "OneFlow is listening · tap Done when finished"
+        case .interviewing(.agentSpeaking): return "OneFlow is speaking"
         default: return nil
         }
     }
@@ -928,13 +1011,16 @@ final class AskViewController: UIViewController {
     }
 
     /// Snapshots the page behind the knot so its glass can refract the real headline and color fields.
+    /// Only the page itself is drawn: the color fields (layers) and the headline. Every other view is
+    /// hidden for the snapshot, because Liquid Glass controls (the voice row, the composer, capsules)
+    /// render as solid black outside the compositor and would turn the knot's glass black.
     private func refreshKnotBackdrop() {
         let frame = knotView.frame
         guard frame.width > 1, frame.height > 1, view.window != nil else { return }
         let format = UIGraphicsImageRendererFormat()
         format.scale = traitCollection.displayScale
         format.opaque = true
-        let hidden = [knotView, hintLabel, composer, suggestions, errorNotice]
+        let hidden = view.subviews.filter { $0 !== heroStack }
         let wasHidden = hidden.map(\.isHidden)
         hidden.forEach { $0.isHidden = true }
         let image = UIGraphicsImageRenderer(bounds: frame, format: format).image { context in
