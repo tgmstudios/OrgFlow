@@ -239,3 +239,25 @@ export function VoiceWave({
     />
   );
 }
+
+/** Counts from 0 to `value` with an ease-out, once per value change. */
+export function CountUp({ value, duration = 1000 }: { value: number; duration?: number }) {
+  const [shown, setShown] = useState(prefersReducedMotion() ? value : 0);
+  const from = useRef(0);
+  useEffect(() => {
+    if (prefersReducedMotion()) return setShown(value);
+    const start = performance.now(),
+      a = from.current;
+    let frame = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const v = Math.round(a + (value - a) * (1 - Math.pow(1 - t, 3)));
+      setShown(v);
+      if (t < 1) frame = requestAnimationFrame(tick);
+      else from.current = value;
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [value, duration]);
+  return <>{shown}</>;
+}

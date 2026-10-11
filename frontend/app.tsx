@@ -45,6 +45,12 @@ import {
   AlertCircle,
   Plug,
   Network,
+  Lock,
+  Eye,
+  EyeOff,
+  UserRound,
+  Ticket,
+  ArrowRight,
 } from "lucide-react";
 import "./style.css";
 import {
@@ -113,15 +119,93 @@ const initials = (name: string) =>
     .join("")
     .slice(0, 2)
     .toUpperCase();
+const PILLARS = [
+  {
+    icon: FolderOpen,
+    title: "Connect",
+    text: "Index Drive and Gmail with consent. Originals never leave their home.",
+  },
+  {
+    icon: Mic,
+    title: "Capture",
+    text: "Talk through a process. OrgFlow drafts the playbook for your team to approve.",
+  },
+  {
+    icon: MessageSquare,
+    title: "Ask",
+    text: "Answers grounded in approved playbooks, with every source cited.",
+  },
+  {
+    icon: Users,
+    title: "Transfer",
+    text: "When someone leaves, their knowledge has a clear owner and a handoff.",
+  },
+] as const;
+
+function AuthShowcase() {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+    const t = setInterval(() => setI((n) => (n + 1) % PILLARS.length), 3600);
+    return () => clearInterval(t);
+  }, []);
+  const pillar = PILLARS[i]!;
+  const Icon = pillar.icon;
+  return (
+    <div className="auth-showcase">
+      <div className="auth-pillar-tabs" role="tablist" aria-label="What OrgFlow does">
+        {PILLARS.map((p, n) => (
+          <button
+            key={p.title}
+            role="tab"
+            aria-selected={n === i}
+            className={n === i ? "on" : ""}
+            onClick={() => setI(n)}
+          >
+            {n === i && (
+              <m.span
+                layoutId="auth-pillar"
+                className="auth-pillar-pill"
+                transition={{ type: "spring", duration: 0.4, bounce: 0.15 }}
+              />
+            )}
+            {p.title}
+          </button>
+        ))}
+      </div>
+      <AnimatePresence mode="wait" initial={false}>
+        <m.div
+          key={pillar.title}
+          className="auth-pillar"
+          initial={{ opacity: 0, y: 10, filter: "blur(4px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          exit={{ opacity: 0, y: -8, filter: "blur(4px)" }}
+          transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+        >
+          <span className="auth-pillar-icon">
+            <Icon size={18} />
+          </span>
+          <p>{pillar.text}</p>
+        </m.div>
+      </AnimatePresence>
+      <div className="auth-progress" aria-hidden="true">
+        <span key={i} />
+      </div>
+    </div>
+  );
+}
+
 function AuthScreen({ onUser }: { onUser: (user: User) => void }) {
   const [mode, setMode] = useState<"login" | "signup">("login"),
     [name, setName] = useState(""),
     [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
+    [reveal, setReveal] = useState(false),
     [workspace, setWorkspace] = useState<"demo" | "create" | "invite">("demo"),
     [organization, setOrganization] = useState(""),
     [inviteCode, setInviteCode] = useState(""),
     [error, setError] = useState(""),
+    [attempt, setAttempt] = useState(0),
     [busy, setBusy] = useState(false);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -142,124 +226,235 @@ function AuthScreen({ onUser }: { onUser: (user: User) => void }) {
       onUser(r.user);
     } catch (err: any) {
       setError(err.message);
+      setAttempt((n) => n + 1);
     } finally {
       setBusy(false);
     }
   }
+  const switchMode = (next: "login" | "signup") => {
+    setMode(next);
+    setError("");
+  };
   return (
     <div className="auth-page">
-      <form className="auth-card" onSubmit={submit}>
+      <section className="auth-hero">
         <div className="brand-static">
           <span className="brand-mark" aria-hidden="true" />
           orgflow<span className="brand-dot">.</span>
         </div>
-        <h1 key={mode}>{mode === "login" ? "Sign in" : "Create your account"}</h1>
-        <Collapse open={mode === "signup"}>
-          <label>
-            Name
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoComplete="name"
-            />
+        <div className="auth-hero-body">
+          <Orb size={132} />
+          <h1>
+            Your organization’s <em>living memory</em>.
+          </h1>
+          <p>
+            Nonprofits lose what they know every time someone moves on. OrgFlow keeps the how,
+            the who and the why in one place your whole team can trust.
+          </p>
+          <AuthShowcase />
+        </div>
+        <small className="auth-hero-foot">
+          <ShieldCheck size={14} /> Read-only Google access · AI drafts always need a person’s
+          approval
+        </small>
+      </section>
+
+      <section className="auth-panel">
+        <m.form
+          key={attempt}
+          className="auth-card"
+          onSubmit={submit}
+          animate={attempt ? { x: [0, -8, 7, -5, 3, 0] } : undefined}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        >
+          <div className="segmented auth-tabs" role="tablist">
+            {(
+              [
+                ["login", "Sign in"],
+                ["signup", "Create account"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === value}
+                key={value}
+                className={mode === value ? "on" : ""}
+                onClick={() => switchMode(value)}
+              >
+                {mode === value && <SegmentPill id="auth-mode" />}
+                {label}
+              </button>
+            ))}
+          </div>
+          <AnimatePresence mode="wait" initial={false}>
+            <m.div
+              key={mode}
+              className="auth-heading"
+              initial={{ opacity: 0, y: 6, filter: "blur(3px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -4, filter: "blur(3px)" }}
+              transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
+            >
+              <h2>{mode === "login" ? "Welcome back" : "Start your team’s memory"}</h2>
+              <p>
+                {mode === "login"
+                  ? "Sign in to pick up where your team left off."
+                  : "Create an account, then join the demo or set up your organization."}
+              </p>
+            </m.div>
+          </AnimatePresence>
+          <Collapse open={mode === "signup"}>
+            <label className="auth-field">
+              <span>Name</span>
+              <span className="auth-input">
+                <UserRound size={16} />
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
+                  placeholder="Alex Rivera"
+                />
+              </span>
+            </label>
+          </Collapse>
+          <label className="auth-field">
+            <span>Email</span>
+            <span className="auth-input">
+              <Mail size={16} />
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                placeholder="you@yournonprofit.org"
+              />
+            </span>
           </label>
-        </Collapse>
-        <label>
-          Email
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-          />
-        </label>
-        <label>
-          Password
-          <input
-            type="password"
-            required
-            minLength={mode === "signup" ? 8 : undefined}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete={
-              mode === "login" ? "current-password" : "new-password"
-            }
-          />
-        </label>
-        <Collapse open={mode === "signup"}>
-          <div className="workspace-choice">
-            <span>Workspace</span>
-            <div className="segmented">
+          <label className="auth-field">
+            <span>Password</span>
+            <span className="auth-input">
+              <Lock size={16} />
+              <input
+                type={reveal ? "text" : "password"}
+                required
+                minLength={mode === "signup" ? 8 : undefined}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                placeholder={mode === "signup" ? "At least 8 characters" : "Your password"}
+              />
+              <button
+                type="button"
+                className="auth-reveal"
+                aria-label={reveal ? "Hide password" : "Show password"}
+                onClick={() => setReveal(!reveal)}
+              >
+                {reveal ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </span>
+          </label>
+          <Collapse open={mode === "signup"}>
+            <div className="workspace-choice" role="radiogroup" aria-label="Workspace">
+              <span>Workspace</span>
               {(
                 [
-                  ["demo", "Join demo workspace"],
-                  ["create", "Create organization"],
-                  ["invite", "Join with invite code"],
+                  ["demo", Sparkles, "Explore the demo", "Shared workspace with sample playbooks."],
+                  ["create", Building2, "Create an organization", "A private workspace; you’re the admin."],
+                  ["invite", Ticket, "Join with an invite code", "From an admin in your organization."],
                 ] as const
-              ).map(([value, label]) => (
+              ).map(([value, Icon, title, caption]) => (
                 <button
                   type="button"
+                  role="radio"
+                  aria-checked={workspace === value}
                   key={value}
-                  className={workspace === value ? "on" : ""}
+                  className={"workspace-option" + (workspace === value ? " on" : "")}
                   onClick={() => setWorkspace(value)}
                 >
-                  {workspace === value && <SegmentPill id="auth-workspace" />}
-                  {label}
+                  {workspace === value && (
+                    <m.span
+                      layoutId="workspace-option"
+                      className="workspace-option-ring"
+                      transition={{ type: "spring", duration: 0.35, bounce: 0.15 }}
+                    />
+                  )}
+                  <span className="workspace-option-icon">
+                    <Icon size={16} />
+                  </span>
+                  <span>
+                    <strong>{title}</strong>
+                    <small>{caption}</small>
+                  </span>
                 </button>
               ))}
+              <Collapse open={workspace !== "demo"}>
+                <span className="auth-input workspace-detail">
+                  {workspace === "invite" ? <Ticket size={16} /> : <Building2 size={16} />}
+                  {workspace === "invite" ? (
+                    <input
+                      required
+                      aria-label="Invite code"
+                      placeholder="Invite code"
+                      autoCapitalize="off"
+                      autoComplete="off"
+                      value={inviteCode}
+                      onChange={(e) => setInviteCode(e.target.value)}
+                    />
+                  ) : (
+                    <input
+                      required={workspace === "create"}
+                      aria-label="Organization name"
+                      placeholder="Organization name"
+                      maxLength={120}
+                      value={organization}
+                      onChange={(e) => setOrganization(e.target.value)}
+                    />
+                  )}
+                </span>
+              </Collapse>
             </div>
-            <div className="workspace-detail" key={workspace}>
-              {workspace === "demo" && (
-                <small>
-                  Explore OrgFlow in the shared demo workspace with sample data.
-                </small>
-              )}
-              {workspace === "create" && (
-                <input
-                  required
-                  aria-label="Organization name"
-                  placeholder="Organization name"
-                  maxLength={120}
-                  value={organization}
-                  onChange={(e) => setOrganization(e.target.value)}
-                />
-              )}
-              {workspace === "invite" && (
-                <input
-                  required
-                  aria-label="Invite code"
-                  placeholder="Invite code"
-                  autoCapitalize="off"
-                  autoComplete="off"
-                  value={inviteCode}
-                  onChange={(e) => setInviteCode(e.target.value)}
-                />
-              )}
-            </div>
-          </div>
-        </Collapse>
-        {error && (
-          <div className="error" role="alert">
-            {error}
-          </div>
-        )}
-        <button className="auth-submit" disabled={busy}>
-          {mode === "login" ? "Sign in" : "Create account"}
-        </button>
-        <button
-          type="button"
-          className="auth-switch"
-          onClick={() => {
-            setMode(mode === "login" ? "signup" : "login");
-            setError("");
-          }}
-        >
-          {mode === "login"
-            ? "New here? Create an account"
-            : "Already have an account? Sign in"}
-        </button>
-      </form>
+          </Collapse>
+          <AnimatePresence initial={false}>
+            {error && (
+              <m.div
+                className="error"
+                role="alert"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <AlertCircle size={15} /> {error}
+              </m.div>
+            )}
+          </AnimatePresence>
+          <button className="auth-submit primary" disabled={busy}>
+            {busy ? (
+              <>
+                <LoaderCircle size={17} className="spin" />
+                {mode === "login" ? "Signing in…" : "Creating your account…"}
+              </>
+            ) : (
+              <>
+                {mode === "login" ? "Sign in" : "Create account"}
+                <ArrowRight size={17} className="auth-arrow" />
+              </>
+            )}
+          </button>
+          <p className="auth-switch-line">
+            {mode === "login" ? "New to OrgFlow?" : "Already have an account?"}{" "}
+            <button
+              type="button"
+              className="auth-switch"
+              onClick={() => switchMode(mode === "login" ? "signup" : "login")}
+            >
+              {mode === "login" ? "Create an account" : "Sign in"}
+            </button>
+          </p>
+        </m.form>
+      </section>
     </div>
   );
 }

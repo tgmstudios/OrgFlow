@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Activity, ArrowUpRight, LoaderCircle, ShieldCheck, TriangleAlert } from "lucide-react";
 import { api, fullDate, type Article, type InterviewPlan } from "./api";
+import { CountUp } from "./ambient";
 
 type Row = { id: string; title: string; meta: string };
 
@@ -87,9 +88,32 @@ export function HealthPage({
       )}
       <div className="health-summary">
         <div className={"score-card " + tone}>
-          <strong>{health.score}</strong>
-          <span>/ 100</span>
+          <svg className="score-ring" viewBox="0 0 120 120" aria-hidden="true">
+            <defs>
+              <linearGradient id="score-thread" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="var(--teal)" />
+                <stop offset="0.5" stopColor="var(--primary)" />
+                <stop offset="1" stopColor="var(--apricot)" />
+              </linearGradient>
+            </defs>
+            <circle className="score-track" cx="60" cy="60" r="52" />
+            <circle
+              className="score-fill"
+              cx="60"
+              cy="60"
+              r="52"
+              pathLength={100}
+              style={{ "--score": health.score } as React.CSSProperties}
+            />
+          </svg>
+          <div className="score-value">
+            <strong>
+              <CountUp value={health.score} />
+            </strong>
+            <span>/ 100</span>
+          </div>
           <small>
+            <span className={"glow-dot" + (tone === "good" ? "" : " warn")} />
             {t.published + t.drafts === 0
               ? "Nothing documented yet"
               : tone === "good"
@@ -110,7 +134,9 @@ export function HealthPage({
           ] as [string, number, string][]
         ).map(([label, value, cls]) => (
           <div className={"stat-card " + cls} key={label}>
-            <strong>{value}</strong>
+            <strong>
+              <CountUp value={value} duration={700} />
+            </strong>
             <span>{label}</span>
           </div>
         ))}
@@ -129,6 +155,7 @@ export function HealthPage({
         ) : (
           health.actions.map((action: any, i: number) => (
             <div className={"digest-item " + action.severity} key={i}>
+              <span className={"glow-dot " + ({ high: "bad", medium: "warn", low: "" } as any)[action.severity]} />
               <span>{action.text}</span>
               <button className="text-button" disabled={busy !== ""} onClick={() => act(action)}>
                 {busy === action.text && <LoaderCircle className="spin" size={12} />}
