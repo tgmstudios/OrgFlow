@@ -1,0 +1,41 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Trust host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sync code to instance
+        run: |
+          for app in landing frontend backend app; do
+            rsync -az --delete \
+              --exclude 'node_modules' \
+              --exclude '.git' \
+              "$app/" "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/opt/app/$app/"
+          done
+
+      - name: Install dependencies and restart services
+        run: |
+          ssh "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" '
+            set -e
+            for svc in landing frontend backend; do
+              cd /opt/app/$svc
+              ~/.bun/bin/bun install
+              sudo systemctl restart $svc
+            done
+          '
