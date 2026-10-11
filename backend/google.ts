@@ -9,6 +9,11 @@ type Session = {
   refreshToken?: string;
   expiresAt: number;
 };
+type PendingConnection = {
+  verifier: string;
+  expiresAt: number;
+  returnTo?: string;
+};
 const scopes = [
   "https://www.googleapis.com/auth/drive.readonly",
   "https://www.googleapis.com/auth/gmail.readonly",
@@ -44,7 +49,7 @@ function messageText(payload: Item): string {
 
 export function createGoogleHandler(dependencies: GoogleDependencies) {
   const sessions = new Map<string, Session>();
-  const pending = new Map<string, { verifier: string; expiresAt: number }>();
+  const pending = new Map<string, PendingConnection>();
   const getSession = (request: Request) =>
     sessions.get(cookie(request, "orgflow_google") || "");
   async function access(request: Request) {
@@ -107,6 +112,13 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
     }
     return { files, limited: Boolean(pageToken) };
   }
+  function returnTo(request: Request, value: string | null): string | undefined {
+    if (!value?.startsWith("/") || value.startsWith("//")) return undefined;
+    const current = new URL(request.url);
+    const candidate = new URL(value, current);
+    if (candidate.origin !== current.origin) return undefined;
+    return candidate.pathname + candidate.search + candidate.hash;
+  }
   return async function handle(request: Request): Promise<Response | null> {
     const url = new URL(request.url);
     const path = url.pathname;
@@ -143,7 +155,11 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
           );
         const state = randomBytes(32).toString("hex");
         const verifier = randomBytes(48).toString("base64url");
-        pending.set(state, { verifier, expiresAt: Date.now() + 600000 });
+        pending.set(state, {
+          verifier,
+          expiresAt: Date.now() + 600000,
+          returnTo: returnTo(request, url.searchParams.get("returnTo")),
+        });
         const query = new URLSearchParams({
           client_id: process.env.GOOGLE_CLIENT_ID!,
           redirect_uri:
@@ -228,6 +244,7 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
         });
         const headers = new Headers({
           Location:
+            entry.returnTo ||
             process.env.FRONTEND_REDIRECT_URL ||
             process.env.FRONTEND_ORIGIN ||
             "http://localhost:3002/",

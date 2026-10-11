@@ -93,7 +93,7 @@ test("Google OAuth binds state to browser, keeps tokens server-side, and syncs m
       },
     });
     const start = (await handler(
-      new Request("http://localhost/auth/google/start"),
+      new Request("http://localhost/auth/google/start?returnTo=/a/files?provider=google"),
     ))!;
     expect(start.status).toBe(302);
     const destination = new URL(start.headers.get("location")!);
@@ -106,6 +106,7 @@ test("Google OAuth binds state to browser, keeps tokens server-side, and syncs m
       ),
     ))!;
     expect(callback.status).toBe(302);
+    expect(callback.headers.get("location")).toBe("/a/files?provider=google");
     const sessionCookie = callback.headers
       .getSetCookie()
       .find((v) => v.startsWith("orgflow_google="))!

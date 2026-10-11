@@ -9,3 +9,5 @@ dist/
 .kiro/skills
 .pi/agent/skills
 *.pem
+
+.monetize/
