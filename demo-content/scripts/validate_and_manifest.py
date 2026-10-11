@@ -61,11 +61,16 @@ for p in docs:
     assert p.with_suffix(".txt").exists(), str(p)
     assert p.with_suffix(".pdf").exists(), str(p)
     assert p.stat().st_size>500, str(p)
-files=sorted(f for f in ROOT.rglob("*") if f.is_file() and f.name!="FILE_MANIFEST.json")
+files=sorted(f for f in ROOT.rglob("*") if f.is_file() and f.name not in {"FILE_MANIFEST.json","ALL_FILES.txt"})
+all_files=ROOT/"00_START_HERE/ALL_FILES.txt"
+all_paths=sorted([str(f.relative_to(ROOT)) for f in files]+["00_START_HERE/ALL_FILES.txt","00_START_HERE/FILE_MANIFEST.json"])
+all_files.write_text("\n".join(all_paths)+"\n",encoding="utf-8")
+files=sorted(files+[all_files])
+latest_main=subprocess.run(["git","-C",str(ROOT.parent),"rev-parse","--short","origin/main"],capture_output=True,text=True,check=True).stdout.strip()
 manifest={
  "pack_name":"OrgFlow Continuity Showcase | Centre Valley Community Pantry",
  "fictional":True,
- "source_commit_ref":"origin/main at cc3d10a (2026-10-11 17:47 ET)",
+ "source_commit_ref":f"origin/main at {latest_main} (2026-10-11)",
  "opening_clip":"~/Downloads/orgflow_opening_v5.mp4 (19.93s, 1920x1080, 60fps)",
  "counts":{"source_documents":len(docs),"pdfs":len(pdfs),
        "word_documents":len(list(DRIVE.rglob("*.docx"))),
@@ -77,6 +82,4 @@ manifest={
      "sha256":hashlib.sha256(f.read_bytes()).hexdigest()[:16]} for f in files]
 }
 (ROOT/"00_START_HERE/FILE_MANIFEST.json").write_text(json.dumps(manifest,indent=2),encoding="utf-8")
-with (ROOT/"00_START_HERE/ALL_FILES.txt").open("w",encoding="utf-8") as out:
-    for item in manifest["files"]: out.write(item["path"]+"\n")
 print("VALIDATED",json.dumps(manifest["counts"],indent=2))

@@ -1,7 +1,7 @@
 {
   "pack_name": "OrgFlow Continuity Showcase | Centre Valley Community Pantry",
   "fictional": true,
-  "source_commit_ref": "origin/main at cc3d10a (2026-10-11 17:47 ET)",
+  "source_commit_ref": "origin/main at bb6a6c1 (2026-10-11)",
   "opening_clip": "~/Downloads/orgflow_opening_v5.mp4 (19.93s, 1920x1080, 60fps)",
   "counts": {
     "source_documents": 11,
@@ -12,9 +12,14 @@
     "calendar_events": 11,
     "graph_nodes": 10,
     "verifiable_QA": 15,
-    "all_files": 97
+    "all_files": 98
   },
   "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 159,
+      "sha256": "eb433949ddc5177c"
+    },
     {
       "path": ".gitignore",
       "bytes": 29,
@@ -22,8 +27,8 @@
     },
     {
       "path": "00_START_HERE/ALL_FILES.txt",
-      "bytes": 5172,
-      "sha256": "d603fb00f1d2b536"
+      "bytes": 5231,
+      "sha256": "0f67e733b52b26e9"
     },
     {
       "path": "00_START_HERE/START_HERE.md",
@@ -497,8 +502,8 @@
     },
     {
       "path": "scripts/validate_and_manifest.py",
-      "bytes": 6072,
-      "sha256": "3a0c0cc1849161cc"
+      "bytes": 6372,
+      "sha256": "427b5dcc8de38a1c"
     }
   ]
 }

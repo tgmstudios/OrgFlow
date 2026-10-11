@@ -1,5 +1,7 @@
+.gitattributes
 .gitignore
 00_START_HERE/ALL_FILES.txt
+00_START_HERE/FILE_MANIFEST.json
 00_START_HERE/START_HERE.md
 01_Google_Drive/Development/Donation_Register_Example.csv
 01_Google_Drive/Development/Donor_Thank_You_and_Receipts.docx
