@@ -37,6 +37,30 @@ jobs:
               "$app/" "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/opt/app/$app/"
           done
 
+      - name: Configure production Google OAuth
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.PROD_GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.PROD_GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REDIRECT_URI: ${{ secrets.PROD_GOOGLE_REDIRECT_URI }}
+        run: |
+          printf '%s\n' \
+            "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" \
+            "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" \
+            "GOOGLE_REDIRECT_URI=$GOOGLE_REDIRECT_URI" \
+            "FRONTEND_ORIGIN=https://orgflow.dev" \
+            | ssh "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" '
+                set -e
+                umask 077
+                env_file=/opt/app/backend/.env
+                touch "$env_file"
+                while IFS= read -r entry; do
+                  key=${entry%%=*}
+                  sed -i "/^${key}=/d" "$env_file"
+                  printf "%s\\n" "$entry" >> "$env_file"
+                done
+                chmod 600 "$env_file"
+              '
+
       - name: Install dependencies and restart services
         run: |
           ssh "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" '
