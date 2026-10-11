@@ -16,7 +16,7 @@ Product and demo
 - Product is OrgFlow; the original brief is preserved in MVP.md. Hackathon priority: presentation-ready and sellable; work in interview style.
 - Capture (source content to employee-approved playbooks) is the demo centerpiece; donor stewardship is the first demo process.
 - Demo a live connection (Gmail and Google Drive, personal Google login); file upload is the fallback.
-- Visual direction: modern, expressive, off-white background, purple accent, professional tone for chat and voice.
+- Visual direction: modern, expressive, off-white background, purple accent, professional tone for chat and voice. Primary color #7753CE; keep the teal/lavender/apricot thread palette; no dark mode or theme toggle. Fonts: Newsreader headlines, Geist UI, Geist Mono metadata.
 - Reference competitor: process.st; the user wants a better version for this use case.
 - Judging time was never recorded; do not assume a fresh time window.
 - No accessibility work and no tests unless needed for personal verification.
@@ -57,7 +57,7 @@ Backend (`backend/`, Bun, port 3003)
 - API contract for the new routes: Swagger at `/docs` and `/openapi.json`.
 
 Web (`frontend/`, React/Bun, port 3002; production at https://orgflow.dev/a/)
-- Home, Files, Knowledge Base, plus Discover, indexing consent, Checklists, People, Organization views and article owner/review metadata. ElevenLabs live voice interview (WebRTC session token, mute control), editable transcript, consent, then draft. Mobile voice fix deployed in `070ce2e`; the user's device retest is not recorded.
+- Home, Files, Knowledge Base, Knowledge Map (`/map`, browser-stored; OPEN_QUESTIONS 20), plus Discover, indexing consent, Checklists, People, Organization views and article owner/review metadata. ElevenLabs live voice interview (WebRTC session token, mute control), editable transcript, consent, then draft. Mobile voice fix deployed in `070ce2e`; the user's device retest is not recorded.
 
 iOS (`app/iOS`)
 - Ask, Capture and Handoff modes; Library (Knowledge, Files, Upcoming, Checklists); sign-in sheet; billing denial shows "See plans". Base URL from Info.plist `OrgFlowBaseURL` (default `https://orgflow.dev`). Optional on-device Foundation Models drafting is off by default. Provider connection stays on the web. Bundle ID `ryannair05.OrgFlow`. Builds; device behaviour not verified.

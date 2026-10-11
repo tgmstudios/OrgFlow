@@ -40,6 +40,8 @@ import {
   ClipboardCheck,
   Mail,
   AlertCircle,
+  Waypoints,
+  Plug,
 } from "lucide-react";
 import "./style.css";
 import {
@@ -59,6 +61,9 @@ import { ArticleMeta } from "./article-meta";
 import { ChecklistsPage } from "./checklists";
 import { PeoplePage } from "./people";
 import { OrganizationPage } from "./organization";
+import { KnowledgeMap } from "./map";
+import { buildDocs, docsForPerson, useMapState } from "./map-store";
+import { Aurora, Orb, VoiceWave, useTypewriter } from "./ambient";
 import {
   AnimatePresence,
   Collapse,
@@ -276,6 +281,7 @@ const pagePaths: Record<string, string> = {
   Files: "/files",
   "Knowledge Base": "/knowledge-base",
   Checklists: "/checklists",
+  Map: "/map",
   People: "/people",
   Organization: "/organization",
 };
@@ -353,7 +359,27 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     [captureError, setCaptureError] = useState(""),
     [org, setOrg] = useState<OrgInfo | null>(null),
     [orgError, setOrgError] = useState(""),
-    [activeRun, setActiveRun] = useState<string | null>(null);
+    [activeRun, setActiveRun] = useState<string | null>(null),
+    [personFocus, setPersonFocus] = useState<string | null>(null),
+    [composerFocus, setComposerFocus] = useState(false);
+  const orgId = org?.id || user.orgId || "default";
+  const [mapState] = useMapState(orgId);
+  const mapDocs = React.useMemo(
+    () =>
+      data
+        ? buildDocs({
+            articles: data.articles,
+            files: data.files,
+            sources: data.sources,
+            categories: data.categories,
+          })
+        : [],
+    [data],
+  );
+  const mapped = (personId: string) => ({
+    groups: mapState.groups.filter((g) => g.ownerId === personId),
+    docs: docsForPerson(mapState, mapDocs, personId),
+  });
   // Keyboard-initiated opens/closes (⌘J, Escape) skip the dialog animation.
   const [instant, setInstant] = useState(false);
   const agentPresence = usePresence(agent, instant ? 0 : 170);
@@ -613,6 +639,21 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     void realtimeVoice.endSession();
   };
   const inline = page === "Home";
+  const typed = useTypewriter(
+    mode === "draft"
+      ? [
+          "Walk me through how we thank a major donor…",
+          "Turn our volunteer onboarding into a checklist…",
+          "Capture the grant reporting process from Maya…",
+        ]
+      : [
+          "Who handles the quarterly grant report?",
+          "Where is the donor stewardship overview?",
+          "What happens in a new hire's first week?",
+          "How do we schedule volunteers each month?",
+        ],
+    !!input || composerFocus || !!messages.length || tab !== "chat",
+  );
   const agentState = agentPresence.closing ? "closed" : "open";
   const assistant = (
     <>
@@ -826,8 +867,10 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
         <div className="messages" ref={messagesRef}>
           {!messages.length && (
             <div className="agent-welcome">
-              <span className="welcome-orb" aria-hidden="true" />
-              <h2>How can I help your team?</h2>
+              <Orb busy={busy} size={inline ? 104 : 84} />
+              <h2>
+                How can I help <em>your team</em>?
+              </h2>
               <p>
                 Ask a question, work through a process, or turn what you know
                 into a draft playbook.
@@ -954,6 +997,15 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
         </div>
         <Collapse open={tab === "voice"}>
           <div className="voice-controls">
+            <VoiceWave
+              status={realtimeVoice.status}
+              speaking={realtimeVoice.isSpeaking}
+              muted={realtimeVoice.isMuted}
+              levels={{
+                input: realtimeVoice.getInputByteFrequencyData,
+                output: realtimeVoice.getOutputByteFrequencyData,
+              }}
+            />
             <div className="voice-actions">
               <button
                 className={
@@ -1061,10 +1113,14 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
           <textarea
             aria-label="Message assistant"
             placeholder={
-              mode === "draft"
-                ? "Describe the process you want to capture…"
-                : "Ask your assistant…"
+              !messages.length && !composerFocus && typed
+                ? typed + "▏"
+                : mode === "draft"
+                  ? "Describe the process you want to capture…"
+                  : "Ask your assistant…"
             }
+            onFocus={() => setComposerFocus(true)}
+            onBlur={() => setComposerFocus(false)}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -1090,13 +1146,16 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
   );
   return (
     <div className="app">
+      <Aurora />
       <aside className="sidebar">
         <button className="brand" onClick={() => setPage("Home")}>
           <span className="brand-mark" aria-hidden="true" />
           orgflow<span className="brand-dot">.</span>
         </button>
         <button className="agent-launch" onClick={() => openAgent()}>
-          <Sparkles size={18} /> Your AI assistant <kbd>⌘ J</kbd>
+          <span className="agent-launch-glow" aria-hidden="true" />
+          <Sparkles size={18} /> <span className="nav-text">Your AI assistant</span>{" "}
+          <kbd>⌘ J</kbd>
         </button>
         <p className="nav-label">WORKSPACE</p>
         <nav>
@@ -1105,6 +1164,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
             [FolderOpen, "Files"],
             [BookOpen, "Knowledge Base"],
             [ClipboardCheck, "Checklists"],
+            [Waypoints, "Map"],
             [Users, "People"],
             [Building2, "Organization"],
           ].map(([Icon, label]: any) => (
@@ -1114,11 +1174,20 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
               onClick={() => {
                 setPage(label);
                 setQuery("");
+                setPersonFocus(null);
                 if (label === "Checklists") setActiveRun(null);
               }}
             >
+              {page === label && (
+                <m.span
+                  layoutId="nav-pill"
+                  className="nav-pill"
+                  aria-hidden="true"
+                  transition={{ type: "spring", duration: 0.4, bounce: 0.15 }}
+                />
+              )}
               <Icon size={19} />
-              {label}
+              <span className="nav-text">{label}</span>
               {label === "Knowledge Base" && (
                 <small>{data?.articles.length || 0}</small>
               )}
@@ -1187,9 +1256,15 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
             <strong>{page}</strong>
           </span>
           <div className="top-right">
-            <span className="live-label">
-              Your organization's living memory
-            </span>
+            {data && (
+              <span className="live-pill" title="Playbooks in this workspace">
+                <span className="glow-dot" />
+                {data.articles.filter((a) => a.status === "published").length} live
+                <span className="live-sep" />
+                {data.articles.filter((a) => a.status !== "published").length} in
+                draft
+              </span>
+            )}
             <span className="avatar" title={user.email}>
               {initials(user.name)}
             </span>
@@ -1205,7 +1280,20 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
             <LoaderCircle className="spin" /> Loading your workspace…
           </div>
         ) : (
-          <>
+          <AnimatePresence mode="wait" initial={false}>
+          <m.div
+            key={page}
+            className="page-frame"
+            initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -6, filter: "blur(4px)", transition: { duration: 0.14, ease: "easeIn" } }}
+            transition={{ duration: 0.32, ease: [0.23, 1, 0.32, 1] }}
+            onAnimationComplete={(def: any) => {
+              // A lingering filter would make fixed/sticky descendants misbehave.
+              const el = document.querySelector<HTMLElement>(".page-frame");
+              if (el && def?.opacity === 1) el.style.filter = "none";
+            }}
+          >
             {inline && assistant}
             {page === "Files" && (
               <div className="page-content">
@@ -1609,8 +1697,31 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                 onOpenArticle={openArticle}
               />
             )}
+            {page === "Map" && data && (
+              <KnowledgeMap
+                orgId={orgId}
+                orgName={org?.name || "Your organization"}
+                articles={data.articles}
+                files={data.files}
+                sources={data.sources || NONE}
+                categories={data.categories}
+                people={data.people || NONE}
+                onOpenArticle={openArticle}
+                onOpenPerson={(id) => {
+                  setPersonFocus(id);
+                  setPage("People");
+                }}
+              />
+            )}
             {page === "People" && (
               <PeoplePage
+                key={personFocus || "people"}
+                initialPersonId={personFocus}
+                mapped={mapped}
+                onOpenMap={() => {
+                  setPersonFocus(null);
+                  setPage("Map");
+                }}
                 people={data?.people || NONE}
                 articles={data?.articles || NONE}
                 onRefresh={refresh}
@@ -1633,7 +1744,8 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                 }}
               />
             )}
-          </>
+          </m.div>
+          </AnimatePresence>
         )}
       </main>
       {!inline && agent && assistant}
@@ -1662,10 +1774,12 @@ function Connections({
       <h3>Connected tools</h3>
       <p>Sample files are demo data. Provider access requires a connection.</p>
       <div className="connections-list">
-        <div>
+        <div className={google?.connected ? "is-connected" : "is-ready"}>
           <FolderOpen size={18} />
           <strong>Google Drive & Gmail</strong>
-          <span>{google?.connected ? "Connected" : "Not connected"}</span>
+          <span>
+            {google?.connected ? "Connected · read-only" : "Ready to connect · read-only"}
+          </span>
           {google?.connected ? (
             <>
               <button
@@ -1714,13 +1828,15 @@ function Connections({
             </a>
           )}
         </div>
-        {["SharePoint", "OneDrive"].map((name) => (
-          <div key={name}>
-            <FolderOpen size={18} />
-            <strong>{name}</strong>
-            <span>Not connected · coming later</span>
-          </div>
-        ))}
+        <div className="connection-soon">
+          <Plug size={18} />
+          <strong>Microsoft 365</strong>
+          <em className="soon-badge">Coming soon</em>
+          <p>
+            SharePoint, OneDrive and Outlook, indexed beside Google with the same
+            consent controls.
+          </p>
+        </div>
       </div>
       {notice && <p role="status">{notice}</p>}
       <IndexSources

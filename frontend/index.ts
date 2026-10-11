@@ -12,6 +12,7 @@ Bun.serve({
         "/files": page,
         "/knowledge-base": page,
         "/checklists": page,
+        "/map": page,
         "/people": page,
         "/organization": page,
         "/a": page,

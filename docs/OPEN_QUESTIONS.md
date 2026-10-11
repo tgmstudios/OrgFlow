@@ -52,6 +52,11 @@ Each entry lists the **current default** — what the code does until someone de
     drafts afterwards. Adopt ElevenLabs on iOS (adds their SDK and sends live audio to them)?
     Default: on-device transcription.
 
+20. **Knowledge Map storage and owner reassignment.** Map groups, group owners and handovers live in each
+    browser's localStorage (frontend only); a handover does not change `article.ownerId`, because the article
+    PATCH resets a published playbook to draft on any change, including owner. Store the map server-side and let
+    owner changes keep publish status? Default: browser-only, article owners unchanged.
+
 ## Business
 
 17. **Pricing tiers by organization size** (brief: nonprofit-friendly monthly tiers). Amounts and seat
