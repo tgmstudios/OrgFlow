@@ -69,6 +69,8 @@ AI providers
 - ElevenLabs Conversational AI private agent "OrgFlow Voice" (server-held key and agent ID); unauthenticated calls return 401.
 
 Deployment
+- Production host (moved 2026-10-11 to AWS account 255260119952, us-east-2): EC2 `i-0b2f19dba772e2f22` (t3.micro, Amazon Linux 2023), Elastic IP `3.12.200.93`, SG `orgflow-web`, instance profile `orgflow-backend-monetization`. SSH: `ssh -i orgflow-prod-key.pem ec2-user@3.12.200.93` (key is git-ignored, kept in the repo root locally and in the GitHub secret `EC2_SSH_KEY`). App in `/opt/app`, units `backend`/`frontend`/`landing`, nginx on port 80 (Cloudflare terminates TLS). The previous host (old account, `3.140.197.206`, `hackathon-landing-app-key.pem`) is retired but not terminated.
+- Monetization: AWS App Monetization app `01a12cef6e537c4288f0b6931dcaeeca` (account 255260119952, us-west-2 control plane, sandbox ARN in `PROD_MONETIZATION_APP_ID`); 3 draft plans without quotas, enforcement off, seller/Stripe registration not done yet.
 - Pushing to `main` deploys via `.github/workflows/deploy.yml` to the existing EC2 server (Region us-east-2 from local config) behind Cloudflare and Nginx (`deploy/`). Server `.env` is preserved across deploys. Production OAuth redirect: `https://orgflow.dev/auth/google/callback`; whether it is saved in the Google client was last reported as missing (`redirect_uri_mismatch`), current status not verified. Google app is in Testing, test users only. Google project `orgflow-20261011`.
 - Microsoft 365, calendar sync (events are synthetic), extraction caching and embeddings: not built.
 
