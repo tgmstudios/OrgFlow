@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from "react";
-import { ArrowRight, BookOpen, Check, CheckCircle2, ChevronRight, FileText, Pencil, RotateCcw, ShieldCheck, Sparkles, X } from "lucide-react";
+import { ArrowRight, BookOpen, Check, CheckCircle2, ChevronRight, FileText, Pencil, RotateCcw, ShieldCheck, X } from "lucide-react";
 import { sources } from "./sample-data";
 import "./guided-demo.css";
 
@@ -125,7 +125,7 @@ export default function GuidedDemo() {
   return (
     <div className="of-guided-shell">
       <div className="of-guided-topbar">
-        <span><Sparkles size={17} aria-hidden="true" />OrgFlow assistant</span>
+        <span><img src="/brand-knot.webp" width="26" height="26" alt="" />OrgFlow assistant</span>
         <button className="of-guided-reset" onClick={reset} aria-label="Reset the simple example">
           <RotateCcw size={14} aria-hidden="true" />Reset
         </button>
@@ -133,7 +133,7 @@ export default function GuidedDemo() {
       <div className={`of-guided-canvas of-guided-${stage}`}>
         {stage === "question" && (
           <div className="of-guided-question-content">
-            <span className="of-guided-question-mark" aria-hidden="true"><Sparkles size={30} strokeWidth={1.3} /></span>
+            <span className="of-guided-question-mark" aria-hidden="true"><img src="/brand-knot.webp" width="84" height="84" alt="" /></span>
             <h3>How do we welcome<br className="of-guided-desktop-break" /> a new volunteer?</h3>
             <button ref={initialAction} className="of-guided-primary" onClick={() => {
               setStage("answer");
@@ -208,6 +208,7 @@ export default function GuidedDemo() {
                 setStatus(`Step ${index + 1} ${event.target.checked ? "completed" : "cleared"} in the sample checklist.`);
               }} /><span>{step}</span></label>)}
             </div>
+            <div className="of-guided-completion" role="progressbar" aria-label="Procedure completion" aria-valuemin={0} aria-valuemax={4} aria-valuenow={completed} aria-valuetext={`${completed} of 4 steps complete`}><span style={{ transform: `scaleX(${completed / 4})` }} /></div>
             <div className="of-guided-progress"><span>{completed === 4 ? <><CheckCircle2 size={16} aria-hidden="true" />Ready for the next first shift.</> : `${completed} of 4 steps complete`}</span><button className="of-guided-text-action" onClick={() => {setChecked([false, false, false, false]);setStatus("The sample checklist has been cleared.");}}>Clear checklist</button></div>
             <div className="of-guided-actions"><a className="of-guided-primary" href="https://orgflow.dev/a/">Try OrgFlow<ArrowRight size={17} aria-hidden="true" /></a><button className="of-guided-text-action" onClick={edit}><Pencil size={14} aria-hidden="true" />Edit draft</button></div>
           </div>

@@ -219,7 +219,7 @@ function Hero() {
           <span className="editorial-word">memory.</span>
         </h1>
         <p className="hero-description">
-          Bring your team’s knowledge together. Find answers, document the work,
+          Bring your nonprofit’s knowledge together. Find answers, document the work,
           and give the next person a place to start.
         </p>
         <div className="hero-actions">
@@ -290,7 +290,7 @@ function ProductOverview() {
         <div className="overview-capability"><BookOpen size={19} aria-hidden="true" /><div><h3>Processes your team can improve.</h3><p>Write, review, and publish as the work changes.</p></div></div>
       </div>
       <div className="overview-visual reveal" role="group" aria-label="Illustrative OrgFlow Knowledge Base article using fictional content">
-        <div className="overview-appbar"><span><Layers size={18} /> orgflow.</span><span>Knowledge Base</span></div>
+        <div className="overview-appbar"><span><img src="/brand-knot.webp" width="24" height="24" alt="" /> orgflow.</span><span>Knowledge Base</span></div>
         <div className="overview-document">
           <div className="overview-document-meta"><span>Volunteer operations</span><span className="overview-published"><Check size={11} /> Published</span></div>
           <h3>A volunteer’s first day</h3>
@@ -307,10 +307,10 @@ function ProductOverview() {
 }
 
 const faqs = [
-  ["Can I try OrgFlow today?", "Yes. Open the working app and create an account. It is a shared demonstration workspace, so use fictional content. Paid checkout is not available."],
+  ["Can I try OrgFlow today?", "Yes. Open the app and choose the shared demo workspace. Use fictional content there. Opening the app does not start a subscription."],
   ["Can I use my existing documents?", "Upload a text file or select Google Drive documents and Gmail messages after connecting Google. Connected originals stay where they are. Microsoft connections are not available yet."],
   ["Does AI publish changes automatically?", "No. Generated content starts as an editable draft. Your team reviews it and publishes it separately. Later edits stay in draft until you publish again."],
-  ["Is my organization’s information private?", "The current demo does not isolate organizations. Do not add private information. In the app, selected source text is sent to the AI provider only after you consent."],
+  ["Is my organization’s information private?", "The demo workspace is shared. Do not add private information there. In the app, selected source text is sent to the AI provider only after you consent."],
 ] as const;
 
 function Pricing() {
@@ -321,8 +321,8 @@ function Pricing() {
         <div className="founding-panel">
           <span className="founding-label">Founding nonprofit offer</span>
           <div className="founding-price"><span>$19</span><span>per month</span></div>
-          <p className="founding-status">Proposed price. Checkout is not available.</p>
-          <div className="workspace-disclosure"><ShieldCheck size={20} aria-hidden="true" /><p>The app is a shared demonstration workspace. Use fictional content.</p></div>
+          <p className="founding-status">Proposed founding price. Explore the demo today.</p>
+          <div className="workspace-disclosure"><ShieldCheck size={20} aria-hidden="true" /><p>Choose the shared demo workspace and use fictional content.</p></div>
           <AppLink className="button button-light">Try OrgFlow</AppLink>
           <p className="subscription-note">Opening the app does not start a subscription.</p>
         </div>
