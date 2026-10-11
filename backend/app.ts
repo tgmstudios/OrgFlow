@@ -3,6 +3,7 @@ import { openapi } from "./openapi";
 import { createAgentHandler } from "./agent";
 import { uploads } from "./uploads";
 import { createGoogleHandler } from "./google";
+import { createAuth, AuthError } from "./auth";
 class ApiError extends Error {
   constructor(
     public status: number,
@@ -55,12 +56,17 @@ export async function bootstrap(store: Store) {
       demoLabel:
         "Synthetic demonstration data; provider links are placeholders.",
       storage: store.mode,
-      authentication: "not-configured",
+      authentication: "required",
       voice: "browser-dependent",
     },
   };
 }
-export function createApp(store: Store) {
+export function createApp(
+  store: Store,
+  options: { requireAuth?: boolean } = {},
+) {
+  const requireAuth = options.requireAuth ?? true;
+  const auth = createAuth(store);
   const google = createGoogleHandler({
     upsertFile: async (file) => {
       const current = await store.get("files", file.id);
@@ -123,6 +129,17 @@ export function createApp(store: Store) {
         !allowed.includes(origin)
       )
         throw new ApiError(403, "Origin is not allowed");
+      const authResponse = await auth.handle(req, path);
+      if (authResponse) return authResponse;
+      const open =
+        path === "/health" ||
+        path === "/openapi.json" ||
+        path === "/docs" ||
+        path === "/swagger" ||
+        path.startsWith("/docs/assets/") ||
+        path === "/auth/google/callback";
+      if (requireAuth && !open && !(await auth.currentUser(req)))
+        throw new ApiError(401, "Sign in required");
       const googleResponse = await google(req);
       if (googleResponse) return googleResponse;
       if (path.startsWith("/api/uploads")) {
@@ -246,7 +263,8 @@ export function createApp(store: Store) {
       await store.put(kind, v);
       return json(v);
     } catch (e) {
-      if (e instanceof ApiError) return json({ error: e.message }, e.status);
+      if (e instanceof ApiError || e instanceof AuthError)
+        return json({ error: e.message }, e.status);
       console.error("API request failed");
       return json({ error: "Internal server error" }, 500);
     }

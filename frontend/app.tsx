@@ -60,8 +60,123 @@ async function api(path: string, method = "GET", body?: any) {
     body: body ? JSON.stringify(body) : undefined,
   });
   const d = await r.json();
+  if (r.status === 401 && !path.startsWith("/auth/")) {
+    window.dispatchEvent(new Event("orgflow:signed-out"));
+  }
   if (!r.ok) throw new Error(d.error || "Request failed");
   return d;
+}
+type User = { id: string; email: string; name: string };
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+function AuthScreen({ onUser }: { onUser: (user: User) => void }) {
+  const [mode, setMode] = useState<"login" | "signup">("login"),
+    [name, setName] = useState(""),
+    [email, setEmail] = useState(""),
+    [password, setPassword] = useState(""),
+    [error, setError] = useState(""),
+    [busy, setBusy] = useState(false);
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      const r = await api("/auth/" + mode, "POST", { name, email, password });
+      onUser(r.user);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="auth-page">
+      <form className="auth-card" onSubmit={submit}>
+        <div className="brand-static">
+          orgflow<span className="brand-dot">.</span>
+        </div>
+        <h1>{mode === "login" ? "Sign in" : "Create your account"}</h1>
+        {mode === "signup" && (
+          <label>
+            Name
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoComplete="name"
+            />
+          </label>
+        )}
+        <label>
+          Email
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+          />
+        </label>
+        <label>
+          Password
+          <input
+            type="password"
+            required
+            minLength={mode === "signup" ? 8 : undefined}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete={mode === "login" ? "current-password" : "new-password"}
+          />
+        </label>
+        {error && (
+          <div className="error" role="alert">
+            {error}
+          </div>
+        )}
+        <button className="auth-submit" disabled={busy}>
+          {mode === "login" ? "Sign in" : "Create account"}
+        </button>
+        <button
+          type="button"
+          className="auth-switch"
+          onClick={() => {
+            setMode(mode === "login" ? "signup" : "login");
+            setError("");
+          }}
+        >
+          {mode === "login"
+            ? "New here? Create an account"
+            : "Already have an account? Sign in"}
+        </button>
+      </form>
+    </div>
+  );
+}
+function AuthGate() {
+  const [user, setUser] = useState<User | null | undefined>(undefined);
+  useEffect(() => {
+    api("/auth/me")
+      .then((r) => setUser(r.user))
+      .catch(() => setUser(null));
+    const out = () => setUser(null);
+    window.addEventListener("orgflow:signed-out", out);
+    return () => window.removeEventListener("orgflow:signed-out", out);
+  }, []);
+  if (user === undefined) return null;
+  if (!user) return <AuthScreen onUser={setUser} />;
+  return (
+    <App
+      user={user}
+      onLogout={async () => {
+        await api("/auth/logout", "POST", {}).catch(() => {});
+        setUser(null);
+      }}
+    />
+  );
 }
 const date = (d: string) =>
   new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -76,7 +191,7 @@ const currentPage = () =>
     : location.pathname.replace(/^\/a(?=\/|$)/, "").startsWith("/files")
       ? "Files"
       : "Home";
-function App() {
+function App({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [data, setData] = useState<Data | null>(null),
     [page, setPageState] = useState(currentPage),
     [error, setError] = useState(""),
@@ -315,6 +430,10 @@ function App() {
               : "Demo workspace"}{" "}
             <span className="info">i</span>
           </div>
+          <div className="account-row">
+            <span title={user.email}>{user.name}</span>
+            <button onClick={onLogout}>Sign out</button>
+          </div>
           <a
             className="docs-link"
             href="/docs"
@@ -334,7 +453,9 @@ function App() {
             <span className="live-label">
               Your organization's living memory
             </span>
-            <span className="avatar">YO</span>
+            <span className="avatar" title={user.email}>
+              {initials(user.name)}
+            </span>
           </div>
         </header>
         {error && (
@@ -1672,4 +1793,4 @@ function ArticleEditor({
     </div>
   );
 }
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(<AuthGate />);

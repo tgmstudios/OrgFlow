@@ -8,7 +8,7 @@ const doc = (text: string) => ({
 async function fixture() {
   const store = await openStore({ sqlitePath: ":memory:" });
   await seed(store);
-  const app = createApp(store);
+  const app = createApp(store, { requireAuth: false });
   return {
     store,
     call: async (path: string, method = "GET", body?: unknown) =>
@@ -125,7 +125,7 @@ test("bootstrap labels synthetic data and docs are served locally", async () => 
 test('cross-origin writes are rejected', async () => {
   const store = await openStore({sqlitePath: ':memory:'});
   try {
-    const app = createApp(store);
+    const app = createApp(store, { requireAuth: false });
     const res = await app(new Request('http://localhost/api/categories', {method:'POST',headers:{origin:'https://attacker.example','content-type':'application/json'},body:JSON.stringify({name:'Injected'})}));
     expect(res.status).toBe(403);
     expect(await store.list('categories')).toEqual([]);

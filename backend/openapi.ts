@@ -139,7 +139,7 @@ export const openapi = {
     title: "OrgFlow API",
     version: "0.1.0",
     description:
-      "Local single-workspace development API. No staff authentication yet: bind only to localhost. Seed data is synthetic. Editing a published article creates a draft and preserves publishedContent until explicit publication.",
+      "Local single-workspace development API. Email/password accounts: sign in via /api/auth/login (HttpOnly session cookie); all /api routes except /api/auth/* require a session. No organization isolation yet: all accounts share one workspace. Seed data is synthetic. Editing a published article creates a draft and preserves publishedContent until explicit publication.",
   },
   servers: [{ url: "/" }],
   components: { schemas },
@@ -150,6 +150,24 @@ export const openapi = {
         object({ status: string, storage: string }),
       ),
     },
+    "/api/auth/signup": {
+      post: operation(
+        "Create account and start session",
+        object({ user: object({ id: string, email: string, name: string }) }),
+        object({ email: string, password: string, name: string }, ["email", "password"]),
+        false,
+        true,
+      ),
+    },
+    "/api/auth/login": {
+      post: operation(
+        "Sign in and start session",
+        object({ user: object({ id: string, email: string, name: string }) }),
+        object({ email: string, password: string }, ["email", "password"]),
+      ),
+    },
+    "/api/auth/logout": { post: operation("End session", object({ ok: { type: "boolean" } })) },
+    "/api/auth/me": { get: operation("Current user (null when signed out)", object({ user: { type: "object", nullable: true } })) },
     "/api/bootstrap": { get: operation("Load workspace", ref("Bootstrap")) },
     "/api/categories": {
       post: operation(

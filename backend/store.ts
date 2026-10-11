@@ -8,6 +8,7 @@ export interface Store {
   list(kind: string): Promise<Entity[]>;
   get(kind: string, id: string): Promise<Entity | null>;
   put(kind: string, value: Entity): Promise<void>;
+  delete(kind: string, id: string): Promise<void>;
   close(): Promise<void>;
 }
 export async function openStore(
@@ -32,6 +33,9 @@ export async function openStore(
       },
       async put(kind, value) {
         await sql`INSERT INTO orgflow_entities(kind,id,data) VALUES(${kind},${value.id},${JSON.stringify(value)}::jsonb) ON CONFLICT(kind,id) DO UPDATE SET data=EXCLUDED.data`;
+      },
+      async delete(kind, id) {
+        await sql`DELETE FROM orgflow_entities WHERE kind=${kind} AND id=${id}`;
       },
       async close() {
         await sql.close();
@@ -63,6 +67,9 @@ export async function openStore(
       db.query(
         "INSERT INTO entities(kind,id,data) VALUES(?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data",
       ).run(kind, value.id, JSON.stringify(value));
+    },
+    async delete(kind, id) {
+      db.query("DELETE FROM entities WHERE kind=? AND id=?").run(kind, id);
     },
     async close() {
       db.close();

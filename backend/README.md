@@ -4,7 +4,7 @@ From this directory run `bun install`, then `bun run index.ts`. Tests: `bun test
 
 Default address: `http://localhost:3003`, bound to 127.0.0.1. Swagger UI: `/docs` or `/swagger`. OpenAPI: `/openapi.json`. Swagger assets are served locally.
 
-This is a **single-workspace local development build without staff authentication**. Do not expose publicly. Browser writes from unexpected origins are rejected. Set `FRONTEND_ORIGIN` for a custom frontend origin (default `http://localhost:3002`). `HOST` and `PORT` override the bind address.
+This is a **single-workspace build with basic email/password accounts**: `POST /api/auth/signup|login|logout`, `GET /api/auth/me`. Passwords are Argon2id-hashed (`Bun.password`); sessions are server-side records referenced by an HttpOnly, SameSite=Lax `orgflow_session` cookie (7 days). All `/api/*` routes except `/api/auth/*` return 401 without a session; failed logins are rate limited per email. Any signed-in account sees the whole workspace (no roles or organization isolation yet), and sign-up is open. Browser writes from unexpected origins are rejected. Set `FRONTEND_ORIGIN` for a custom frontend origin (default `http://localhost:3002`). `HOST` and `PORT` override the bind address.
 
 ## Persistence
 
