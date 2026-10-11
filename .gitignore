@@ -5,8 +5,7 @@ dist/
 .env.local
 .dump
 .npmrc
-.claude/skills
-.codex/skills
+.DS_Store
 .kiro/skills
 .pi/agent/skills
 *.pem
