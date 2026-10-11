@@ -70,6 +70,7 @@ export type Person = {
   status: "active" | "leaving" | "left";
   leaveDate?: string;
   successorId?: string;
+  managerId?: string;
   handoffArticleId?: string;
   createdAt: string;
 };

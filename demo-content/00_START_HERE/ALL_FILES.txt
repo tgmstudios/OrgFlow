@@ -3,6 +3,7 @@
 00_START_HERE/ALL_FILES.txt
 00_START_HERE/FILE_MANIFEST.json
 00_START_HERE/START_HERE.md
+00_START_HERE/WEBSITE_IMPORT_AND_ACCESS.md
 01_Google_Drive/Development/Donation_Register_Example.csv
 01_Google_Drive/Development/Donor_Thank_You_and_Receipts.docx
 01_Google_Drive/Development/Donor_Thank_You_and_Receipts.md
@@ -96,4 +97,7 @@
 scripts/build_documents.py
 scripts/build_extras.py
 scripts/build_records.py
+scripts/install_orgflow_showcase.test.ts
+scripts/install_orgflow_showcase.ts
+scripts/showcase_http.test.ts
 scripts/validate_and_manifest.py
