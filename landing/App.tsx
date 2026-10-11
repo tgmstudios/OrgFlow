@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { usePausedOffscreen, useScrollProgress } from "./motion";
 import Story from "./Story";
-import ThreadMap from "./ThreadMap";
+import Screens from "./Screens";
 
 const APP_URL = "https://orgflow.dev/a/";
 const navigation = [
@@ -149,7 +149,7 @@ function Hero() {
           </a>
         </div>
       </div>
-      <ThreadMap />
+      <Screens />
     </section>
   );
 }
@@ -313,8 +313,6 @@ function Pricing() {
           <p className="eyebrow">Pricing</p>
           <h2 id="pricing-title">
             Start with the demo.
-            <br />
-            <em>Stay for the memory.</em>
           </h2>
           <div className="faq">
             {faqs.map(([question, answer]) => (
