@@ -1,12 +1,12 @@
 import { test, expect } from "bun:test";
-import { openStore, seed } from "./store";
+import { createMemoryStore, seed } from "./store";
 import { createApp } from "./app";
 const doc = (text: string) => ({
   type: "doc",
   content: [{ type: "paragraph", content: [{ type: "text", text }] }],
 });
 async function fixture() {
-  const store = await openStore({ sqlitePath: ":memory:" });
+  const store = await createMemoryStore();
   await seed(store);
   const app = createApp(store, { requireAuth: false });
   return {
@@ -123,7 +123,7 @@ test("bootstrap labels synthetic data and docs are served locally", async () => 
 });
 
 test('cross-origin writes are rejected', async () => {
-  const store = await openStore({sqlitePath: ':memory:'});
+  const store = await createMemoryStore();
   try {
     const app = createApp(store, { requireAuth: false });
     const res = await app(new Request('http://localhost/api/categories', {method:'POST',headers:{origin:'https://attacker.example','content-type':'application/json'},body:JSON.stringify({name:'Injected'})}));
@@ -135,7 +135,7 @@ test('cross-origin writes are rejected', async () => {
 test("configured browser origin permits writes when OAuth returns to an app path", async () => {
   const previous = process.env.FRONTEND_ORIGIN;
   process.env.FRONTEND_ORIGIN = "https://orgflow.dev";
-  const store = await openStore({ sqlitePath: ":memory:" });
+  const store = await createMemoryStore();
   try {
     const app = createApp(store, { requireAuth: false });
     const response = await app(

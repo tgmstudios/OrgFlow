@@ -55,6 +55,9 @@ Each entry lists the **current default** — what the code does until someone de
 15. **Evidence checks are advisory.** Unverified quotes are flagged, never blocked. Should publishing be
     blocked (or need an admin) while a draft has unverified quotes? Default: advisory only.
 
+22. **Embedding provider for pgvector file indexing.** Indexed source text must be sent to an embedding
+    model to create vectors. Which provider is acceptable, and does consent need to change? Default: no
+    embeddings generated; Luminal's embedding support and retention/training terms are unverified.
 ## Business
 
 16. **Pricing tiers by organization size** (brief: nonprofit-friendly monthly tiers). Amounts and seat

@@ -1,9 +1,9 @@
 import { test, expect } from "bun:test";
-import { openStore, seed } from "./store";
+import { createMemoryStore, seed } from "./store";
 import { createApp } from "./app";
 
 async function fixture() {
-  const store = await openStore({ sqlitePath: ":memory:" });
+  const store = await createMemoryStore();
   await seed(store);
   const app = createApp(store);
   const call = (path: string, method = "GET", body?: unknown, cookie?: string) =>

@@ -1,0 +1,17 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Entity {
+  kind String @db.Text
+  id   String @db.Text
+  data Json   @db.JsonB
+
+  @@id([kind, id])
+  @@map("orgflow_entities")
+}

@@ -25,7 +25,7 @@ From the repo root, `bun run dev` starts backend and frontend together.
 - `monetization.ts`: AWS Monetization sandbox entitlement checks and metering.
 - `elevenlabs.ts`: ephemeral WebRTC token for the private voice agent (`GET /api/voice/session-token`).
 - `samples.ts`: labelled sample playbooks and people for the shared demo workspace (added once; new organizations start empty).
-- `store.ts`: persistence (PostgreSQL or SQLite). `uploads.ts`: image uploads. `openapi.ts`: API description.
+- `store.ts`: Prisma/PostgreSQL persistence. `migrate-sqlite-to-postgres.ts`: one-time legacy import. `uploads.ts`: image uploads. `openapi.ts`: API description.
 
 ## Configuration
 
@@ -37,11 +37,12 @@ Copy `.env.example` to `.env` (Git-ignored, mode 0600; Bun loads it automaticall
 - Secrets: `TOKEN_ENCRYPTION_KEY` (seals stored Google sessions)
 - Storage and origins: `DATABASE_URL`, `FRONTEND_ORIGIN`, `FRONTEND_REDIRECT_URL`, `HOST`, `PORT`
 
-Also read by the code, not in `.env.example`: `SQLITE_PATH`, `REVIEW_INTERVAL_DAYS`, `MONETIZATION_APP_ID`, `MONETIZATION_ENFORCE`.
+Also read by the code, not in `.env.example`: `REVIEW_INTERVAL_DAYS`, `MONETIZATION_APP_ID`, `MONETIZATION_ENFORCE`.
 
 ## Behaviour notes
 
-- Without `DATABASE_URL`, data persists to SQLite at `./data/orgflow.sqlite` (run from this directory). A configured PostgreSQL failure stops startup instead of falling back; PostgreSQL has not been integration-tested here.
+- PostgreSQL is required. For local development, start `docker compose up -d`, copy `.env.example` to `.env`, then run `bun run prisma:migrate:deploy`. The Docker image includes pgvector. Prisma migrations install the extension and create the app table.
+- To import the legacy SQLite database, make a backup first, then set `SQLITE_SOURCE` and `DATABASE_URL` and run `bun run db:import:sqlite`. The importer is idempotent and upserts by `(kind, id)`.
 - Without `LUMINAL_API_KEY`, AI routes return 503 `AI_NOT_CONFIGURED`. AI saves drafts only; publishing is `POST /api/articles/:id/publish`.
 - All `/api/*` routes except `/api/auth/*` need the session cookie. Browser writes from unexpected origins are rejected.
 - Google sessions are sealed with AES-256-GCM (`vault.ts`) and stored in the database, keyed by the `orgflow_google` cookie (30 days), so a restart keeps connections. The key is `TOKEN_ENCRYPTION_KEY` (any string) or a generated `data/token.key` (mode 0600); back it up with the database. Disconnecting deletes the record and revokes the token at Google.

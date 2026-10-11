@@ -1,10 +1,8 @@
 import { openStore, seed } from "./store";
 import { seedSamples } from "./samples";
 import { createApp } from "./app";
-const store = await openStore({
-  databaseUrl: process.env.DATABASE_URL,
-  sqlitePath: process.env.SQLITE_PATH,
-});
+const store = await openStore(process.env.DATABASE_URL);
+await store.list("meta"); // Fail before serving if the database is unreachable.
 await seed(store);
 await seedSamples(store);
 const app = createApp(store);
@@ -23,7 +21,3 @@ const server = Bun.serve({
 console.log(
   `OrgFlow backend: ${server.url} (${store.mode}). API docs: ${server.url}docs`,
 );
-if (store.mode === "sqlite-development")
-  console.log(
-    "Development SQLite fallback; set DATABASE_URL for PostgreSQL. Synthetic demo data; authentication not configured.",
-  );

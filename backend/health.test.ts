@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test";
-import { openStore, seed } from "./store";
+import { createMemoryStore, seed } from "./store";
 import { createApp } from "./app";
 import { changedSources, computeHealth, gapsFor, interviewPlan, outlineSections, sectionsToDoc } from "./health";
 import { createGoogleHandler } from "./google";
@@ -142,7 +142,7 @@ test("handoff outline is built only from recorded facts", () => {
 });
 
 test("API: health, interview plan, and a no-AI handoff outline that is regenerated in place", async () => {
-  const store = await openStore({ sqlitePath: ":memory:" });
+  const store = await createMemoryStore();
   try {
     await seed(store);
     const app = createApp(store, { requireAuth: false });
@@ -182,7 +182,7 @@ test("API: health, interview plan, and a no-AI handoff outline that is regenerat
 test("Google connections survive a restart and are stored sealed", async () => {
   process.env.TOKEN_ENCRYPTION_KEY = "test-only-key";
   const originalFetch = globalThis.fetch;
-  const store = await openStore({ sqlitePath: ":memory:" });
+  const store = await createMemoryStore();
   const env = {
     id: process.env.GOOGLE_CLIENT_ID,
     secret: process.env.GOOGLE_CLIENT_SECRET,

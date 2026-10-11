@@ -21,7 +21,9 @@ Requires [Bun](https://bun.sh).
 
 ```sh
 bun run install:app   # installs backend and frontend dependencies
+(cd backend && docker compose up -d)  # local PostgreSQL + pgvector
 cp backend/.env.example backend/.env   # first time only; fill values locally, never commit
+cd backend && bun run prisma:migrate:deploy && cd ..  # create the local schema
 bun run dev           # backend :3003 and frontend :3002
 ```
 
@@ -30,7 +32,7 @@ bun run dev           # backend :3003 and frontend :3002
 - Verify: `bun run typecheck`, `bun run test`, `bun run build`
 - iOS: open `app/iOS/OrgFlow.xcodeproj` in Xcode, run on a simulator or device (deployment target iOS 27). It talks to `OrgFlowBaseURL` in `app/iOS/OrgFlow/Info.plist` (default `https://orgflow.dev`); point it at your own backend to test local changes.
 
-Without `LUMINAL_API_KEY`, Ask, drafting, Discover and handoff return an `AI_NOT_CONFIGURED` error. Without `DATABASE_URL`, data persists to SQLite under `backend/data/`. Pushing to `main` deploys production (`.github/workflows/deploy.yml`, `deploy/`).
+Without `LUMINAL_API_KEY`, Ask, drafting, Discover and handoff return an `AI_NOT_CONFIGURED` error. PostgreSQL is required for all app runs; local development uses the pgvector Docker image described above. Pushing to `main` deploys production (`.github/workflows/deploy.yml`, `deploy/`).
 
 ## Demo walkthrough
 
