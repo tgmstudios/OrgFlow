@@ -20,7 +20,7 @@ const doc = (...content: unknown[]) => ({ type: "doc", content });
 // Showcase documents (fictional Center Valley Community Pantry) indexed into the demo workspace: the ones in
 // Maria Reyes's handoff story. Originals open from the team repository, the same links the importer uses.
 const SHOWCASE_ROOT = new URL("../demo-content/", import.meta.url).pathname;
-const SHOWCASE_URL = "https://raw.githubusercontent.com/tgmstudios/c0mpiled/aae1b41/demo-content/";
+const SHOWCASE_URL = "https://raw.githubusercontent.com/tgmstudios/c0mpiled/ca04f40/demo-content/";
 const showcaseUrl = (path: string) => SHOWCASE_URL + path.split("/").map(encodeURIComponent).join("/");
 const showcaseId = (kind: "source" | "mail", rel: string) =>
   `showcase-${kind}-${Buffer.from(rel).toString("base64url").slice(0, 190)}`;

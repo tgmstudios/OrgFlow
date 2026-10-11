@@ -23,7 +23,7 @@ import { createOperations } from "../../backend/operations";
 const ROOT = new URL("../", import.meta.url).pathname;
 const DRIVE = join(ROOT, "01_Google_Drive");
 const MAIL = join(ROOT, "02_Gmail_Examples");
-const REV = "aae1b41";
+const REV = "ca04f40";
 const GITHUB = `https://raw.githubusercontent.com/tgmstudios/c0mpiled/${REV}/demo-content/`;
 const SHOWCASE_ORGANIZATIONS = new Set([
   "Center Valley Community Pantry (OrgFlow Showcase)",
