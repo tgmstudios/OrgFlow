@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+<rect width="1920" height="1080" fill="#F8F7F4"/>
+<defs><filter id="s"><feDropShadow dx="0" dy="13" stdDeviation="18" flood-color="#302D3B" flood-opacity=".09"/></filter></defs>
+<text x="110" y="99" font-family="Arial,sans-serif" font-size="51" font-weight="bold" fill="#302D3B">The connections behind the work.</text>
+<rect x="1549" y="52" rx="18" width="247" height="52" fill="#EEE8FA"/>
+<text x="1672" y="86" text-anchor="middle" font-family="Arial" font-size="25" fill="#7753CE" font-weight="bold">DESIGN CONCEPT</text>
+<text x="115" y="150" font-family="Arial,sans-serif" font-size="24" fill="#716B7D">People, sources, procedures and the knowledge between them.</text>
+<path d="M 487 520 C 645.76 440, 706.24 429, 865 349" stroke="#C6B6E6" stroke-width="4.5" fill="none" opacity=".8"/>
+<path d="M 487 520 C 634.42 440, 690.5799999999999 733, 838 653" stroke="#C6B6E6" stroke-width="4.5" fill="none" opacity=".8"/>
+<path d="M 487 520 C 487.0 475, 487.0 816, 487 771" stroke="#C6B6E6" stroke-width="4.5" fill="none" opacity=".8"/>
+<path d="M 487 771 C 844.42 691, 980.5799999999999 563, 1338 483" stroke="#C6B6E6" stroke-width="4.5" fill="none" opacity=".8"/>
+<path d="M 1338 483 C 1139.34 403, 1063.66 429, 865 349" stroke="#C6B6E6" stroke-width="4.5" fill="none" opacity=".8"/>
+<path d="M 1338 483 C 1128.0 403, 1048.0 733, 838 653" stroke="#C6B6E6" stroke-width="4.5" fill="none" opacity=".8"/>
+<path d="M 838 653 C 1008.1 573, 1072.9 807, 1243 727" stroke="#C6B6E6" stroke-width="4.5" fill="none" opacity=".8"/>
+<path d="M 865 349 C 1075.0 269, 1155.0 341, 1365 261" stroke="#C6B6E6" stroke-width="4.5" fill="none" opacity=".8"/>
+<path d="M 474 224 C 694.92 144, 779.0799999999999 274, 1000 194" stroke="#C6B6E6" stroke-width="4.5" fill="none" opacity=".8"/>
+<path d="M 474 224 C 887.7 144, 1045.3 903, 1459 823" stroke="#C6B6E6" stroke-width="4.5" fill="none" opacity=".8"/>
+<path d="M 1365 261 C 1404.48 216, 1419.52 868, 1459 823" stroke="#C6B6E6" stroke-width="4.5" fill="none" opacity=".8"/>
+<path d="M 1243 727 C 925.48 647, 804.52 851, 487 771" stroke="#C6B6E6" stroke-width="4.5" fill="none" opacity=".8"/>
+<g filter="url(#s)"><rect x="357" y="470" rx="23" width="260" height="104" fill="#FFFFFF" stroke="#E9E3F0" stroke-width="2.5"/></g>
+<circle cx="386" cy="500" r="12" fill="#7753CE" opacity=".92"/>
+<text x="407" y="508" font-family="Arial,sans-serif" font-size="24" font-weight="bold" fill="#302D3B">Maria Reyes</text>
+<text x="407" y="542" font-family="Arial,sans-serif" font-size="18" fill="#777080">Outgoing coordinator</text>
+<g filter="url(#s)"><rect x="1208" y="433" rx="23" width="260" height="104" fill="#FFFFFF" stroke="#E9E3F0" stroke-width="2.5"/></g>
+<circle cx="1237" cy="463" r="12" fill="#7753CE" opacity=".92"/>
+<text x="1258" y="471" font-family="Arial,sans-serif" font-size="24" font-weight="bold" fill="#302D3B">Jordan Lee</text>
+<text x="1258" y="505" font-family="Arial,sans-serif" font-size="18" fill="#777080">Incoming coordinator</text>
+<g filter="url(#s)"><rect x="735" y="299" rx="23" width="260" height="104" fill="#FFFFFF" stroke="#E9E3F0" stroke-width="2.5"/></g>
+<circle cx="764" cy="329" r="12" fill="#5C3DA5" opacity=".92"/>
+<text x="785" y="337" font-family="Arial,sans-serif" font-size="24" font-weight="bold" fill="#302D3B">Volunteer welcome</text>
+<text x="785" y="371" font-family="Arial,sans-serif" font-size="18" fill="#777080">9 reviewed steps</text>
+<g filter="url(#s)"><rect x="708" y="603" rx="23" width="260" height="104" fill="#FFFFFF" stroke="#E9E3F0" stroke-width="2.5"/></g>
+<circle cx="737" cy="633" r="12" fill="#5C3DA5" opacity=".92"/>
+<text x="758" y="641" font-family="Arial,sans-serif" font-size="24" font-weight="bold" fill="#302D3B">Monthly scheduling</text>
+<text x="758" y="675" font-family="Arial,sans-serif" font-size="18" fill="#777080">Availability by 15th</text>
+<g filter="url(#s)"><rect x="1113" y="677" rx="23" width="260" height="104" fill="#FFFFFF" stroke="#E9E3F0" stroke-width="2.5"/></g>
+<circle cx="1142" cy="707" r="12" fill="#2A7A77" opacity=".92"/>
+<text x="1163" y="715" font-family="Arial,sans-serif" font-size="24" font-weight="bold" fill="#302D3B">October availability</text>
+<text x="1163" y="749" font-family="Arial,sans-serif" font-size="18" fill="#777080">24 fictional entries</text>
+<g filter="url(#s)"><rect x="330" y="721" rx="23" width="314" height="104" fill="#FFFFFF" stroke="#E9E3F0" stroke-width="2.5"/></g>
+<circle cx="359" cy="751" r="12" fill="#B75B3A" opacity=".92"/>
+<text x="380" y="759" font-family="Arial,sans-serif" font-size="24" font-weight="bold" fill="#302D3B">Maria's handoff interview</text>
+<text x="380" y="793" font-family="Arial,sans-serif" font-size="18" fill="#777080">Reviewed transcript</text>
+<g filter="url(#s)"><rect x="1235" y="211" rx="23" width="260" height="104" fill="#FFFFFF" stroke="#E9E3F0" stroke-width="2.5"/></g>
+<circle cx="1264" cy="241" r="12" fill="#7753CE" opacity=".92"/>
+<text x="1285" y="249" font-family="Arial,sans-serif" font-size="24" font-weight="bold" fill="#302D3B">Sam Rivera</text>
+<text x="1285" y="283" font-family="Arial,sans-serif" font-size="18" fill="#777080">Operations Manager</text>
+<g filter="url(#s)"><rect x="344" y="174" rx="23" width="260" height="104" fill="#FFFFFF" stroke="#E9E3F0" stroke-width="2.5"/></g>
+<circle cx="373" cy="204" r="12" fill="#7753CE" opacity=".92"/>
+<text x="394" y="212" font-family="Arial,sans-serif" font-size="24" font-weight="bold" fill="#302D3B">Maya Chen</text>
+<text x="394" y="246" font-family="Arial,sans-serif" font-size="18" fill="#777080">Development Director</text>
+<g filter="url(#s)"><rect x="843" y="144" rx="23" width="314" height="104" fill="#FFFFFF" stroke="#E9E3F0" stroke-width="2.5"/></g>
+<circle cx="872" cy="174" r="12" fill="#5C3DA5" opacity=".92"/>
+<text x="893" y="182" font-family="Arial,sans-serif" font-size="24" font-weight="bold" fill="#302D3B">Donor acknowledgements</text>
+<text x="893" y="216" font-family="Arial,sans-serif" font-size="18" fill="#777080">Receipts in 24h</text>
+<g filter="url(#s)"><rect x="1302" y="773" rx="23" width="314" height="104" fill="#FFFFFF" stroke="#E9E3F0" stroke-width="2.5"/></g>
+<circle cx="1331" cy="803" r="12" fill="#5C3DA5" opacity=".92"/>
+<text x="1352" y="811" font-family="Arial,sans-serif" font-size="24" font-weight="bold" fill="#302D3B">Quarterly grant report</text>
+<text x="1352" y="845" font-family="Arial,sans-serif" font-size="18" fill="#777080">Executive approval</text>
+<rect x="0" y="1020" width="1920" height="60" fill="#302D3B"/>
+<text x="113" y="1058" font-family="Arial,sans-serif" font-size="19" fill="#FFFFFF">ORGFLOW / ILLUSTRATIVE CLUSTERS DESIGN / FICTIONAL DEMONSTRATION</text>
+</svg>

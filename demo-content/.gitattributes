@@ -1,0 +1,13 @@
+*.pdf binary
+*.docx binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.mp4 binary
+*.zip binary
+*.svg text
+*.json text
+*.csv text
+*.md text
+*.eml text
+*.txt text

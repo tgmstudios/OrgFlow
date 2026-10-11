@@ -1,0 +1,25 @@
+gift_id,donor_alias,received_date,amount_usd,campaign,designation,receipt_due,receipt_sent,personal_thanks_due,personal_thanks_sent,director_call_required,director_call_done,communications_allowed
+GIFT-0001,Donor D-001,2026-10-01,25.00,Winter shelves,Food procurement,2026-10-02,2026-10-02,2026-10-05,2026-10-05,no,not applicable,yes
+GIFT-0002,Donor D-002,2026-10-02,50.00,Harvest Dinner,Event support,2026-10-03,2026-10-03,2026-10-06,2026-10-06,no,not applicable,yes
+GIFT-0003,Donor D-003,2026-10-03,35.00,General pantry,Unrestricted,2026-10-04,2026-10-04,2026-10-06,2026-10-06,no,not applicable,yes
+GIFT-0004,Donor D-004,2026-10-04,75.00,Winter shelves,Food procurement,2026-10-05,2026-10-05,2026-10-06,2026-10-06,no,not applicable,yes
+GIFT-0005,Donor D-005,2026-10-05,125.00,Harvest Dinner,Event support,2026-10-06,2026-10-06,2026-10-07,2026-10-07,no,not applicable,yes
+GIFT-0006,Donor D-006,2026-10-06,40.00,General pantry,Unrestricted,2026-10-07,2026-10-07,2026-10-08,2026-10-08,no,not applicable,yes
+GIFT-0007,Donor D-007,2026-10-07,60.00,Winter shelves,Food procurement,2026-10-08,2026-10-08,2026-10-09,2026-10-09,no,not applicable,yes
+GIFT-0008,Donor D-008,2026-10-08,150.00,Harvest Dinner,Event support,2026-10-09,,2026-10-12,,no,not applicable,yes
+GIFT-0009,Donor D-009,2026-10-09,1200.00,General pantry,Unrestricted,2026-10-10,2026-10-10,2026-10-13,2026-10-13,yes,yes,yes
+GIFT-0010,Donor D-010,2026-10-10,250.00,Winter shelves,Food procurement,2026-10-11,2026-10-11,2026-10-13,2026-10-13,no,not applicable,yes
+GIFT-0011,Donor D-011,2026-10-01,45.00,Harvest Dinner,Event support,2026-10-02,2026-10-02,2026-10-05,2026-10-05,no,not applicable,yes
+GIFT-0012,Donor D-012,2026-10-02,80.00,General pantry,Unrestricted,2026-10-03,2026-10-03,2026-10-06,2026-10-06,no,not applicable,yes
+GIFT-0013,Donor D-013,2026-10-03,100.00,Winter shelves,Food procurement,2026-10-04,2026-10-04,2026-10-06,2026-10-06,no,not applicable,yes
+GIFT-0014,Donor D-014,2026-10-04,30.00,Harvest Dinner,Event support,2026-10-05,2026-10-05,2026-10-06,,no,not applicable,no
+GIFT-0015,Donor D-015,2026-10-05,1500.00,General pantry,Unrestricted,2026-10-06,,2026-10-07,,yes,no,yes
+GIFT-0016,Donor D-016,2026-10-06,55.00,Winter shelves,Food procurement,2026-10-07,2026-10-07,2026-10-08,2026-10-08,no,not applicable,yes
+GIFT-0017,Donor D-017,2026-10-07,90.00,Harvest Dinner,Event support,2026-10-08,2026-10-08,2026-10-09,2026-10-09,no,not applicable,yes
+GIFT-0018,Donor D-018,2026-10-08,200.00,General pantry,Unrestricted,2026-10-09,2026-10-09,2026-10-12,2026-10-12,no,not applicable,yes
+GIFT-0019,Donor D-019,2026-10-09,15.00,Winter shelves,Food procurement,2026-10-10,2026-10-10,2026-10-13,2026-10-13,no,not applicable,yes
+GIFT-0020,Donor D-020,2026-10-10,250.00,Harvest Dinner,Event support,2026-10-11,2026-10-11,2026-10-13,2026-10-13,no,not applicable,yes
+GIFT-0021,Donor D-021,2026-10-01,40.00,General pantry,Unrestricted,2026-10-02,2026-10-02,2026-10-05,2026-10-05,no,not applicable,yes
+GIFT-0022,Donor D-022,2026-10-02,120.00,Winter shelves,Food procurement,2026-10-03,2026-10-03,2026-10-06,2026-10-06,no,not applicable,no
+GIFT-0023,Donor D-023,2026-10-03,70.00,Harvest Dinner,Event support,2026-10-04,2026-10-04,2026-10-06,2026-10-06,no,not applicable,yes
+GIFT-0024,Donor D-024,2026-10-04,75.00,General pantry,Unrestricted,2026-10-05,2026-10-05,2026-10-06,2026-10-06,no,not applicable,yes

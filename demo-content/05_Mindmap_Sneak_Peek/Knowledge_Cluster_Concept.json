@@ -1,0 +1,150 @@
+{
+  "schema": "orgflow-knowledge-graph-concept-v1",
+  "status": "ILLUSTRATIVE DESIGN FALLBACK - live Clusters separately implemented in latest main",
+  "warning": "This SVG/JSON is an illustrative fallback. The separately implemented in-app Knowledge Clusters view must be captured directly for claims about shipped functionality.",
+  "organization": "Centre Valley Community Pantry (fictional)",
+  "nodes": [
+    {
+      "id": "maria",
+      "title": "Maria Reyes",
+      "type": "person",
+      "subtitle": "Outgoing coordinator",
+      "x": 0.15,
+      "y": 0.5
+    },
+    {
+      "id": "jordan",
+      "title": "Jordan Lee",
+      "type": "person",
+      "subtitle": "Incoming coordinator",
+      "x": 0.78,
+      "y": 0.45
+    },
+    {
+      "id": "welcome",
+      "title": "Volunteer welcome",
+      "type": "procedure",
+      "subtitle": "9 reviewed steps",
+      "x": 0.43,
+      "y": 0.27
+    },
+    {
+      "id": "schedule",
+      "title": "Monthly scheduling",
+      "type": "procedure",
+      "subtitle": "Availability by 15th",
+      "x": 0.41,
+      "y": 0.68
+    },
+    {
+      "id": "roster",
+      "title": "October availability",
+      "type": "file",
+      "subtitle": "24 fictional entries",
+      "x": 0.71,
+      "y": 0.78
+    },
+    {
+      "id": "interview",
+      "title": "Maria's handoff interview",
+      "type": "voice",
+      "subtitle": "Reviewed transcript",
+      "x": 0.15,
+      "y": 0.84
+    },
+    {
+      "id": "sam",
+      "title": "Sam Rivera",
+      "type": "person",
+      "subtitle": "Operations Manager",
+      "x": 0.8,
+      "y": 0.15
+    },
+    {
+      "id": "maya",
+      "title": "Maya Chen",
+      "type": "person",
+      "subtitle": "Development Director",
+      "x": 0.14,
+      "y": 0.1
+    },
+    {
+      "id": "donors",
+      "title": "Donor acknowledgements",
+      "type": "procedure",
+      "subtitle": "Receipts in 24h",
+      "x": 0.53,
+      "y": 0.06
+    },
+    {
+      "id": "grant",
+      "title": "Quarterly grant report",
+      "type": "procedure",
+      "subtitle": "Executive approval",
+      "x": 0.87,
+      "y": 0.91
+    }
+  ],
+  "edges": [
+    {
+      "source": "maria",
+      "target": "welcome",
+      "relationship": "knowledge contributed"
+    },
+    {
+      "source": "maria",
+      "target": "schedule",
+      "relationship": "previous owner"
+    },
+    {
+      "source": "maria",
+      "target": "interview",
+      "relationship": "voice capture"
+    },
+    {
+      "source": "interview",
+      "target": "jordan",
+      "relationship": "handoff to"
+    },
+    {
+      "source": "jordan",
+      "target": "welcome",
+      "relationship": "new owner"
+    },
+    {
+      "source": "jordan",
+      "target": "schedule",
+      "relationship": "new owner"
+    },
+    {
+      "source": "schedule",
+      "target": "roster",
+      "relationship": "based on"
+    },
+    {
+      "source": "welcome",
+      "target": "sam",
+      "relationship": "escalation to"
+    },
+    {
+      "source": "maya",
+      "target": "donors",
+      "relationship": "owns"
+    },
+    {
+      "source": "maya",
+      "target": "grant",
+      "relationship": "owns"
+    },
+    {
+      "source": "sam",
+      "target": "grant",
+      "relationship": "checks evidence"
+    },
+    {
+      "source": "roster",
+      "target": "interview",
+      "relationship": "referenced in"
+    }
+  ]
+}
