@@ -262,10 +262,17 @@ export const openapi = {
         ),
       ),
     },
-    "/api/voice/signed-url": {
+    "/api/voice/session-token": {
       get: operation(
-        "Create a short-lived signed WebSocket URL for the private ElevenLabs voice agent",
-        object({ signedUrl: string, agentId: string }, ["signedUrl", "agentId"]),
+        "Create a short-lived WebRTC token for the private ElevenLabs voice agent",
+        object(
+          {
+            conversationToken: string,
+            conversationId: string,
+            agentId: string,
+          },
+          ["conversationToken", "conversationId", "agentId"],
+        ),
         undefined,
       ),
     },

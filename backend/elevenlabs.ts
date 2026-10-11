@@ -1,14 +1,13 @@
-const signedUrlEndpoint =
-  "https://api.elevenlabs.io/v1/convai/conversation/get-signed-url";
+const tokenEndpoint = "https://api.elevenlabs.io/v1/convai/conversation/token";
 
 /**
- * Issues an ephemeral WebSocket URL for the private ElevenLabs agent.
+ * Issues an ephemeral WebRTC token for the private ElevenLabs agent.
  * The API key stays on this server; callers must already have passed OrgFlow auth.
  */
 export async function elevenLabsVoice(req: Request): Promise<Response | null> {
-  if (new URL(req.url).pathname !== "/api/voice/signed-url") return null;
+  if (new URL(req.url).pathname !== "/api/voice/session-token") return null;
   if (req.method !== "GET")
-    return Response.json({ error: "Use GET for a voice session URL." }, { status: 405 });
+    return Response.json({ error: "Use GET for a voice session token." }, { status: 405 });
 
   const apiKey = process.env.ELEVENLABS_API_KEY;
   const agentId = process.env.ELEVENLABS_AGENT_ID;
@@ -21,7 +20,7 @@ export async function elevenLabsVoice(req: Request): Promise<Response | null> {
   let upstream: Response;
   try {
     upstream = await fetch(
-      `${signedUrlEndpoint}?agent_id=${encodeURIComponent(agentId)}`,
+      `${tokenEndpoint}?agent_id=${encodeURIComponent(agentId)}`,
       { headers: { "xi-api-key": apiKey } },
     );
   } catch {
@@ -31,13 +30,21 @@ export async function elevenLabsVoice(req: Request): Promise<Response | null> {
     );
   }
   const payload = (await upstream.json().catch(() => null)) as
-    | { signed_url?: unknown }
+    | { token?: unknown; conversation_id?: unknown }
     | null;
-  if (!upstream.ok || typeof payload?.signed_url !== "string")
+  if (
+    !upstream.ok ||
+    typeof payload?.token !== "string" ||
+    typeof payload.conversation_id !== "string"
+  )
     return Response.json(
       { error: "ElevenLabs could not start a voice session. Please retry." },
       { status: 502 },
     );
 
-  return Response.json({ signedUrl: payload.signed_url, agentId });
+  return Response.json({
+    conversationToken: payload.token,
+    conversationId: payload.conversation_id,
+    agentId,
+  });
 }

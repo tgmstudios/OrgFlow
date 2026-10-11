@@ -222,6 +222,8 @@ async function openHosted(
 
 function App({ user, onLogout }: { user: User; onLogout: () => void }) {
   const realtimeVoice = useConversation({
+    onError: (message) => setVoiceNote("Voice session error: " + message),
+    onDisconnect: () => setVoiceNote("Voice session ended."),
     onMessage: ({ message, role }) => {
       const speaker = role === "user" ? "user" : "assistant";
       setVoiceTranscript((transcript) =>
@@ -377,12 +379,18 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     }
     setVoiceNote("Connecting securely to OrgFlow Voice…");
     try {
-      const { signedUrl } = await api("/voice/signed-url");
+      if (!navigator.mediaDevices?.getUserMedia)
+        throw new Error("This browser does not support microphone access.");
+      const permissionStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+      permissionStream.getTracks().forEach((track) => track.stop());
+      const { conversationToken } = await api("/voice/session-token");
       setVoiceTranscript("");
       setVoiceDraftConsent(false);
       await realtimeVoice.startSession({
-        signedUrl,
-        connectionType: "websocket",
+        conversationToken,
+        connectionType: "webrtc",
         userId: user.id,
       });
       setVoiceNote("Connected. You can speak naturally.");
