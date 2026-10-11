@@ -28,6 +28,8 @@ Use credential-free `.env.example` as a guide. Bun automatically reads `.env`. K
 
 `LUMINAL_API_KEY` enables the server-only agent. Missing configuration produces a clear error. AI saves drafts and never publishes. Explorer metadata supports document discovery; it never establishes facts about file contents. Explicitly selected source text requires AI consent.
 
+`ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID` enable `GET /api/voice/signed-url`. This authenticated route returns an ephemeral signed WebSocket URL for the private realtime voice agent; never expose the API key or signed URL in logs or client configuration.
+
 Google OAuth setup instructions: `../docs/GOOGLE_SETUP.md`. Implemented routes start at `/auth/google/start`; the state-cookie/PKCE callback is `/auth/google/callback`. Session tokens remain in server memory and require reconnection after restart. `/api/integrations/google/sync` indexes Drive metadata only and preserves custom OrgFlow folder paths; `/api/sources/google` lists Drive files/Gmail subjects and the per-source GET reads explicitly selected text. Google Docs and plain text/Markdown/CSV files are supported; email capture requires a plain-text MIME body. Calendar, SharePoint and OneDrive connections are not implemented. OAuth secrets belong only in ignored `.env`; no service-account key is needed for the selected personal-user flow.
 
 ## Limits

@@ -289,3 +289,9 @@ Commit 185c19d deployed successfully through GitHub Actions run 38168088224. Liv
 User authorized syncing the backend AI configuration to resolve the missing LUMINAL_API_KEY error. Synced only local LUMINAL_* settings over SSH into `/opt/app/backend/.env`, preserving other production settings, with file permissions 0600. Restarted the backend successfully. Deployment excludes .env files, so future pushes preserve these settings. No credentials entered Git or browser assets.
 
 Verified after the sign-in deployment (00d9774): public health returns 200 and anonymous agent requests return 401. Synthetic live Ask and Draft calls through the deployed adapter each returned 200; the draft verification used an in-memory save callback and did not add a production article. This verifies inference and draft conversion, not organization isolation or private provider-data access.
+
+### ElevenLabs voice setup — 2026-10-11
+
+- User supplied an ElevenLabs API key. It is stored only in ignored `backend/.env` with the agent ID; neither value is recorded here or committed.
+- Created a private ElevenLabs Conversational AI agent named `OrgFlow Voice`. Its initial configuration uses the selected professional tone to conduct focused process/SOP interviews, treats all SOPs as review-only drafts, and forbids claims of private-source access or publication.
+- Implemented authenticated `GET /api/voice/signed-url`, which exchanges the server-only key for an ephemeral signed WebSocket URL. A live handshake was verified without displaying the URL/token. The Voice tab now uses the official ElevenLabs React SDK to start/end the secure live session and shows connection/speaking state; browser speech recognition/synthesis is no longer used for live voice. The currently spoken conversation is handled by ElevenLabs and does not automatically become an OrgFlow knowledge-base draft; a tool/callback for explicit draft capture remains future work.

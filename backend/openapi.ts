@@ -262,6 +262,14 @@ export const openapi = {
         ),
       ),
     },
+    "/api/voice/signed-url": {
+      get: operation(
+        "Create a short-lived signed WebSocket URL for the private ElevenLabs voice agent",
+        object({ signedUrl: string, agentId: string }, ["signedUrl", "agentId"]),
+        undefined,
+        true,
+      ),
+    },
     "/api/uploads": {
       post: {
         summary: "Upload PNG/JPEG/GIF/WebP image (5 MB maximum)",

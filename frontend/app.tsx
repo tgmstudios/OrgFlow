@@ -5,6 +5,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
+import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import {
   Sparkles,
   Home,
@@ -220,6 +221,7 @@ async function openHosted(
 }
 
 function App({ user, onLogout }: { user: User; onLogout: () => void }) {
+  const realtimeVoice = useConversation();
   const [data, setData] = useState<Data | null>(null),
     [page, setPageState] = useState(currentPage),
     [error, setError] = useState(""),
@@ -234,7 +236,6 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     [messages, setMessages] = useState<Message[]>([]),
     [input, setInput] = useState(""),
     [busy, setBusy] = useState(false),
-    [listening, setListening] = useState(false),
     [voiceNote, setVoiceNote] = useState(""),
     [provider, setProvider] = useState("All providers"),
     [folder, setFolder] = useState(""),
@@ -263,7 +264,6 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
-  const recognition = useRef<any>(null);
   const pageRef = useRef(page);
   pageRef.current = page;
   const [mode, setMode] = useState<"ask" | "draft">("ask");
@@ -283,8 +283,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setAgent(false);
-        recognition.current?.stop();
-        window.speechSynthesis?.cancel();
+        void realtimeVoice.endSession();
         document.querySelector<HTMLButtonElement>(".agent-launch")?.focus();
       }
       if (e.key === "Tab" && !docked) {
@@ -311,7 +310,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
         ?.focus(),
     );
     return () => window.removeEventListener("keydown", onKey);
-  }, [agent, docked]);
+  }, [agent, docked, realtimeVoice]);
   useEffect(() => {
     const shortcut = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") {
@@ -346,10 +345,6 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
         ...next,
         { role: "assistant", content: r.message, sources: r.sources },
       ]);
-      if (tab === "voice" && "speechSynthesis" in window) {
-        const u = new SpeechSynthesisUtterance(r.message);
-        window.speechSynthesis.speak(u);
-      }
       if (r.draft) {
         await refresh();
         setActive(r.draft.id);
@@ -361,37 +356,20 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
       setBusy(false);
     }
   }
-  function voice() {
-    const W = window as any;
-    const Speech = W.SpeechRecognition || W.webkitSpeechRecognition;
-    if (!Speech) {
-      setVoiceNote(
-        "Speech recognition is not supported in this browser. Use Chat, or try Chrome with microphone access.",
-      );
+  async function voice() {
+    if (realtimeVoice.status !== "disconnected") {
+      await realtimeVoice.endSession();
+      setVoiceNote("Voice session ended.");
       return;
     }
-    if (listening) {
-      recognition.current?.stop();
-      return;
+    setVoiceNote("Connecting securely to OrgFlow Voice…");
+    try {
+      const { signedUrl } = await api("/voice/signed-url");
+      await realtimeVoice.startSession({ signedUrl, userId: user.id });
+      setVoiceNote("Connected. You can speak naturally.");
+    } catch (e: any) {
+      setVoiceNote(e.message || "Unable to start the voice session.");
     }
-    const r = new Speech();
-    recognition.current = r;
-    r.lang = "en-US";
-    r.interimResults = false;
-    r.onstart = () => setListening(true);
-    r.onend = () => setListening(false);
-    r.onerror = (e: any) => {
-      setVoiceNote(
-        "Microphone unavailable: " + e.error + ". You can continue in Chat.",
-      );
-      setListening(false);
-    };
-    r.onresult = (e: any) => {
-      const text = e.results[0][0].transcript;
-      setInput(text);
-      send(text);
-    };
-    r.start();
   }
   const selected = data?.articles.find((a) => a.id === active);
   const files = (data?.files || []).filter(
@@ -420,13 +398,17 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     else setAgent(true);
     if (text) send(text);
   };
+  const closeAgent = () => {
+    setAgent(false);
+    void realtimeVoice.endSession();
+  };
   const inline = page === "Home";
   const assistant = (
     <>
       {!inline && (
         <div
           className={docked ? "" : "modal-backdrop"}
-          onClick={() => !docked && setAgent(false)}
+          onClick={() => !docked && closeAgent()}
         />
       )}
       <section
@@ -461,11 +443,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
               <button
                 className="icon-button"
                 aria-label="Close assistant"
-                onClick={() => {
-                  setAgent(false);
-                  recognition.current?.stop();
-                  window.speechSynthesis?.cancel();
-                }}
+                onClick={closeAgent}
               >
                 <X size={19} />
               </button>
@@ -728,18 +706,28 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
         {tab === "voice" && (
           <div className="voice-controls">
             <button
-              className={listening ? "mic-button listening" : "mic-button"}
+              className={
+                realtimeVoice.status === "connected"
+                  ? "mic-button listening"
+                  : "mic-button"
+              }
               onClick={voice}
-              disabled={busy}
+              disabled={busy || realtimeVoice.status === "connecting"}
             >
               <Mic size={25} />
             </button>
             <strong>
-              {listening ? "Listening… tap to finish" : "Tap to speak"}
+              {realtimeVoice.status === "connecting"
+                ? "Connecting…"
+                : realtimeVoice.status === "connected"
+                  ? realtimeVoice.isSpeaking
+                    ? "OrgFlow is speaking… tap to end"
+                    : "Listening… tap to end"
+                  : "Start live voice"}
             </strong>
             <p>
               {voiceNote ||
-                "Browser speech services may send audio to your browser vendor. Supported browsers can read responses aloud."}
+                "Live audio is handled by ElevenLabs after you start a secure voice session."}
             </p>
           </div>
         )}
@@ -1691,4 +1679,8 @@ function ArticleEditor({
     </div>
   );
 }
-createRoot(document.getElementById("root")!).render(<AuthGate />);
+createRoot(document.getElementById("root")!).render(
+  <ConversationProvider>
+    <AuthGate />
+  </ConversationProvider>,
+);

@@ -35,7 +35,7 @@ Production builds use `/a/` asset URLs and disable the Bun development server. N
 - Off-white/purple interface with left navigation, AI-first Home, recent files, agenda/month calendar.
 - External file index preserving provider structure, with OrgFlow-only reorganization and original-provider links.
 - Server-hosted knowledge base, editable categories, Tiptap rich-text editor, autosaved drafts and separate approval/publication. Published snapshots survive later edits.
-- Global chat/voice agent, centered window with bottom-right docking, one conversation across tabs. Browser speech availability varies; speech recognition may use the browser vendor's service.
+- Global chat/voice agent, centered window with bottom-right docking, one conversation across tabs. Voice uses a private ElevenLabs realtime agent through an authenticated short-lived session URL.
 - Server-side Luminal chat and SOP drafting. Connected/uploaded source text requires explicit consent before transmission. AI drafts never publish automatically.
 - Read-only Google OAuth, Drive metadata indexing, selection of Google Docs/text files and Gmail plain-text email bodies. Microsoft providers and calendar sync remain disconnected.
 - Article image uploads and local Swagger assets.

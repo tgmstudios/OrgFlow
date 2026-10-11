@@ -3,6 +3,7 @@ import { openapi } from "./openapi";
 import { createAgentHandler } from "./agent";
 import { uploads } from "./uploads";
 import { createGoogleHandler } from "./google";
+import { elevenLabsVoice } from "./elevenlabs";
 import { createAuth, AuthError } from "./auth";
 import {
   EVENT_ASK,
@@ -178,6 +179,8 @@ export function createApp(
         const response = await uploads(req);
         if (response) return response;
       }
+      const voiceResponse = await elevenLabsVoice(req);
+      if (voiceResponse) return voiceResponse;
       if (path === "/api/agent") {
         const user = requireAuth ? await auth.currentUser(req) : null;
         const mode = user

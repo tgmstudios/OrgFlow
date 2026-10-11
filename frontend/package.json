@@ -17,6 +17,7 @@
     "typescript": "^7"
   },
   "dependencies": {
+    "@elevenlabs/react": "^1.17.0",
     "@tiptap/extension-image": "^3.31.4",
     "@tiptap/extension-task-item": "^3.31.4",
     "@tiptap/extension-task-list": "^3.31.4",

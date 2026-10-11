@@ -36,6 +36,6 @@ The user requested subagents, frontend and backend implementation, reasonable as
 - Swagger UI at `/docs` and `/swagger`; machine-readable OpenAPI at `/openapi.json`.
 - Local development only until authentication and organization authorization exist. No cloud deployment requested.
 - Synthetic demo content clearly marked; no provider shown as connected unless a real connection exists.
-- Browser speech input/output for initial voice experience, with explicit capability and privacy information. A dedicated realtime voice service remains future work.
+- ElevenLabs realtime voice through a private agent and an authenticated, short-lived signed session URL. The agent's API key remains server-side; the provider's data handling applies after a staff member starts a voice session.
 
 These implementation choices are agent assumptions, not independently confirmed human selections. Implementation status and validation results belong in shared memory and project READMEs.
