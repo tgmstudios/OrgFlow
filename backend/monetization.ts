@@ -1,5 +1,3 @@
-import { MonetizationAI } from "@aws-app-monetization/sdk";
-
 /** Billable action names; must match each metric's sourceEventType in AWS Monetization. */
 export const EVENT_ASK = "ask_assistant";
 export const EVENT_DRAFT = "draft_sop";
@@ -10,13 +8,26 @@ const PORTAL_COOKIE = "mai_billing_portal_url";
 /** Hosted sessions are capped at 24h; the app session itself lasts 7 days, so users re-sign-in daily to refresh. */
 const SESSION_SECONDS = 86400;
 
-type Client = Pick<
-  MonetizationAI,
-  | "checkEntitlement"
-  | "putEvent"
-  | "createPricingSession"
-  | "createBillingPortalSession"
->;
+/**
+ * The slice of `@aws-app-monetization/sdk` this app uses. The package comes from a private beta
+ * registry that `bun install` cannot reach, so it is loaded at runtime and is not a declared
+ * dependency: without it billing is inert and the rest of the app is unaffected.
+ */
+type Client = {
+  checkEntitlement(
+    userId: string,
+    options: { eventType: string },
+  ): Promise<{ decision?: string; reason?: unknown }>;
+  putEvent(userId: string, event: { eventType: string }): Promise<unknown>;
+  createPricingSession(
+    userId: string,
+    options: { returnUrl: string; refreshUrl: string; sessionDurationSeconds?: number },
+  ): Promise<{ pricingUrl: string }>;
+  createBillingPortalSession(
+    userId: string,
+    options: { returnUrl: string; refreshUrl: string; sessionDurationSeconds?: number },
+  ): Promise<{ billingPortalUrl: string }>;
+};
 
 let loaded = false;
 /**
@@ -37,11 +48,18 @@ async function loadEnvFile() {
   }
 }
 
-let sdk: MonetizationAI | null = null;
+let sdk: Client | null = null;
+const SDK_PACKAGE = "@aws-app-monetization/sdk";
 /** Lazy: the constructor validates appId, so never construct at import time. */
 export async function getMonetize(): Promise<Client> {
   await loadEnvFile();
-  sdk ??= new MonetizationAI({ appId: process.env.MONETIZATION_APP_ID ?? "" });
+  if (!sdk) {
+    // Variable specifier: keeps typechecking and bundling independent of the private package.
+    const mod = (await import(SDK_PACKAGE)) as {
+      MonetizationAI: new (config: { appId: string }) => Client;
+    };
+    sdk = new mod.MonetizationAI({ appId: process.env.MONETIZATION_APP_ID ?? "" });
+  }
   return sdk;
 }
 
@@ -161,9 +179,9 @@ export async function hostedUrl(
   if (!userId) throw new Error("userId is required");
   if (!(await monetizationConfigured()))
     throw new BillingUnavailable("Billing is not configured on this server.");
-  const sdkClient = client ?? (await getMonetize());
   const returnUrl = appReturnUrl();
   try {
+    const sdkClient = client ?? (await getMonetize());
     if (surface === "pricing")
       return (
         await sdkClient.createPricingSession(userId, {
