@@ -8,6 +8,7 @@ import type { User } from "./auth";
 import { chunk, rank } from "./retrieval";
 import { LuminalError, luminalJSON } from "./luminal";
 import { DEFAULT_ORG, currentOrg, inviteCode } from "./workspace";
+import { changedSources, computeHealth, interviewPlan, outlineSections, sectionsToDoc } from "./health";
 
 type Item = Record<string, any>;
 export class OperationError extends Error {
@@ -167,6 +168,8 @@ export function createOperations(dependencies: {
         title: String(meta.title).slice(0, 240),
         text: body,
         ...(typeof meta.url === "string" && /^https?:\/\//.test(meta.url) ? { url: meta.url } : {}),
+        // The version captured, so a later change to the original can be detected.
+        ...(typeof meta.updatedAt === "string" ? { modifiedTime: meta.updatedAt } : {}),
       });
       if (budget < 500) break;
     }
@@ -408,6 +411,43 @@ export function createOperations(dependencies: {
           const input = await body();
           const notes = optionalText(input.notes, 5000);
           const articles = await store.list("articles");
+          if (input.mode === "outline") {
+            // Facts only: no model, no consent needed. Regenerating replaces the previous draft.
+            const successor = person.successorId ? await store.get("people", person.successorId) : null;
+            const sections = outlineSections({
+              person,
+              successor,
+              articles,
+              sources: await store.list("sources"),
+            });
+            const existing = person.handoffArticleId
+              ? articles.find((a) => a.id === person.handoffArticleId)
+              : undefined;
+            const categories = await store.list("categories");
+            const category = categories.find((c) => /onboard|people/i.test(String(c.name))) ?? categories[0];
+            if (!existing && !category) throw new OperationError(409, "Create a category first.");
+            const article = {
+              ...existing,
+              id: existing?.id ?? crypto.randomUUID(),
+              title: `Handoff guide: ${person.name}`,
+              categoryId: existing?.categoryId ?? category!.id,
+              content: sectionsToDoc(sections),
+              sources: existing?.sources ?? [],
+              kind: "handoff",
+              ownerId: person.id,
+              status: "draft",
+              updatedAt: now(),
+            };
+            await store.put("articles", article);
+            const v = {
+              ...person,
+              status: person.status === "active" ? "leaving" : person.status,
+              handoffArticleId: article.id,
+            };
+            await store.put("people", v);
+            await audit(user, "transfer.outline", { personId: person.id, articleId: article.id });
+            return json({ draft: article, person: v, mode: "outline" }, 201);
+          }
           const owned = articles.filter((a) => a.ownerId === person.id);
           const runs = (await store.list("runs")).filter((r) => owned.some((a) => a.id === r.articleId));
           // Evidence: emails they sent, from the consented index. (Their playbooks are already part of
@@ -448,6 +488,25 @@ export function createOperations(dependencies: {
           });
           if (successorId) await store.put("people", { ...person, successorId });
           return json(run, 201);
+        }
+
+        // Knowledge health and interview plans
+        if (path === "/api/insights/health" && req.method === "GET")
+          return json(
+            computeHealth({
+              articles: await store.list("articles"),
+              people: await store.list("people"),
+              sources: await store.list("sources"),
+            }),
+          );
+        match = m(/^\/api\/people\/([^/]+)\/interview$/);
+        if (match && req.method === "POST") {
+          const person = await store.get("people", match[1]!);
+          if (!person) throw new OperationError(404, "Person not found.");
+          return json(
+            interviewPlan(person, await store.list("articles"), await store.list("sources")),
+            201,
+          );
         }
 
         // Audit

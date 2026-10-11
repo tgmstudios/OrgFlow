@@ -1,7 +1,10 @@
 import { randomBytes, createHash } from "node:crypto";
+import type { SessionVault } from "./vault";
 
 type Item = Record<string, any>;
 export type GoogleDependencies = {
+  /** Encrypted persistence so connections survive restarts. Defaults to memory only. */
+  vault?: SessionVault;
   upsertFile: (file: Item) => Promise<void>;
   /** Stores one indexed source's text (replacing any earlier index of it). */
   saveSource?: (source: {
@@ -63,7 +66,8 @@ const secureCookie = () =>
     ? "; Secure"
     : "";
 const expiryCookie = () =>
-  "Path=/; HttpOnly; SameSite=Lax; Max-Age=28800" + secureCookie();
+  "Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000" + secureCookie();
+const SESSION_MS = 30 * 86400000;
 const base64 = (data: string) =>
   Buffer.from(data, "base64url").toString("utf8");
 function messageText(payload: Item): string {
@@ -79,10 +83,19 @@ function messageText(payload: Item): string {
 export function createGoogleHandler(dependencies: GoogleDependencies) {
   const sessions = new Map<string, Session>();
   const pending = new Map<string, PendingConnection>();
-  const getSession = (request: Request) =>
-    sessions.get(cookie(request, "orgflow_google") || "");
+  const sessionId = (request: Request) => cookie(request, "orgflow_google") || "";
+  /** Memory first, then the encrypted vault (after a restart). */
+  async function getSession(request: Request): Promise<Session | undefined> {
+    const id = sessionId(request);
+    if (!id) return undefined;
+    const cached = sessions.get(id);
+    if (cached) return cached;
+    const stored = await dependencies.vault?.get<Session>(id);
+    if (stored) sessions.set(id, stored);
+    return stored ?? undefined;
+  }
   async function access(request: Request) {
-    const session = getSession(request);
+    const session = await getSession(request);
     if (!session) throw new Error("Connect Google first.");
     if (session.expiresAt < Date.now() + 30000) {
       if (!session.refreshToken)
@@ -102,6 +115,7 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
       const data = (await response.json()) as Item;
       session.accessToken = data.access_token;
       session.expiresAt = Date.now() + Number(data.expires_in || 3600) * 1000;
+      await dependencies.vault?.put(sessionId(request), session, Date.now() + SESSION_MS);
     }
     return session.accessToken;
   }
@@ -204,9 +218,9 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
       if (path === "/api/integrations/google" && request.method === "GET")
         return json({
           configured: configured(),
-          connected: Boolean(getSession(request)),
+          connected: Boolean(await getSession(request)),
           providers: ["Google Drive", "Gmail"],
-          sessionStorage: "memory",
+          sessionStorage: dependencies.vault ? "encrypted-database" : "memory",
           calendarConnected: false,
         });
       if (path === "/auth/google/start" && request.method === "GET") {
@@ -309,11 +323,13 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
         const sessionId = randomBytes(32).toString("hex");
         if (sessions.size >= 100)
           sessions.delete(sessions.keys().next().value!);
-        sessions.set(sessionId, {
+        const created: Session = {
           accessToken: data.access_token,
           refreshToken: data.refresh_token,
           expiresAt: Date.now() + Number(data.expires_in || 3600) * 1000,
-        });
+        };
+        sessions.set(sessionId, created);
+        await dependencies.vault?.put(sessionId, created, Date.now() + SESSION_MS);
         const headers = new Headers({
           Location:
             entry.returnTo ||
@@ -335,8 +351,17 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
         path === "/api/integrations/google/disconnect" &&
         request.method === "POST"
       ) {
-        const id = cookie(request, "orgflow_google") || "";
+        const id = sessionId(request);
+        const existing = await getSession(request);
         sessions.delete(id);
+        if (id) await dependencies.vault?.delete(id);
+        const revoke = existing?.refreshToken || existing?.accessToken;
+        if (revoke)
+          await fetch("https://oauth2.googleapis.com/revoke", {
+            method: "POST",
+            body: new URLSearchParams({ token: revoke }),
+            signal: AbortSignal.timeout(5000),
+          }).catch(() => {});
         return new Response(JSON.stringify({ connected: false }), {
           headers: {
             "Content-Type": "application/json",
@@ -573,7 +598,7 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
               ? error.message
               : "Google connection request failed. Please retry.",
         },
-        getSession(request) ? 502 : 401,
+        (await getSession(request)) ? 502 : 401,
       );
     }
   };

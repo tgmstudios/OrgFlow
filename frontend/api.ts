@@ -42,6 +42,25 @@ export type Article = {
   reviewDueAt?: string | null;
   reviewedAt?: string;
   reviewedBy?: Stamp;
+  kind?: string;
+  /** Verbatim quotes the assistant cited, checked against the source text by the server. */
+  evidence?: Citation[];
+  conflicts?: { topic: string; sourceIds: string[]; note: string }[];
+  /** Cited documents whose indexed text changed after the draft captured them. */
+  sourceChanges?: { sourceId: string; title?: string; url?: string; modifiedTime?: string }[];
+};
+export type Citation = {
+  sourceId: string;
+  title: string;
+  quote: string;
+  supports: string;
+  verified: boolean;
+};
+export type InterviewPlan = {
+  title: string;
+  gapCount: number;
+  agentBrief: string;
+  questions: { id: string; text: string; origin: "gap" | "template" }[];
 };
 export type Person = {
   id: string;

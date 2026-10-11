@@ -34,6 +34,7 @@ Copy `.env.example` to `.env` (Git-ignored, mode 0600; Bun loads it automaticall
 - AI: `LUMINAL_API_KEY`, `LUMINAL_BASE_URL`, `LUMINAL_MODEL`, `LUMINAL_IMAGES_BASE_URL`, `LUMINAL_IMAGES_MODEL`
 - Voice: `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`
 - Google: `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` (see [Google setup](../docs/GOOGLE_SETUP.md))
+- Secrets: `TOKEN_ENCRYPTION_KEY` (seals stored Google sessions)
 - Storage and origins: `DATABASE_URL`, `FRONTEND_ORIGIN`, `FRONTEND_REDIRECT_URL`, `HOST`, `PORT`
 
 Also read by the code, not in `.env.example`: `SQLITE_PATH`, `REVIEW_INTERVAL_DAYS`, `MONETIZATION_APP_ID`, `MONETIZATION_ENFORCE`.
@@ -43,6 +44,10 @@ Also read by the code, not in `.env.example`: `SQLITE_PATH`, `REVIEW_INTERVAL_DA
 - Without `DATABASE_URL`, data persists to SQLite at `./data/orgflow.sqlite` (run from this directory). A configured PostgreSQL failure stops startup instead of falling back; PostgreSQL has not been integration-tested here.
 - Without `LUMINAL_API_KEY`, AI routes return 503 `AI_NOT_CONFIGURED`. AI saves drafts only; publishing is `POST /api/articles/:id/publish`.
 - All `/api/*` routes except `/api/auth/*` need the session cookie. Browser writes from unexpected origins are rejected.
-- Google tokens are held in server memory; a restart requires reconnecting.
+- Google sessions are sealed with AES-256-GCM (`vault.ts`) and stored in the database, keyed by the `orgflow_google` cookie (30 days), so a restart keeps connections. The key is `TOKEN_ENCRYPTION_KEY` (any string) or a generated `data/token.key` (mode 0600); back it up with the database. Disconnecting deletes the record and revokes the token at Google.
+- AI citations must include verbatim quotes. `evidence.ts` checks each quote against the text actually supplied and returns `evidence` (with `verified`), `grounding` and `conflicts`; drafts store them. Verified means the quote exists in the source, not that the claim follows from it.
+- `GET /api/insights/health` (`health.ts`): score, per-person risk (leaving, no handoff guide, no successor, nothing published), overdue and due-soon reviews, unowned processes, stuck drafts, changed sources and unverified quotes, with recommended actions.
+- `POST /api/people/:id/interview` returns a gap-driven question plan and an `agentBrief` for the live voice agent. `POST /api/people/:id/handoff` with `{"mode":"outline"}` writes a facts-only handoff draft with no AI call.
+- Articles include `sourceChanges` when a cited document's indexed `updatedAt` is newer than the version captured with the draft.
 - Image uploads (`POST /api/uploads`): PNG/JPEG/GIF/WebP, at most 5 MB, stored in ignored `data/uploads/`.
 - Concurrent edits are last-write-wins.

@@ -7,6 +7,9 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import {
+  Activity,
+  ShieldCheck,
+  TriangleAlert,
   Sparkles,
   Home,
   FolderOpen,
@@ -50,7 +53,9 @@ import {
   isOverdue,
   type Article,
   type Candidate,
+  type Citation,
   type IndexedSource,
+  type InterviewPlan,
   type OrgInfo,
   type Person,
   type Run,
@@ -60,6 +65,7 @@ import { SuggestedPlaybooks } from "./discover";
 import { ArticleMeta } from "./article-meta";
 import { ChecklistsPage } from "./checklists";
 import { PeoplePage } from "./people";
+import { HealthPage } from "./health";
 import { OrganizationPage } from "./organization";
 import { KnowledgeMap } from "./map";
 import { buildDocs, docsForPerson, useMapState } from "./map-store";
@@ -86,7 +92,13 @@ type Data = {
   candidates?: Candidate[];
   sources?: IndexedSource[];
 };
-type Message = { role: "user" | "assistant"; content: string; sources?: any[] };
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+  sources?: any[];
+  evidence?: Citation[];
+  grounding?: { verified: number; total: number };
+};
 type User = {
   id: string;
   email: string;
@@ -283,6 +295,7 @@ const pagePaths: Record<string, string> = {
   Checklists: "/checklists",
   Map: "/map",
   People: "/people",
+  Health: "/knowledge-health",
   Organization: "/organization",
 };
 const currentPage = () => {
@@ -343,6 +356,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     [agent, setAgent] = useState(false),
     [docked, setDocked] = useState(false),
     [tab, setTab] = useState("chat"),
+    [interviewPlan, setInterviewPlan] = useState<InterviewPlan | null>(null),
     [messages, setMessages] = useState<Message[]>([]),
     [input, setInput] = useState(""),
     [busy, setBusy] = useState(false),
@@ -545,7 +559,13 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
       });
       setMessages([
         ...next,
-        { role: "assistant", content: r.message, sources: r.sources },
+        {
+          role: "assistant",
+          content: r.message,
+          sources: r.sources,
+          evidence: r.evidence,
+          grounding: r.grounding,
+        },
       ]);
       if (r.draft) {
         await refresh();
@@ -556,6 +576,22 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
       setMessages([...next, { role: "assistant", content: e.message }]);
     } finally {
       setBusy(false);
+    }
+  }
+  const interviewPlanRef = useRef<InterviewPlan | null>(null);
+  interviewPlanRef.current = interviewPlan;
+  /** Load a gap-driven interview plan and switch the assistant to its voice tab. */
+  function startInterview(plan: InterviewPlan) {
+    void realtimeVoice.endSession();
+    setInterviewPlan(plan);
+    setVoiceTranscript("");
+    setVoiceDraftConsent(false);
+    setVoiceNote(`Interview ready: ${plan.title}. Start the voice session when you are.`);
+    setTab("voice");
+    if (page === "Home") focusChat();
+    else {
+      setInstant(false);
+      setAgent(true);
     }
   }
   async function voice() {
@@ -580,7 +616,13 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
         connectionType: "webrtc",
         userId: user.id,
       });
-      setVoiceNote("Connected. You can speak naturally.");
+      if (interviewPlanRef.current) {
+        // Steer the private voice agent with the server-built, gap-driven plan.
+        realtimeVoice.sendContextualUpdate(interviewPlanRef.current.agentBrief);
+        setVoiceNote(
+          `Connected. Interview plan loaded (${interviewPlanRef.current.questions.length} questions).`,
+        );
+      } else setVoiceNote("Connected. You can speak naturally.");
     } catch (e: any) {
       setVoiceNote(e.message || "Unable to start the voice session.");
     }
@@ -914,6 +956,37 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
               </span>
               <div>
                 {m.content}
+                {m.grounding && m.grounding.total > 0 && (
+                  <div
+                    className={
+                      m.grounding.verified === m.grounding.total
+                        ? "grounding ok"
+                        : "grounding warn"
+                    }
+                  >
+                    {m.grounding.verified === m.grounding.total ? (
+                      <ShieldCheck size={13} />
+                    ) : (
+                      <TriangleAlert size={13} />
+                    )}
+                    {m.grounding.verified} of {m.grounding.total} cited quotes
+                    found verbatim in the sources
+                  </div>
+                )}
+                {m.evidence && m.evidence.length > 0 && (
+                  <details className="evidence-list">
+                    <summary>Evidence</summary>
+                    {m.evidence.map((ev, j) => (
+                      <blockquote key={j} className={ev.verified ? "verified" : "unverified"}>
+                        “{ev.quote}”
+                        <small>
+                          {ev.verified ? "Verified" : "Not found in source"} ·{" "}
+                          {ev.title}
+                        </small>
+                      </blockquote>
+                    ))}
+                  </details>
+                )}
                 {m.sources && m.sources.length > 0 && (
                   <div className="source-citations">
                     <strong>Sources</strong>
@@ -997,6 +1070,26 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
         </div>
         <Collapse open={tab === "voice"}>
           <div className="voice-controls">
+            {interviewPlan && (
+              <div className="interview-plan">
+                <div className="section-heading">
+                  <strong>{interviewPlan.title}</strong>
+                  <button className="text-button" onClick={() => setInterviewPlan(null)}>
+                    Clear plan
+                  </button>
+                </div>
+                <ol>
+                  {interviewPlan.questions.slice(0, 6).map((q) => (
+                    <li key={q.id} className={q.origin}>
+                      {q.text}
+                    </li>
+                  ))}
+                </ol>
+                {interviewPlan.questions.length > 6 && (
+                  <small>+ {interviewPlan.questions.length - 6} more in the plan</small>
+                )}
+              </div>
+            )}
             <VoiceWave
               status={realtimeVoice.status}
               speaking={realtimeVoice.isSpeaking}
@@ -1166,6 +1259,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
             [ClipboardCheck, "Checklists"],
             [Waypoints, "Map"],
             [Users, "People"],
+            [Activity, "Health"],
             [Building2, "Organization"],
           ].map(([Icon, label]: any) => (
             <button
@@ -1727,6 +1821,15 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                 onRefresh={refresh}
                 onOpenArticle={openArticle}
                 onOpenRun={openRun}
+                onStartInterview={startInterview}
+              />
+            )}
+            {page === "Health" && (
+              <HealthPage
+                articles={data?.articles || NONE}
+                onOpenArticle={openArticle}
+                onOpenPerson={() => setPage("People")}
+                onStartInterview={startInterview}
               />
             )}
             {page === "Organization" && (
@@ -2182,6 +2285,67 @@ function ArticleEditor({
         <span>Rich text · images · checklists</span>
       </div>
       <EditorContent editor={editor} />
+      {(article.sourceChanges?.length ?? 0) > 0 && (
+        <div className="notice warn" role="status">
+          <TriangleAlert size={15} />
+          <div>
+            <strong>A source document changed after this was captured.</strong>
+            <ul>
+              {article.sourceChanges!.map((c) => (
+                <li key={c.sourceId}>
+                  {c.url ? (
+                    <a href={c.url} target="_blank" rel="noreferrer">
+                      {c.title || c.sourceId}
+                    </a>
+                  ) : (
+                    c.title || c.sourceId
+                  )}
+                </li>
+              ))}
+            </ul>
+            Check the process is still accurate, then mark it reviewed.
+          </div>
+        </div>
+      )}
+      {(article.evidence?.length ?? 0) > 0 && (
+        <div className="article-sources evidence-panel">
+          <h3>
+            {article.evidence!.every((e) => e.verified) ? (
+              <ShieldCheck size={16} />
+            ) : (
+              <TriangleAlert size={16} />
+            )}{" "}
+            Evidence check: {article.evidence!.filter((e) => e.verified).length} of{" "}
+            {article.evidence!.length} quotes found verbatim
+          </h3>
+          <p>
+            The assistant had to quote its sources. Quotes that could not be
+            found in the source text are marked; verify those claims by hand
+            before publishing.
+          </p>
+          {article.evidence!.map((ev, i) => (
+            <blockquote key={i} className={ev.verified ? "verified" : "unverified"}>
+              “{ev.quote}”
+              <small>
+                {ev.verified ? "Verified" : "Not found in source"} · {ev.title}
+                {ev.supports && ` · supports: ${ev.supports}`}
+              </small>
+            </blockquote>
+          ))}
+        </div>
+      )}
+      {(article.conflicts?.length ?? 0) > 0 && (
+        <div className="article-sources">
+          <h3>
+            <TriangleAlert size={16} /> Sources disagree
+          </h3>
+          {article.conflicts!.map((c, i) => (
+            <p key={i}>
+              <strong>{c.topic}:</strong> {c.note}
+            </p>
+          ))}
+        </div>
+      )}
       {article.sources && article.sources.length > 0 && (
         <div className="article-sources">
           <h3>Source evidence</h3>

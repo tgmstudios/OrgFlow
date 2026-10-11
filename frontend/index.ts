@@ -14,6 +14,7 @@ Bun.serve({
         "/checklists": page,
         "/map": page,
         "/people": page,
+        "/knowledge-health": page,
         "/organization": page,
         "/a": page,
         "/a/*": page,
