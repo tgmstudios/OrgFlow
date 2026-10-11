@@ -11,7 +11,7 @@ Status: implemented and typechecking; AI paths partly verified live; nothing ver
 | Connect | Google Drive and Gmail OAuth (read-only); consented text indexing of recent Docs and emails. Microsoft 365 is not built. | Web (Files: connections and indexing); `backend/google.ts` |
 | Capture | Discover suggests recurring workflows from indexed content and drafts playbooks; voice interview on web (ElevenLabs) and on iOS (on-device transcription); drafts need human approval; runnable checklists; owners and periodic review ("due for review"). | Web, iOS (Capture, Library); `backend/operations.ts`, `agent.ts` |
 | Ask | Answers grounded in approved articles plus consented email/document excerpts (BM25 retrieval), labelled by source type. | Web agent, iOS Ask; `backend/agent.ts`, `retrieval.ts` |
-| Transfer | People records, mark leaving, AI handoff guide from owned playbooks, sent emails and notes, successor onboarding checklist. | Web (People), iOS Handoff; `backend/operations.ts` |
+| Transfer | People records, mark leaving, AI handoff guide from owned playbooks, sent emails and notes, successor onboarding checklist. | Web (People, Knowledge map), iOS Handoff; `backend/operations.ts` |
 
 Platform: organizations with isolation (new org at sign-up or invite code; default shared demo workspace with labelled samples), admin/member roles, audit log, billing through the AWS Monetization sandbox (enforcement off).
 
@@ -43,6 +43,7 @@ Live AI steps need `LUMINAL_API_KEY` on the backend; Google steps need a Google 
 5. **Run a checklist.** Start a run from the published playbook, assign it, and tick off steps.
 6. **Ask.** Ask a question in the agent. Show the answer citing the approved playbook and email/document excerpts, each labelled by source type.
 7. **Transfer.** In People, mark a person as leaving and generate their handoff guide (from owned playbooks, sent emails and notes), approve it, then start the successor's onboarding checklist.
+8. **Knowledge map.** See playbooks and indexed source material grouped by owner, assign or reassign owners, and open a person's handoff flow. Assigned sources feed that person's handoff draft.
 
 iOS moment: on an iPhone, open Capture (or Handoff), narrate a process or role aloud (on-device transcription), and show the resulting draft in Library awaiting "Approve & publish". Not verified on a physical device.
 

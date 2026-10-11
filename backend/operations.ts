@@ -101,6 +101,7 @@ export function createOperations(dependencies: {
         updatedAt: source.updatedAt,
         text: piece,
       });
+    const previous = await store.get("sources", source.id);
     await store.put("sources", {
       id: source.id,
       title: source.title,
@@ -111,6 +112,7 @@ export function createOperations(dependencies: {
       indexedAt: now(),
       chunkCount: pieces.length,
       preview: String(source.text).replace(/\s+/g, " ").slice(0, 400),
+      ...(previous?.ownerId ? { ownerId: previous.ownerId } : {}),
     });
   }
 
@@ -299,6 +301,22 @@ export function createOperations(dependencies: {
           return json({ removed: all.length });
         }
         let match = m(/^\/api\/sources\/((?:drive|gmail)-[^/]+)$/);
+        if (match && req.method === "PATCH") {
+          const source = await store.get("sources", decodeURIComponent(match[1]!));
+          if (!source) throw new OperationError(404, "Indexed source not found.");
+          const input = await body();
+          let ownerId: string | undefined;
+          if (input.ownerId !== undefined && input.ownerId !== null && input.ownerId !== "") {
+            ownerId = text(input.ownerId, "ownerId");
+            if (!(await store.get("people", ownerId))) throw new OperationError(400, "Unknown person.");
+          }
+          const updated = { ...source, ...(ownerId ? { ownerId } : {}) };
+          if (!ownerId) delete updated.ownerId;
+          await store.put("sources", updated);
+          await audit(user, "source.owner", { sourceId: source.id, ownerId: ownerId ?? null });
+          return json(updated);
+        }
+        match = m(/^\/api\/sources\/((?:drive|gmail)-[^/]+)$/);
         if (match && req.method === "DELETE") {
           await removeSource(decodeURIComponent(match[1]!));
           await audit(user, "index.remove", { sourceId: match[1] });
@@ -450,14 +468,20 @@ export function createOperations(dependencies: {
           }
           const owned = articles.filter((a) => a.ownerId === person.id);
           const runs = (await store.list("runs")).filter((r) => owned.some((a) => a.id === r.articleId));
-          // Evidence: emails they sent, from the consented index. (Their playbooks are already part of
-          // the agent's article context, ranked by the prompt below.)
+          // Evidence: sources explicitly assigned to them plus emails they sent. Their playbooks are
+          // already part of the agent's article context, ranked by the prompt below.
           const sources: Item[] = [];
+          const assigned = (await store.list("sources"))
+            .filter((s) => s.ownerId === person.id)
+            .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
+            .slice(0, 8);
+          sources.push(...(await evidenceSources(assigned.map((s) => s.id))));
           if (person.email) {
             const sent = (await store.list("sources"))
               .filter((s) => s.provider === "Gmail" && String(s.from ?? "").toLowerCase().includes(String(person.email).toLowerCase()))
               .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
-              .slice(0, 8 - sources.length);
+              .filter((s) => !assigned.some((ownedSource) => ownedSource.id === s.id))
+              .slice(0, Math.max(0, 8 - sources.length));
             sources.push(...(await evidenceSources(sent.map((s) => s.id))));
           }
           const prompt = `Draft a role handoff guide for ${person.name}, ${person.role}, who is ${person.status === "left" ? "gone" : "leaving"}${person.leaveDate ? ` on ${person.leaveDate}` : ""}. Sections: Role overview; Recurring responsibilities and their timing; Key relationships (roles, not private details); Where things live; Work in progress; First 30 days — a checklist (as steps) for the successor; Review questions. Playbooks they own: ${JSON.stringify(owned.map((a) => a.publishedTitle ?? a.title))}. Checklists run from those playbooks: ${runs.length}. ${notes ? `Notes from them or their manager: ${notes}` : ""} Use the selected sources as evidence and cite them; never invent facts.`;

@@ -13,6 +13,7 @@ Bun.serve({
         "/knowledge-base": page,
         "/checklists": page,
         "/people": page,
+        "/knowledge-map": page,
         "/knowledge-health": page,
         "/organization": page,
         "/a": page,

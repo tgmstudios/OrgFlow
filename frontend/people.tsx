@@ -377,6 +377,7 @@ function PersonDetail({
 export function PeoplePage({
   people,
   articles,
+  selectedPersonId,
   onRefresh,
   onOpenArticle,
   onOpenRun,
@@ -384,12 +385,13 @@ export function PeoplePage({
 }: {
   people: Person[];
   articles: Article[];
+  selectedPersonId?: string | null;
   onRefresh: () => Promise<void> | void;
   onOpenArticle: (id: string) => void;
   onOpenRun: (id: string) => void;
   onStartInterview: (plan: InterviewPlan) => void;
 }) {
-  const [selectedId, setSelectedId] = useState<string | null>(null),
+  const [selectedId, setSelectedId] = useState<string | null>(selectedPersonId || null),
     [adding, setAdding] = useState(false),
     [name, setName] = useState(""),
     [role, setRole] = useState(""),

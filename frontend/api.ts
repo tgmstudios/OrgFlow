@@ -121,6 +121,7 @@ export type IndexedSource = {
   indexedAt: string;
   chunkCount: number;
   preview: string;
+  ownerId?: string | null;
 };
 export type OrgInfo = {
   id: string;
@@ -187,6 +188,7 @@ export const actionLabels: Record<string, string> = {
   "run.delete": "Deleted a checklist",
   "person.update": "Updated a person",
   "transfer.handoff": "Generated a handoff guide",
+  "source.owner": "Assigned an indexed source owner",
   "discover.run": "Searched for recurring work",
   "discover.draft": "Drafted a playbook from a suggestion",
   "index.remove": "Removed an indexed source",

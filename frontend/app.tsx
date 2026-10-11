@@ -43,6 +43,7 @@ import {
   ClipboardCheck,
   Mail,
   AlertCircle,
+  Network,
 } from "lucide-react";
 import "./style.css";
 import {
@@ -65,6 +66,7 @@ import { ChecklistsPage } from "./checklists";
 import { PeoplePage } from "./people";
 import { HealthPage } from "./health";
 import { OrganizationPage } from "./organization";
+import { KnowledgeMap } from "./knowledge-map";
 import {
   AnimatePresence,
   Collapse,
@@ -289,6 +291,7 @@ const pagePaths: Record<string, string> = {
   "Knowledge Base": "/knowledge-base",
   Checklists: "/checklists",
   People: "/people",
+  "Knowledge map": "/knowledge-map",
   Health: "/knowledge-health",
   Organization: "/organization",
 };
@@ -367,7 +370,8 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     [captureError, setCaptureError] = useState(""),
     [org, setOrg] = useState<OrgInfo | null>(null),
     [orgError, setOrgError] = useState(""),
-    [activeRun, setActiveRun] = useState<string | null>(null);
+    [activeRun, setActiveRun] = useState<string | null>(null),
+    [selectedMapPerson, setSelectedMapPerson] = useState<string | null>(null);
   // Keyboard-initiated opens/closes (⌘J, Escape) skip the dialog animation.
   const [instant, setInstant] = useState(false);
   const agentPresence = usePresence(agent, instant ? 0 : 170);
@@ -1199,6 +1203,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
             [BookOpen, "Knowledge Base"],
             [ClipboardCheck, "Checklists"],
             [Users, "People"],
+            [Network, "Knowledge map"],
             [Activity, "Health"],
             [Building2, "Organization"],
           ].map(([Icon, label]: any) => (
@@ -1707,10 +1712,25 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
               <PeoplePage
                 people={data?.people || NONE}
                 articles={data?.articles || NONE}
+                selectedPersonId={selectedMapPerson}
                 onRefresh={refresh}
                 onOpenArticle={openArticle}
                 onOpenRun={openRun}
                 onStartInterview={startInterview}
+              />
+            )}
+            {page === "Knowledge map" && (
+              <KnowledgeMap
+                articles={data?.articles || NONE}
+                categories={data?.categories || NONE}
+                people={data?.people || NONE}
+                sources={data?.sources || NONE}
+                onRefresh={refresh}
+                onOpenArticle={openArticle}
+                onOpenPerson={(id) => {
+                  setSelectedMapPerson(id);
+                  setPage("People");
+                }}
               />
             )}
             {page === "Health" && (
