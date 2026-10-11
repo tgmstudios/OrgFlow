@@ -4,6 +4,15 @@ import { createAgentHandler } from "./agent";
 import { uploads } from "./uploads";
 import { createGoogleHandler } from "./google";
 import { createAuth, AuthError } from "./auth";
+import {
+  EVENT_ASK,
+  EVENT_DRAFT,
+  EVENT_GOOGLE_IMPORT,
+  clearSessionCookies,
+  entitlementGate,
+  meter,
+  sessionCookies,
+} from "./monetization";
 class ApiError extends Error {
   constructor(
     public status: number,
@@ -66,7 +75,11 @@ export function createApp(
   options: { requireAuth?: boolean } = {},
 ) {
   const requireAuth = options.requireAuth ?? true;
-  const auth = createAuth(store);
+  const auth = createAuth(store, {
+    sessionCookies: (req, user) => sessionCookies(req, user.id),
+    clearCookies: clearSessionCookies,
+    refreshWhenMissing: "mai_pricing_url",
+  });
   const google = createGoogleHandler({
     upsertFile: async (file) => {
       const current = await store.get("files", file.id);
@@ -142,13 +155,42 @@ export function createApp(
         path === "/auth/google/callback";
       if (requireAuth && !open && !(await auth.currentUser(req)))
         throw new ApiError(401, "Sign in required");
+      const googleEvent =
+        (req.method === "POST" && path === "/api/integrations/google/sync") ||
+        (req.method === "GET" &&
+          /^\/api\/sources\/google\/[^/]+\/[^/]+$/.test(path))
+          ? EVENT_GOOGLE_IMPORT
+          : null;
+      const billedUser = requireAuth ? await auth.currentUser(req) : null;
+      if (googleEvent && billedUser) {
+        const denied = await entitlementGate(billedUser.id, googleEvent);
+        if (denied) return denied;
+      }
       const googleResponse = await google(req);
-      if (googleResponse) return googleResponse;
+      if (googleResponse) {
+        if (googleEvent && billedUser && googleResponse.ok)
+          await meter(billedUser.id, googleEvent);
+        return googleResponse;
+      }
       if (path.startsWith("/api/uploads")) {
         const response = await uploads(req);
         if (response) return response;
       }
-      if (path === "/api/agent") return agent(req);
+      if (path === "/api/agent") {
+        const user = requireAuth ? await auth.currentUser(req) : null;
+        const mode = user
+          ? ((await req.clone().json().catch(() => null)) as any)?.mode
+          : null;
+        const event =
+          mode === "ask" ? EVENT_ASK : mode === "draft" ? EVENT_DRAFT : null;
+        if (user && event) {
+          const denied = await entitlementGate(user.id, event);
+          if (denied) return denied;
+        }
+        const response = await agent(req);
+        if (user && event && response.ok) await meter(user.id, event);
+        return response;
+      }
       if (req.method === "GET" && path === "/health")
         return json({ status: "ok", storage: store.mode });
       if (req.method === "GET" && path === "/openapi.json")

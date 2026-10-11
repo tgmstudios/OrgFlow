@@ -37,7 +37,16 @@ const publicUser = (u: any): User => ({
   name: u.name,
 });
 
-export function createAuth(store: Store) {
+export type AuthHooks = {
+  /** Extra Set-Cookie values to send when a user signs in (or resumes a session missing them). */
+  sessionCookies?: (req: Request, user: User) => Promise<string[]>;
+  /** Set-Cookie values that clear anything sessionCookies set; sent on sign-out. */
+  clearCookies?: (req: Request) => string[];
+  /** Cookie name that, when absent on /api/auth/me, triggers sessionCookies again. */
+  refreshWhenMissing?: string;
+};
+
+export function createAuth(store: Store, hooks: AuthHooks = {}) {
   const failures = new Map<string, { count: number; first: number }>();
 
   const cookieHeader = (req: Request, value: string, maxAge: number) => {
@@ -81,20 +90,40 @@ export function createAuth(store: Store) {
   /** Handles /api/auth/*. Returns null for paths it does not own. */
   async function handle(req: Request, path: string): Promise<Response | null> {
     if (!path.startsWith("/api/auth/")) return null;
-    const json = (data: unknown, status = 200, setCookie?: string) =>
-      Response.json(data, {
-        status,
-        headers: setCookie ? { "Set-Cookie": setCookie } : undefined,
-      });
+    const json = (
+      data: unknown,
+      status = 200,
+      setCookie?: string,
+      extraCookies: string[] = [],
+    ) => {
+      const headers = new Headers();
+      if (setCookie) headers.append("Set-Cookie", setCookie);
+      for (const value of extraCookies) headers.append("Set-Cookie", value);
+      return Response.json(data, { status, headers });
+    };
     if (req.method === "GET" && path === "/api/auth/me") {
       const user = await currentUser(req);
-      return json({ user });
+      const refresh =
+        user && hooks.sessionCookies && hooks.refreshWhenMissing
+          ? !readCookie(req, hooks.refreshWhenMissing)
+          : false;
+      return json(
+        { user },
+        200,
+        undefined,
+        refresh && user ? await hooks.sessionCookies!(req, user) : [],
+      );
     }
     if (req.method !== "POST") throw new AuthError(404, "Not found");
     if (path === "/api/auth/logout") {
       const token = readCookie(req, COOKIE);
       if (token) await store.delete("sessions", sha256(token));
-      return json({ ok: true }, 200, cookieHeader(req, "", 0));
+      return json(
+        { ok: true },
+        200,
+        cookieHeader(req, "", 0),
+        hooks.clearCookies?.(req) ?? [],
+      );
     }
     if (path !== "/api/auth/signup" && path !== "/api/auth/login")
       throw new AuthError(404, "Not found");
@@ -131,6 +160,7 @@ export function createAuth(store: Store) {
         { user: publicUser(user) },
         201,
         await startSession(req, publicUser(user)),
+        (await hooks.sessionCookies?.(req, publicUser(user))) ?? [],
       );
     }
 
@@ -151,6 +181,7 @@ export function createAuth(store: Store) {
       { user: publicUser(user) },
       200,
       await startSession(req, publicUser(user)),
+      (await hooks.sessionCookies?.(req, publicUser(user))) ?? [],
     );
   }
 

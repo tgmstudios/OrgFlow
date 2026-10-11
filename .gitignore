@@ -11,3 +11,4 @@ dist/
 *.pem
 
 .monetize/
+.env.monetization.local
