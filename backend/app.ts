@@ -118,9 +118,11 @@ export function createApp(
       )
         throw new ApiError(403, "Unrecognized host");
       const origin = req.headers.get("origin");
+      const frontendOrigin = process.env.FRONTEND_ORIGIN ?? "http://localhost:3002";
       const allowed = [
         requestUrl.origin,
-        process.env.FRONTEND_ORIGIN ?? "http://localhost:3002",
+        frontendOrigin,
+        new URL(frontendOrigin).origin,
         "http://127.0.0.1:3002",
       ];
       if (

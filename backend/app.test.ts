@@ -131,3 +131,27 @@ test('cross-origin writes are rejected', async () => {
     expect(await store.list('categories')).toEqual([]);
   } finally { await store.close(); }
 });
+
+test("configured browser origin permits writes when OAuth returns to an app path", async () => {
+  const previous = process.env.FRONTEND_ORIGIN;
+  process.env.FRONTEND_ORIGIN = "https://orgflow.dev";
+  const store = await openStore({ sqlitePath: ":memory:" });
+  try {
+    const app = createApp(store, { requireAuth: false });
+    const response = await app(
+      new Request("http://localhost/api/categories", {
+        method: "POST",
+        headers: {
+          origin: "https://orgflow.dev",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ name: "Production" }),
+      }),
+    );
+    expect(response.status).toBe(201);
+  } finally {
+    if (previous === undefined) delete process.env.FRONTEND_ORIGIN;
+    else process.env.FRONTEND_ORIGIN = previous;
+    await store.close();
+  }
+});

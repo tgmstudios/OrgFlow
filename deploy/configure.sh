@@ -11,7 +11,8 @@ CONFIG
 cat > /etc/systemd/system/backend.service.d/production.conf <<'CONFIG'
 [Service]
 Environment=NODE_ENV=production
-Environment=FRONTEND_ORIGIN=https://orgflow.dev/a/
+Environment=FRONTEND_ORIGIN=https://orgflow.dev
+Environment=FRONTEND_REDIRECT_URL=https://orgflow.dev/a/
 CONFIG
 # .env and data are deliberately managed separately from source deployment.
 cp -n /etc/nginx/nginx.conf /etc/nginx/nginx.conf.pre-orgflow-a || true

@@ -47,7 +47,8 @@ jobs:
             "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" \
             "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" \
             "GOOGLE_REDIRECT_URI=$GOOGLE_REDIRECT_URI" \
-            "FRONTEND_ORIGIN=https://orgflow.dev/a/" \
+            "FRONTEND_ORIGIN=https://orgflow.dev" \
+            "FRONTEND_REDIRECT_URL=https://orgflow.dev/a/" \
             | ssh "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" '
                 set -e
                 umask 077

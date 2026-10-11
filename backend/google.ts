@@ -227,7 +227,10 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
           expiresAt: Date.now() + Number(data.expires_in || 3600) * 1000,
         });
         const headers = new Headers({
-          Location: process.env.FRONTEND_ORIGIN || "http://localhost:3002/",
+          Location:
+            process.env.FRONTEND_REDIRECT_URL ||
+            process.env.FRONTEND_ORIGIN ||
+            "http://localhost:3002/",
         });
         headers.append(
           "Set-Cookie",
