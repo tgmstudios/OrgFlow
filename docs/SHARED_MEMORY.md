@@ -233,3 +233,7 @@ Material limits: single-workspace localhost prototype without staff authenticati
 - Main app remains running at http://localhost:3002; backend http://localhost:3003; Swagger http://localhost:3003/docs (also /swagger); OpenAPI /openapi.json. Main backend uses persistent local SQLite. Root `bun run dev` restarts both services; see README for setup. Development hot reload/restarts clear server-memory Google sessions.
 - Separate browser-test servers on 3012/3013 were stopped at handoff. Their synthetic test database remains under /tmp, outside the repository. No AWS resources or public deployment were created.
 - Next substantive work: configure/verify a PostgreSQL instance, complete Google browser consent and test selected live sources, add staff authentication and organization authorization before hosting, and choose calendar sync/realtime voice providers. These are outstanding integration/production work, not additional confirmed product decisions.
+
+### Commit/push integration — 2026-10-11
+
+User requested committing and pushing all work. Local MVP commit d993296 was created after 22 passing tests and a credential scan. Remote main had advanced with ccabf74 (submission video branding “Org Flow”). Merged remote changes, preserving the newer video branding in the three conflicting video documents. This is a repository update, not a new human product decision; app branding remains as implemented in this interview.

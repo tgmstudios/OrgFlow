@@ -12,7 +12,7 @@ Use this file as the source of truth for media stored outside Git.
 
 | Asset | Status | File or shared link | Creator/source | Usage rights / notes |
 | --- | --- | --- | --- | --- |
-| Product logo | Needed | | Team | Confirm final product name |
+| Product logo | Needed | | Team | Use confirmed name: Org Flow |
 | Brand colors / font | Needed | | Team | Match actual website |
 | Voiceover | Needed | `assets/audio/voiceover/` | Video owner | Record original voice |
 | Music bed | Needed | `assets/audio/music/` | | Record source URL and license |
