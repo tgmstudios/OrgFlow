@@ -207,6 +207,12 @@ Implementation assumptions for this build: use React + Bun HTML imports + Tiptap
 - Live credential probe: supplied client credentials with a deliberately invalid authorization code returned `invalid_grant` / malformed code; invalid-secret control returned `invalid_client` / invalid secret. This supports acceptance of the saved client ID/secret. No tokens were issued.
 - Authorization URL with the planned local callback and Gmail/Drive read-only scopes reached Google sign-in (HTTP 200) without a redirect mismatch or invalid-client error. Consent-screen/test-user eligibility and actual user grant remain unverified. No Gmail/Drive data was accessed. Callback handler remains unimplemented.
 
+### Google OAuth production setup — 2026-10-11
+
+- Confirmed Google accepts `https://orgflow.dev/auth/google/callback` for the OrgFlow OAuth client; it reaches Google sign-in without a redirect mismatch.
+- Added GitHub Actions secrets for the production OAuth client ID, secret, and callback URI. The deployment now writes them with `FRONTEND_ORIGIN=https://orgflow.dev` to the server-only `backend/.env` (permissions `0600`), retaining other existing server configuration. Values are not recorded here or in Git.
+- Deployed commit `3114670` successfully. Live callback routing returns the expected protected-state error; initiating a connection requires an authenticated OrgFlow session. No Google user consent or private-source access was performed.
+
 ## Frontend/backend build handoff — 2026-10-11
 
 User authorized parallel subagent implementation. Confirmed decisions are consolidated in [PRODUCT_DESIGN.md](PRODUCT_DESIGN.md); this supersedes earlier scaffold-only implementation descriptions.
