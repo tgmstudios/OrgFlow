@@ -1243,6 +1243,35 @@ td small {
   color: white;
   animation: pulse 1s infinite;
 }
+.voice-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+.voice-actions .mic-button {
+  flex: 0 0 57px;
+  margin: 0;
+}
+.voice-mute {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 13px;
+  border: 1px solid #e2d4ed;
+  border-radius: 20px;
+  background: #fff;
+  color: #765c88;
+  font-size: 10px;
+}
+.voice-mute.muted {
+  border-color: #d9a9a9;
+  background: #fff3f1;
+  color: #a44d4d;
+}
 .voice-controls strong {
   font-size: 11px;
   display: block;

@@ -22,6 +22,7 @@ import {
   PanelBottomClose,
   X,
   Mic,
+  MicOff,
   MessageSquare,
   Check,
   Bold,
@@ -750,24 +751,48 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
         </div>
         {tab === "voice" && (
           <div className="voice-controls">
-            <button
-              className={
-                realtimeVoice.status === "connected"
-                  ? "mic-button listening"
-                  : "mic-button"
-              }
-              onClick={voice}
-              disabled={busy || realtimeVoice.status === "connecting"}
-            >
-              <Mic size={25} />
-            </button>
+            <div className="voice-actions">
+              <button
+                className={
+                  realtimeVoice.status === "connected"
+                    ? "mic-button listening"
+                    : "mic-button"
+                }
+                onClick={voice}
+                aria-label={
+                  realtimeVoice.status === "connected"
+                    ? "End voice session"
+                    : "Start live voice session"
+                }
+                disabled={busy || realtimeVoice.status === "connecting"}
+              >
+                <Mic size={25} />
+              </button>
+              {realtimeVoice.status === "connected" && (
+                <button
+                  className={
+                    realtimeVoice.isMuted ? "voice-mute muted" : "voice-mute"
+                  }
+                  onClick={() => realtimeVoice.setMuted(!realtimeVoice.isMuted)}
+                  aria-pressed={realtimeVoice.isMuted}
+                  aria-label={
+                    realtimeVoice.isMuted ? "Unmute microphone" : "Mute microphone"
+                  }
+                >
+                  {realtimeVoice.isMuted ? <MicOff size={17} /> : <Mic size={17} />}
+                  {realtimeVoice.isMuted ? "Unmute mic" : "Mute mic"}
+                </button>
+              )}
+            </div>
             <strong>
               {realtimeVoice.status === "connecting"
                 ? "Connecting…"
                 : realtimeVoice.status === "connected"
                   ? realtimeVoice.isSpeaking
                     ? "OrgFlow is speaking… tap to end"
-                    : "Listening… tap to end"
+                    : realtimeVoice.isMuted
+                      ? "Microphone muted"
+                      : "Listening… tap to end"
                   : "Start live voice"}
             </strong>
             <p>
