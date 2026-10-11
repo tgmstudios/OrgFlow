@@ -12,3 +12,4 @@ dist/
 /.agents/skills
 
 .monetize/
+.env.monetization.local
