@@ -213,7 +213,7 @@ test("Google connections survive a restart and are stored sealed", async () => {
     expect(row).not.toContain("private-access");
     expect(row).not.toContain("private-refresh");
 
-    // A brand-new handler (process restart) still recognises the session cookie.
+    // A brand-new handler (process restart) still recognizes the session cookie.
     const restarted = make();
     const status: any = await (
       await restarted(new Request("http://localhost/api/integrations/google", { headers: { cookie: session } }))

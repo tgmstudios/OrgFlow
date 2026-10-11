@@ -2,7 +2,7 @@
   "schema": "orgflow-knowledge-graph-concept-v1",
   "status": "ILLUSTRATIVE DESIGN FALLBACK - live Clusters separately implemented in latest main",
   "warning": "This SVG/JSON is an illustrative fallback. The separately implemented in-app Knowledge Clusters view must be captured directly for claims about shipped functionality.",
-  "organization": "Centre Valley Community Pantry (fictional)",
+  "organization": "Center Valley Community Pantry (fictional)",
   "nodes": [
     {
       "id": "maria",

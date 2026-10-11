@@ -77,7 +77,7 @@ def draw_pdf_footer(canvas, doc):
     canvas.line(48,45,width-48,45)
     canvas.setFont("Helvetica-Bold",7.4)
     canvas.setFillColor(MUTED)
-    canvas.drawString(48,31,"CENTRE VALLEY COMMUNITY PANTRY  /  ORGFLOW DEMONSTRATION")
+    canvas.drawString(48,31,"CENTER VALLEY COMMUNITY PANTRY  /  ORGFLOW DEMONSTRATION")
     canvas.setFont("Helvetica",7.2)
     canvas.drawRightString(width-48,31,f"FICTIONAL TRAINING CONTENT  |  {doc.page}")
     canvas.restoreState()
@@ -127,7 +127,7 @@ def make_docx(path):
         else:
             doc.add_paragraph(line)
     footer=section.footer.paragraphs[0]
-    footer.text="CENTRE VALLEY COMMUNITY PANTRY  |  FICTIONAL ORGFLOW DEMONSTRATION"
+    footer.text="CENTER VALLEY COMMUNITY PANTRY  |  FICTIONAL ORGFLOW DEMONSTRATION"
     footer.style="Caption"
     out=path.with_suffix(".docx")
     doc.save(out)
@@ -137,7 +137,7 @@ def draw_poster(path):
     w,h=A4;c=Canvas(str(path),pagesize=A4)
     c.setFillColor(PAPER);c.rect(0,0,w,h,fill=1,stroke=0)
     c.setFillColor(PURPLE);c.roundRect(45,h-95,w-90,6,3,fill=1,stroke=0)
-    c.setFont("Helvetica-Bold",14);c.drawString(52,h-140,"CENTRE VALLEY COMMUNITY PANTRY")
+    c.setFont("Helvetica-Bold",14);c.drawString(52,h-140,"CENTER VALLEY COMMUNITY PANTRY")
     c.setFillColor(INK);c.setFont("Helvetica-Bold",53)
     c.drawString(52,h-270,"Harvest")
     c.drawString(52,h-334,"Dinner")

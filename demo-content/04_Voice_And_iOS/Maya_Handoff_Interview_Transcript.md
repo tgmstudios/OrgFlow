@@ -1,5 +1,5 @@
 # Maya Chen role handoff: review transcript
-Centre Valley Community Pantry
+Center Valley Community Pantry
 Fictional interview rehearsal for November 9, 2026
 Participants: Maya Chen, Sam Rivera, and Priya Patel
 Status: Draft awaiting human review

@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..500&display=swap");
 
 /* ==========================================================================
-   OneFlow web — design tokens
+   OrgFlow web — design tokens
    Mirrors the iOS "Continuity" theme: warm off-white canvas, ink type, an
    editorial serif for headlines paired with Geist for UI and Geist Mono for
    metadata. Saturated color is reserved for the teal → iris → apricot
@@ -3973,7 +3973,7 @@ input[type="checkbox"]:checked {
   transform: translate(-50%, -50%) scale(1.08) rotate(-2deg);
   box-shadow: var(--shadow-3), 0 14px 30px -10px var(--glow-iris);
 }
-.cl-doc.travelling {
+.cl-doc.traveling {
   animation: doc-travel 0.9s ease-in-out infinite;
   box-shadow: 0 0 0 2px var(--teal), 0 0 18px var(--glow-teal);
 }
@@ -4065,7 +4065,7 @@ input[type="checkbox"]:checked {
   flex-shrink: 0;
   color: var(--faint);
 }
-.travelling-list > div svg {
+.traveling-list > div svg {
   color: var(--teal-ink);
 }
 .cl-stats {
@@ -6007,21 +6007,21 @@ blockquote small {
   }
 }
 
-/* Branded, self-hosted provider artwork and OneFlow's single shared knot. */
-.oneflow-wordmark {
+/* Branded, self-hosted provider artwork and OrgFlow's single shared knot. */
+.orgflow-wordmark {
   font-family: var(--font-display);
   font-weight: 550;
   letter-spacing: -.045em;
   white-space: nowrap;
 }
-.oneflow-brand-mark {
+.orgflow-brand-mark {
   display: inline-block;
   object-fit: contain;
   flex: 0 0 auto;
   width: 30px;
   height: 30px;
 }
-.auth-card .oneflow-brand-mark { width: 34px; height: 34px; }
+.auth-card .orgflow-brand-mark { width: 34px; height: 34px; }
 .provider-icon {
   display: inline-block;
   object-fit: contain;
@@ -6068,3 +6068,85 @@ blockquote small {
 .document-pdf { color: #b32634; background: #fff1f1; font-size: 9px; }
 .document-word { color: white; background: #2869bc; font-size: 15px; }
 .document-sheet { color: white; background: #198754; }
+
+/* Profile menu (top-right avatar) ----------------------------------------------------- */
+.profile {
+  position: relative;
+}
+button.avatar {
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 160ms var(--ease-out);
+}
+button.avatar:hover {
+  transform: scale(1.06);
+}
+button.avatar:active {
+  transform: scale(0.96);
+}
+button.avatar:focus-visible {
+  outline: 2px solid var(--iris);
+  outline-offset: 4px;
+}
+.profile-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 60;
+  min-width: 220px;
+  padding: 6px;
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
+  box-shadow: var(--inner-light), var(--shadow-2);
+  transform-origin: top right;
+  animation: profile-pop 160ms var(--ease-out);
+}
+@keyframes profile-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+}
+.profile-who {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--hairline-soft);
+}
+.profile-who strong {
+  font-size: 13.5px;
+}
+.profile-who small {
+  color: var(--muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.profile-menu button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+}
+.profile-menu button:hover,
+.profile-menu button:focus-visible {
+  background: var(--wash);
+}
+.profile-menu button svg {
+  color: var(--muted);
+}

@@ -5,7 +5,7 @@ import { createOperations } from "./operations";
 /**
  * Sample content for the shared demo workspace (organization "default") so Ask, checklists, ownership,
  * review and Transfer can be shown end to end. Every item is `synthetic: true` and labelled as a sample
- * in the UI. Added once per version (meta "samples-v1", "samples-v2"); staff edits are never overwritten.
+ * in the UI. Added once per version (meta "samples-v1" to "samples-v3"); staff edits are never overwritten.
  * New organizations created at sign-up start empty and never receive these.
  */
 const text = (t: string) => ({ type: "text", text: t });
@@ -17,7 +17,7 @@ const steps = (items: string[]) => ({
 });
 const doc = (...content: unknown[]) => ({ type: "doc", content });
 
-// Showcase documents (fictional Centre Valley Community Pantry) indexed into the demo workspace: the ones in
+// Showcase documents (fictional Center Valley Community Pantry) indexed into the demo workspace: the ones in
 // Maria Reyes's handoff story. Originals open from the team repository, the same links the importer uses.
 const SHOWCASE_ROOT = new URL("../demo-content/", import.meta.url).pathname;
 const SHOWCASE_URL = "https://raw.githubusercontent.com/tgmstudios/c0mpiled/aae1b41/demo-content/";
@@ -156,6 +156,7 @@ const pristine = (a: any) => a?.synthetic === true && a.publishedBy?.id === "sam
 export async function seedSamples(store: Store) {
   if (!(await store.get("meta", "samples-v1"))) await seedBase(store);
   if (!(await store.get("meta", "samples-v2"))) await upgradeToShowcaseStory(store);
+  if (!(await store.get("meta", "samples-v3"))) await refreshShowcaseText(store);
 }
 
 async function publishSample(store: Store, article: (typeof articles)[number], now: string) {
@@ -255,4 +256,39 @@ async function upgradeToShowcaseStory(store: Store) {
     await index(showcaseId("mail", m.rel), m.title, "Demo Mail", path, m.ownerId, from);
   }
   await store.put("meta", { id: "samples-v2", version: 2 });
+}
+
+/**
+ * v3: the showcase corpus was respelled ("Center Valley") and its PDFs rebuilt. Re-index the showcase
+ * sources still marked synthetic and repoint sample links at the current corpus revision. Owners are kept.
+ */
+async function refreshShowcaseText(store: Store) {
+  const now = new Date().toISOString();
+  const operations = createOperations({
+    store,
+    agent: async () => Response.json({ error: "Samples never call AI" }, { status: 503 }),
+    currentUser: async () => null,
+  });
+  const refresh = async (id: string, path: string) => {
+    const current = await store.get("sources", id);
+    if (current?.synthetic !== true) return;
+    const text = await readFile(SHOWCASE_ROOT + path, "utf8").catch(() => "");
+    if (!text) return;
+    await operations.saveSource({ ...current, text: text.slice(0, 45000), url: showcaseUrl(path), updatedAt: now });
+    await store.put("sources", { ...(await store.get("sources", id))!, ownerId: current.ownerId, synthetic: true });
+  };
+  for (const d of SHOWCASE_DOCS) await refresh(showcaseId("source", d.rel), "01_Google_Drive/" + d.rel);
+  for (const m of SHOWCASE_MAIL) await refresh(showcaseId("mail", m.rel), "02_Gmail_Examples/" + m.rel);
+  const stale = /https:\/\/raw\.githubusercontent\.com\/tgmstudios\/c0mpiled\/[0-9a-f]+\/demo-content\//g;
+  for (const file of await store.list("files")) {
+    const url = typeof file.url === "string" ? file.url.replace(stale, SHOWCASE_URL) : file.url;
+    if (file.synthetic === true && url !== file.url) await store.put("files", { ...file, url });
+  }
+  for (const article of await store.list("articles"))
+    if (pristine(article)) {
+      const json = JSON.stringify(article);
+      const next = json.replace(stale, SHOWCASE_URL).replaceAll("Centre Valley", "Center Valley");
+      if (next !== json) await store.put("articles", JSON.parse(next));
+    }
+  await store.put("meta", { id: "samples-v3", version: 3 });
 }

@@ -107,7 +107,7 @@ struct Quad {
 func quads(style: Style) -> [Quad] {
     let scale = size * 0.215
     let center = CGPoint(x: size / 2, y: size * 0.47)
-    // Per sample: screen centre, screen perpendicular, radius in px, depth, view-space perpendicular.
+    // Per sample: screen center, screen perpendicular, radius in px, depth, view-space perpendicular.
     struct Sample { var c: CGPoint; var perp: (Double, Double); var r: Double; var z: Double }
     var samples: [Sample] = []
     for i in 0...segments {
@@ -188,7 +188,7 @@ func svg(_ variant: Variant, _ quads: [Quad]) -> String {
 
 func png(_ variant: Variant, _ quads: [Quad], to url: URL) {
     let space = CGColorSpace(name: CGColorSpace.sRGB)!
-    // Supersampled 3×, then reduced, so the seams between neighbouring quads disappear.
+    // Supersampled 3×, then reduced, so the seams between neighboring quads disappear.
     let supersample = 3.0
     let context = CGContext(data: nil, width: Int(size * supersample), height: Int(size * supersample), bitsPerComponent: 8, bytesPerRow: 0, space: space,
                             bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)!

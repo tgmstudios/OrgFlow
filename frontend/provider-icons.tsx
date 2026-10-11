@@ -26,7 +26,7 @@ export function ProviderIcon({
     normalized === "google docs" ? docs :
     normalized === "google sheets" ? sheets :
     ["microsoft 365", "sharepoint", "onedrive", "outlook"].includes(normalized) ? microsoft :
-    ["orgflow showcase", "oneflow showcase"].includes(normalized) ? knot :
+    ["orgflow showcase", "orgflow showcase"].includes(normalized) ? knot :
     null;
 
   if (icon) {
@@ -57,5 +57,5 @@ export function DocumentIcon({ filename, size = 25 }: { filename: string; size?:
 }
 
 export function ProductMark({ size = 30 }: { size?: number }) {
-  return <img src={knot} width={size} height={size} className="oneflow-brand-mark" alt="" aria-hidden="true" decoding="async" />;
+  return <img src={knot} width={size} height={size} className="orgflow-brand-mark" alt="" aria-hidden="true" decoding="async" />;
 }

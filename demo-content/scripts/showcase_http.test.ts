@@ -3,7 +3,7 @@ import { createMemoryStore, seed } from "../../backend/store";
 import { createApp } from "../../backend/app";
 
 const URL="http://localhost";
-const ORG="Centre Valley Community Pantry (OneFlow Showcase)";
+const ORG="Center Valley Community Pantry (OrgFlow Showcase)";
 test("Showcase imports only for its own administrator, retains original documents and does not leak across organizations", async()=>{
  const store=createMemoryStore();
  await seed(store);

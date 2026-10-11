@@ -75,7 +75,7 @@ final class VoiceInterviewSession {
 
     var isMuted: Bool { conversation?.isMuted ?? false }
 
-    /// Ends the call and returns the transcript as plain text ("OneFlow: …" / "Me: …" lines).
+    /// Ends the call and returns the transcript as plain text ("OrgFlow: …" / "Me: …" lines).
     func finish() async -> String {
         endedByUser = true
         detachMeters()
@@ -87,7 +87,7 @@ final class VoiceInterviewSession {
     }
 
     static func transcript(_ lines: [Line]) -> String {
-        lines.map { "\($0.fromAgent ? "OneFlow" : "Me"): \($0.text)" }.joined(separator: "\n")
+        lines.map { "\($0.fromAgent ? "OrgFlow" : "Me"): \($0.text)" }.joined(separator: "\n")
     }
 
     /// Knot input: whichever voice is louder, colored by who is speaking.

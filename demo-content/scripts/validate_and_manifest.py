@@ -68,7 +68,7 @@ all_files.write_text("\n".join(all_paths)+"\n",encoding="utf-8")
 files=sorted(files+[all_files])
 latest_main=subprocess.run(["git","-C",str(ROOT.parent),"rev-parse","--short","origin/main"],capture_output=True,text=True,check=True).stdout.strip()
 manifest={
- "pack_name":"OrgFlow Continuity Showcase | Centre Valley Community Pantry",
+ "pack_name":"OrgFlow Continuity Showcase | Center Valley Community Pantry",
  "fictional":True,
  "source_commit_ref":f"origin/main at {latest_main} (2026-10-11)",
  "opening_clip":"~/Downloads/orgflow_opening_v5.mp4 (19.93s, 1920x1080, 60fps)",

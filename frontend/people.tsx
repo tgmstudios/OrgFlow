@@ -101,7 +101,7 @@ function PersonDetail({
       setTask(null);
     }
   }
-  /** Facts-only guide from OneFlow's records: no AI, no consent needed. */
+  /** Facts-only guide from OrgFlow's records: no AI, no consent needed. */
   async function outline() {
     setTask("handoff");
     setTransferError("");
@@ -279,7 +279,7 @@ function PersonDetail({
             </h2>
           </div>
           <p className="section-sub">
-            OneFlow drafts a role guide from the playbooks {person.name} owns
+            OrgFlow drafts a role guide from the playbooks {person.name} owns
             and the emails they sent that you have indexed
             {person.email ? "" : " (add their email so sent mail can be matched)"}
             . It is a draft: a staff member must review and approve it before it

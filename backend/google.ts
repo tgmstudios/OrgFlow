@@ -8,7 +8,7 @@ export type GoogleDependencies = {
   vault?: SessionVault;
   upsertFile: (file: Item) => Promise<void>;
   /** Stores one indexed source's text (replacing any earlier index of it). */
-  /** The OneFlow account and organization that initiated this OAuth flow. */
+  /** The OrgFlow account and organization that initiated this OAuth flow. */
   getAccount?: (request: Request) => Promise<{ userId: string; orgId: string } | null>;
   saveSource?: (source: {
     id: string;
@@ -100,7 +100,7 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
     if (!stored) return undefined;
     if (dependencies.getAccount) {
       const signedIn = await dependencies.getAccount(request);
-      // A browser may retain orgflow_google after a OneFlow sign-out or account switch.
+      // A browser may retain orgflow_google after a OrgFlow sign-out or account switch.
       // Never return a Google token to a different user or organization.
       if (!signedIn || !stored.account ||
           stored.account.userId !== signedIn.userId ||
@@ -272,7 +272,7 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
         const verifier = randomBytes(48).toString("base64url");
         const account = await dependencies.getAccount?.(request);
         if (dependencies.getAccount && !account)
-          return json({ error: "Sign in to OneFlow before connecting Google." }, 401);
+          return json({ error: "Sign in to OrgFlow before connecting Google." }, 401);
         pending.set(state, {
           verifier,
           expiresAt: Date.now() + 600000,
@@ -323,7 +323,7 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
           if (!signedIn || !entry.account ||
               signedIn.userId !== entry.account.userId ||
               signedIn.orgId !== entry.account.orgId)
-            return json({ error: "Your OneFlow sign-in changed during Google connection. Sign in and retry." }, 403);
+            return json({ error: "Your OrgFlow sign-in changed during Google connection. Sign in and retry." }, 403);
         }
         if (url.searchParams.has("error"))
           return json(
@@ -551,7 +551,7 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
         return json({
           indexed: { drive, gmail },
           notice:
-            "Indexed text stays in OneFlow and is used to answer questions and suggest playbooks. Remove it any time.",
+            "Indexed text stays in OrgFlow and is used to answer questions and suggest playbooks. Remove it any time.",
         });
       }
       if (path === "/api/sources/google" && request.method === "GET") {

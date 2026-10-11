@@ -294,13 +294,13 @@ final class AskViewController: UIViewController {
     private func applyMode(_ mode: AskMode, animated: Bool) {
         modeControl.selectedSegmentIndex = mode.rawValue
         let copy: (headline: String, subtitle: String, placeholder: String) = switch mode {
-        case .ask: ("Knowledge\nmoves forward.", "Ask what your organization already knows.", "Ask OneFlow anything…")
-        case .capture: ("Show how the\nwork gets done.", "Talk through a process. OneFlow drafts the playbook, and your team approves it.", "Describe a process…")
+        case .ask: ("Knowledge\nmoves forward.", "Ask what your organization already knows.", "Ask OrgFlow anything…")
+        case .capture: ("Show how the\nwork gets done.", "Talk through a process. OrgFlow drafts the playbook, and your team approves it.", "Describe a process…")
         case .handoff:
             if let plan = coordinator.interviewPlan {
-                ("Leave it in\ngood hands.", "\(plan.title) is ready: \(plan.questions.count) questions, gaps first. Start talking and OneFlow leads.", "Describe your role…")
+                ("Leave it in\ngood hands.", "\(plan.title) is ready: \(plan.questions.count) questions, gaps first. Start talking and OrgFlow leads.", "Describe your role…")
             } else {
-                ("Leave it in\ngood hands.", "Walk through your role. OneFlow drafts a handoff and onboarding guide for whoever's next.", "Describe your role…")
+                ("Leave it in\ngood hands.", "Walk through your role. OrgFlow drafts a handoff and onboarding guide for whoever's next.", "Describe your role…")
             }
         }
         let update = {
@@ -360,7 +360,7 @@ final class AskViewController: UIViewController {
     }
 
     private func buildHeader() {
-        wordmark.attributedText = NSAttributedString(string: "OneFlow", attributes: [
+        wordmark.attributedText = NSAttributedString(string: "OrgFlow", attributes: [
             .font: ContinuityTheme.Font.display(19, weight: .semibold),
             .foregroundColor: ContinuityTheme.Color.ink,
             .kern: -0.2,
@@ -624,10 +624,10 @@ final class AskViewController: UIViewController {
             muteButton.configuration?.image = UIImage(systemName: muted ? "mic.slash.fill" : "mic.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: 14, weight: .semibold))
             muteButton.configuration?.attributedTitle = AttributedString(muted ? "Unmute" : "Mute", attributes: AttributeContainer([.font: ContinuityTheme.Font.text(16, weight: .semibold)]))
             muteButton.isEnabled = phase != .connecting
-            captionLabel.text = coordinator.interviewCaption ?? (phase == .connecting ? "Connecting to OneFlow…" : nil)
+            captionLabel.text = coordinator.interviewCaption ?? (phase == .connecting ? "Connecting to OrgFlow…" : nil)
             captionLabel.textColor = coordinator.interviewCaptionFromAgent ? ContinuityTheme.Color.ink : ContinuityTheme.Color.teal
         }
-        hintLabel.text = coordinator.usesInterview ? "Tap to talk with OneFlow  ·  Drag to turn" : "Hold to speak  ·  Drag to turn"
+        hintLabel.text = coordinator.usesInterview ? "Tap to talk with OrgFlow  ·  Drag to turn" : "Hold to speak  ·  Drag to turn"
         guard layout != appliedVoiceLayout else { return }
         let first = appliedVoiceLayout == nil
         appliedVoiceLayout = layout
@@ -816,7 +816,7 @@ final class AskViewController: UIViewController {
                 suggestions.setSuggestions(capsules(for: coordinator.mode), animated: true)
             }
         } else {
-            UIAction(title: "Sign in to OneFlow", image: UIImage(systemName: "person.crop.circle")) { [weak self] _ in
+            UIAction(title: "Sign in to OrgFlow", image: UIImage(systemName: "person.crop.circle")) { [weak self] _ in
                 self?.presentSignIn()
             }
         }
@@ -844,7 +844,7 @@ final class AskViewController: UIViewController {
         let kind = coordinator.mode == .handoff ? "handoff guide" : "playbook"
         let alert = UIAlertController(
             title: "Share with the drafting AI?",
-            message: "Your narration is sent to OneFlow's drafting AI to write a \(kind) draft. Nothing is published until someone approves it.",
+            message: "Your narration is sent to OrgFlow's drafting AI to write a \(kind) draft. Nothing is published until someone approves it.",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
@@ -977,9 +977,9 @@ final class AskViewController: UIViewController {
             if heldToTalk { return speech ? "Listening · release to finish" : "Listening · keep holding" }
             return speech ? "Listening · hearing you" : "Listening"
         case .transcribing: return "Finishing transcript"
-        case .interviewing(.connecting): return "Connecting to OneFlow…"
-        case .interviewing(.listening(let muted)): return muted ? "Muted · tap Unmute to keep talking" : "OneFlow is listening · tap Done when finished"
-        case .interviewing(.agentSpeaking): return "OneFlow is speaking"
+        case .interviewing(.connecting): return "Connecting to OrgFlow…"
+        case .interviewing(.listening(let muted)): return muted ? "Muted · tap Unmute to keep talking" : "OrgFlow is listening · tap Done when finished"
+        case .interviewing(.agentSpeaking): return "OrgFlow is speaking"
         default: return nil
         }
     }

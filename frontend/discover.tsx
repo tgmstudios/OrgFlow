@@ -43,7 +43,7 @@ export function SuggestedPlaybooks({
       (e.status === 503 || e.code === "AI_NOT_CONFIGURED")
     ) {
       setError(
-        "AI isn't configured on this server yet, so OneFlow can't analyze your sources. Ask your administrator to enable it.",
+        "AI isn't configured on this server yet, so OrgFlow can't analyze your sources. Ask your administrator to enable it.",
       );
     } else setError(e.message || fallback || "Something went wrong.");
   }
@@ -105,7 +105,7 @@ export function SuggestedPlaybooks({
             <Sparkles size={15} /> Suggested playbooks
           </h2>
           <p className="section-sub">
-            OneFlow reads your indexed email and documents for work your team
+            OrgFlow reads your indexed email and documents for work your team
             repeats. Drafts always need your review before publishing.
           </p>
         </div>
@@ -146,7 +146,7 @@ export function SuggestedPlaybooks({
         <p className="inline-note">
           {indexedCount
             ? "No suggestions yet. Select “Find recurring work” to analyze your indexed sources."
-            : "Index your email and documents first, then OneFlow can suggest playbooks."}{" "}
+            : "Index your email and documents first, then OrgFlow can suggest playbooks."}{" "}
           {!indexedCount && (
             <button className="text-button" onClick={onGoIndex}>
               Go to indexing <ArrowUpRight size={13} />

@@ -1,6 +1,6 @@
 # OrgFlow showcase package
 
-Centre Valley Community Pantry is a carefully constructed fictional nonprofit. The named team, event calendar, donor register, outcomes, emails, procedures and role transitions are original demo content. They do not refer to actual customers or real private data.
+Center Valley Community Pantry is a carefully constructed fictional nonprofit. The named team, event calendar, donor register, outcomes, emails, procedures and role transitions are original demo content. They do not refer to actual customers or real private data.
 
 This package follows the newest OrgFlow web and iOS implementation at the time of creation, including Google Drive and Gmail indexing, sourced Ask responses, Discover, knowledge procedures, human review and publication, checklists, People, Transfer, Knowledge Health, ElevenLabs web voice, and iOS Capture and Library.
 

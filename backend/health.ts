@@ -345,7 +345,7 @@ export function interviewPlan(person: Item, articles: Item[], sources: Item[] = 
     "Ask ONE question at a time and wait for the answer. When an answer is vague, ask a short follow-up (who, when, which tool or file, what goes wrong). Move on once a topic is clear. Never invent facts; if the person does not know, note it as an open item. Be professional and concise.",
     "Interview plan, in priority order:",
     ...questions.map((q, i) => `${i + 1}. ${q.text}`),
-    "Close by summarising what was captured and listing what is still unknown.",
+    "Close by summarizing what was captured and listing what is still unknown.",
   ].join("\n");
   return {
     title: `Handoff interview — ${person.name}`,

@@ -1,12 +1,12 @@
 # OrgFlow website import and access setup
 
-This guide is for the fictional Centre Valley Community Pantry. Use it with the official OrgFlow website and never confuse fictional staff with actual authenticated users.
+This guide is for the fictional Center Valley Community Pantry. Use it with the official OrgFlow website and never confuse fictional staff with actual authenticated users.
 
 ## Actual organization account
 
 The data installation is restricted to an organization whose exact name is:
 
-Centre Valley Community Pantry (OrgFlow Showcase)
+Center Valley Community Pantry (OrgFlow Showcase)
 
 Create that organization in the sign-up flow with an email account controlled by the team, or sign in to the account created for the showcase if one has already been provided.
 

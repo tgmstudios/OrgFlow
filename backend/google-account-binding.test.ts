@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test";
 import { createGoogleHandler } from "./google";
 
-test("Google consent and tokens stay with the originating OneFlow user and organization", async () => {
+test("Google consent and tokens stay with the originating OrgFlow user and organization", async () => {
   const priorId = process.env.GOOGLE_CLIENT_ID, priorSecret = process.env.GOOGLE_CLIENT_SECRET;
   const originalFetch = globalThis.fetch;
   process.env.GOOGLE_CLIENT_ID = "test-client";

@@ -26,8 +26,8 @@ nonisolated enum OrgFlowAPIError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .signInRequired: "Sign in to OneFlow to ask your organization's knowledge."
-        case .unavailable: "Couldn't reach OneFlow. Check your connection and try again."
+        case .signInRequired: "Sign in to OrgFlow to ask your organization's knowledge."
+        case .unavailable: "Couldn't reach OrgFlow. Check your connection and try again."
         case .server(_, let message): message
         case .planRequired(let message): message
         }
@@ -83,7 +83,7 @@ nonisolated struct OrgFlowAPI: Sendable {
             if http.statusCode == 403, body?.decision == "DENY" {
                 throw OrgFlowAPIError.planRequired(message: body?.message ?? "Your plan does not include this action. Choose a plan to continue.")
             }
-            let message = body?.error ?? body?.message ?? "OneFlow returned an error (\(http.statusCode))."
+            let message = body?.error ?? body?.message ?? "OrgFlow returned an error (\(http.statusCode))."
             throw OrgFlowAPIError.server(status: http.statusCode, message: message)
         }
         return data

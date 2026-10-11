@@ -14,7 +14,7 @@ export async function api(path: string, method = "GET", body?: any) {
     body: body ? JSON.stringify(body) : undefined,
   });
   const d = await r.json().catch(() => ({}));
-  // Only an expired OneFlow session signs the user out; other 401s (such as
+  // Only an expired OrgFlow session signs the user out; other 401s (such as
   // "connect Google first") are ordinary errors for the caller to show.
   if (
     r.status === 401 &&
@@ -172,7 +172,7 @@ export const fromDateInput = (value: string) =>
   value ? new Date(value + "T12:00:00").toISOString() : null;
 
 export const GOOGLE_INDEX_CONSENT =
-  "Index the text of recent Google Docs and emails into OneFlow. Indexed text stays in OneFlow, is used to answer questions and suggest playbooks, and may be sent to OneFlow's AI provider (Luminal) for those answers and drafts. You can remove it any time.";
+  "Index the text of recent Google Docs and emails into OrgFlow. Indexed text stays in OrgFlow, is used to answer questions and suggest playbooks, and may be sent to OrgFlow's AI provider (Luminal) for those answers and drafts. You can remove it any time.";
 
 const LIST_NODES = new Set(["bulletList", "orderedList", "taskList"]);
 export function hasListSteps(node: any): boolean {

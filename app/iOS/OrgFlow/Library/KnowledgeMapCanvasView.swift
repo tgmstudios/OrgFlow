@@ -451,7 +451,7 @@ final class KnowledgeMapCanvasView: UIView, UIGestureRecognizerDelegate {
 
     private func updateStyles(animated: Bool) {
         guard let data else { return }
-        let travelling = saving.union(handover.map { h in Set(data.members(of: h.from).map(\.key)) } ?? [])
+        let traveling = saving.union(handover.map { h in Set(data.members(of: h.from).map(\.key)) } ?? [])
         for cluster in data.clusters {
             guard let node = clusterNodes[cluster.id] else { continue }
             let isHot = hot == cluster.id || handover?.to == cluster.id
@@ -478,7 +478,7 @@ final class KnowledgeMapCanvasView: UIView, UIGestureRecognizerDelegate {
                 animated: animated
             )
             node.isSaving = saving.contains(item.key)
-            if let twig = twigs[item.key] { setFlowing(twig, travelling.contains(item.key)) }
+            if let twig = twigs[item.key] { setFlowing(twig, traveling.contains(item.key)) }
         }
         updateEdges()
     }

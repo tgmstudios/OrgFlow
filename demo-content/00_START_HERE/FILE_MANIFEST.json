@@ -1,5 +1,5 @@
 {
-  "pack_name": "OrgFlow Continuity Showcase | Centre Valley Community Pantry",
+  "pack_name": "OrgFlow Continuity Showcase | Center Valley Community Pantry",
   "fictional": true,
   "source_commit_ref": "origin/main at 51a039b (2026-10-11)",
   "opening_clip": "~/Downloads/orgflow_opening_v5.mp4 (19.93s, 1920x1080, 60fps)",
@@ -33,22 +33,22 @@
     {
       "path": "00_START_HERE/START_HERE.md",
       "bytes": 4356,
-      "sha256": "1097a499fba365c3"
+      "sha256": "a1b18dc3ff28ce2d"
     },
     {
       "path": "00_START_HERE/WEBSITE_IMPORT_AND_ACCESS.md",
       "bytes": 6824,
-      "sha256": "0ffc3558e33def9c"
+      "sha256": "697db9201db93ca2"
     },
     {
       "path": "01_Google_Drive/Development/Donation_Register_Example.csv",
-      "bytes": 3392,
-      "sha256": "007b10eed379b709"
+      "bytes": 3367,
+      "sha256": "0fa96600ae3b4e14"
     },
     {
       "path": "01_Google_Drive/Development/Donor_Thank_You_and_Receipts.docx",
       "bytes": 38885,
-      "sha256": "d77145339b86877e"
+      "sha256": "70096ded075e0e9e"
     },
     {
       "path": "01_Google_Drive/Development/Donor_Thank_You_and_Receipts.md",
@@ -57,8 +57,8 @@
     },
     {
       "path": "01_Google_Drive/Development/Donor_Thank_You_and_Receipts.pdf",
-      "bytes": 5209,
-      "sha256": "0656526ff56c1f5b"
+      "bytes": 5213,
+      "sha256": "0fe0adc30c4f9647"
     },
     {
       "path": "01_Google_Drive/Development/Donor_Thank_You_and_Receipts.txt",
@@ -67,13 +67,13 @@
     },
     {
       "path": "01_Google_Drive/Development/Q3_Budget_to_Actual.csv",
-      "bytes": 542,
-      "sha256": "343d4128fa64a196"
+      "bytes": 534,
+      "sha256": "54db0f8763864c9d"
     },
     {
       "path": "01_Google_Drive/Development/Quarterly_Grant_Reporting.docx",
       "bytes": 38744,
-      "sha256": "04ed2efc4701887e"
+      "sha256": "205dbae03fe32e82"
     },
     {
       "path": "01_Google_Drive/Development/Quarterly_Grant_Reporting.md",
@@ -82,8 +82,8 @@
     },
     {
       "path": "01_Google_Drive/Development/Quarterly_Grant_Reporting.pdf",
-      "bytes": 4991,
-      "sha256": "f27ba96862ad7418"
+      "bytes": 4992,
+      "sha256": "19944b1e69f76754"
     },
     {
       "path": "01_Google_Drive/Development/Quarterly_Grant_Reporting.txt",
@@ -97,8 +97,8 @@
     },
     {
       "path": "01_Google_Drive/Governance/Board_Meeting_Preparation.pdf",
-      "bytes": 4331,
-      "sha256": "2b83c97005aa7604"
+      "bytes": 4332,
+      "sha256": "0fa4cde0bedfac99"
     },
     {
       "path": "01_Google_Drive/Governance/Board_Meeting_Preparation.txt",
@@ -107,8 +107,8 @@
     },
     {
       "path": "01_Google_Drive/Governance/Procedure_Review_Tracker.csv",
-      "bytes": 744,
-      "sha256": "07f0967bd821b280"
+      "bytes": 734,
+      "sha256": "f4f7bf2853bc71cf"
     },
     {
       "path": "01_Google_Drive/Operations/Building_Safety_and_Cold_Chain.md",
@@ -117,8 +117,8 @@
     },
     {
       "path": "01_Google_Drive/Operations/Building_Safety_and_Cold_Chain.pdf",
-      "bytes": 4802,
-      "sha256": "4c58b75b699df82f"
+      "bytes": 4804,
+      "sha256": "87b3aac568529e7c"
     },
     {
       "path": "01_Google_Drive/Operations/Building_Safety_and_Cold_Chain.txt",
@@ -132,8 +132,8 @@
     },
     {
       "path": "01_Google_Drive/Operations/Monthly_Volunteer_Scheduling.pdf",
-      "bytes": 4948,
-      "sha256": "6f43c52ed08e18a6"
+      "bytes": 4947,
+      "sha256": "67a78df575127391"
     },
     {
       "path": "01_Google_Drive/Operations/Monthly_Volunteer_Scheduling.txt",
@@ -142,28 +142,28 @@
     },
     {
       "path": "01_Google_Drive/Operations/Volunteer_Availability_October.csv",
-      "bytes": 1755,
-      "sha256": "e5f8ab5c76c443b3"
+      "bytes": 1730,
+      "sha256": "9128cd5f6455d058"
     },
     {
       "path": "01_Google_Drive/Operations/Volunteer_Welcome_and_First_Shift.docx",
       "bytes": 39022,
-      "sha256": "f32a6dd4305fdabb"
+      "sha256": "e897737d5363ae87"
     },
     {
       "path": "01_Google_Drive/Operations/Volunteer_Welcome_and_First_Shift.md",
       "bytes": 3504,
-      "sha256": "71ea82286604d919"
+      "sha256": "25dc255bc5ec396b"
     },
     {
       "path": "01_Google_Drive/Operations/Volunteer_Welcome_and_First_Shift.pdf",
-      "bytes": 5384,
-      "sha256": "a11d886a1a7caa7c"
+      "bytes": 5385,
+      "sha256": "7eb114c73ecd0d5b"
     },
     {
       "path": "01_Google_Drive/Operations/Volunteer_Welcome_and_First_Shift.txt",
       "bytes": 3504,
-      "sha256": "71ea82286604d919"
+      "sha256": "25dc255bc5ec396b"
     },
     {
       "path": "01_Google_Drive/People_And_Transfer/Maria_Reyes_Volunteer_Coordinator_Handoff.md",
@@ -172,8 +172,8 @@
     },
     {
       "path": "01_Google_Drive/People_And_Transfer/Maria_Reyes_Volunteer_Coordinator_Handoff.pdf",
-      "bytes": 5721,
-      "sha256": "408cfcaef0cec6c4"
+      "bytes": 5724,
+      "sha256": "c424418a10822c94"
     },
     {
       "path": "01_Google_Drive/People_And_Transfer/Maria_Reyes_Volunteer_Coordinator_Handoff.txt",
@@ -183,7 +183,7 @@
     {
       "path": "01_Google_Drive/People_And_Transfer/Maya_Chen_Transfer_Guide.docx",
       "bytes": 39285,
-      "sha256": "5c5abc9e4e9d0802"
+      "sha256": "47092ca076d29592"
     },
     {
       "path": "01_Google_Drive/People_And_Transfer/Maya_Chen_Transfer_Guide.md",
@@ -192,8 +192,8 @@
     },
     {
       "path": "01_Google_Drive/People_And_Transfer/Maya_Chen_Transfer_Guide.pdf",
-      "bytes": 5912,
-      "sha256": "df648c2a90df164d"
+      "bytes": 5916,
+      "sha256": "143db4fc2e9f278f"
     },
     {
       "path": "01_Google_Drive/People_And_Transfer/Maya_Chen_Transfer_Guide.txt",
@@ -207,8 +207,8 @@
     },
     {
       "path": "01_Google_Drive/People_And_Transfer/Staff_Ownership_And_Contacts.pdf",
-      "bytes": 3266,
-      "sha256": "e7c2c2fab1d6aca2"
+      "bytes": 3267,
+      "sha256": "aa429dae80d63cb5"
     },
     {
       "path": "01_Google_Drive/People_And_Transfer/Staff_Ownership_And_Contacts.txt",
@@ -222,8 +222,8 @@
     },
     {
       "path": "01_Google_Drive/Programs/Harvest_Dinner_Event_Runbook.pdf",
-      "bytes": 5224,
-      "sha256": "9b0b00e37f45d136"
+      "bytes": 5222,
+      "sha256": "16a521a9c442eb92"
     },
     {
       "path": "01_Google_Drive/Programs/Harvest_Dinner_Event_Runbook.txt",
@@ -232,8 +232,8 @@
     },
     {
       "path": "01_Google_Drive/Programs/Harvest_Dinner_Invitation.pdf",
-      "bytes": 2360,
-      "sha256": "c2d5d3ab8ef489a9"
+      "bytes": 2363,
+      "sha256": "cf1fdfb4b44b9278"
     },
     {
       "path": "01_Google_Drive/Programs/Harvest_Dinner_Invitation.png",
@@ -242,13 +242,13 @@
     },
     {
       "path": "01_Google_Drive/Programs/Harvest_Dinner_Task_Tracker.csv",
-      "bytes": 785,
-      "sha256": "6904746c03a1812b"
+      "bytes": 772,
+      "sha256": "f7131c47a079be1b"
     },
     {
       "path": "01_Google_Drive/Programs/Outcomes_Jul_Sep.csv",
-      "bytes": 1406,
-      "sha256": "4a6ea966c79892a4"
+      "bytes": 1393,
+      "sha256": "3a9288fd4d99b4f2"
     },
     {
       "path": "01_Google_Drive/Programs/Quarterly_Impact_Snapshot.md",
@@ -257,8 +257,8 @@
     },
     {
       "path": "01_Google_Drive/Programs/Quarterly_Impact_Snapshot.pdf",
-      "bytes": 4918,
-      "sha256": "621e0fbcb683f55d"
+      "bytes": 4921,
+      "sha256": "79de8a66c452c035"
     },
     {
       "path": "01_Google_Drive/Programs/Quarterly_Impact_Snapshot.txt",
@@ -268,7 +268,7 @@
     {
       "path": "01_Google_Drive/Programs/Quarterly_Impact_Visual.pdf",
       "bytes": 2585,
-      "sha256": "25275da88c45b5a8"
+      "sha256": "3bdcfe94fa4b9141"
     },
     {
       "path": "01_Google_Drive/Programs/Quarterly_Impact_Visual.png",
@@ -367,8 +367,8 @@
     },
     {
       "path": "03_Event_Calendar/OrgFlow_Example_Calendar.ics",
-      "bytes": 3726,
-      "sha256": "2fab68c4f7567db3"
+      "bytes": 3620,
+      "sha256": "bf0d468c82b5e903"
     },
     {
       "path": "04_Voice_And_iOS/Maria_Reyes_Handoff_Interview.md",
@@ -378,7 +378,7 @@
     {
       "path": "04_Voice_And_iOS/Maya_Handoff_Interview_Transcript.md",
       "bytes": 2462,
-      "sha256": "360827d36a893de5"
+      "sha256": "dfb928724b46e816"
     },
     {
       "path": "04_Voice_And_iOS/Voice_And_iPhone_Demo_Guide.md",
@@ -393,7 +393,7 @@
     {
       "path": "05_Mindmap_Sneak_Peek/Knowledge_Cluster_Concept.json",
       "bytes": 3332,
-      "sha256": "3f5b9ee6452726d6"
+      "sha256": "ea5e8bbbe74a2b4b"
     },
     {
       "path": "05_Mindmap_Sneak_Peek/Knowledge_Cluster_Sneak_Peek.png",
@@ -478,7 +478,7 @@
     {
       "path": "07_Import_And_QA/Google_Drive_And_Gmail_Import_Guide.md",
       "bytes": 3620,
-      "sha256": "7f7117eb3a5f6656"
+      "sha256": "c6e14471706a1ac5"
     },
     {
       "path": "07_Import_And_QA/PDF_First_Page_Review.png",
@@ -493,37 +493,37 @@
     {
       "path": "scripts/build_documents.py",
       "bytes": 9884,
-      "sha256": "5c12d08f2720d092"
+      "sha256": "19efe156fa0d2af4"
     },
     {
       "path": "scripts/build_extras.py",
       "bytes": 6105,
-      "sha256": "3235e7cd4e1823e6"
+      "sha256": "b54b865b0c948317"
     },
     {
       "path": "scripts/build_records.py",
       "bytes": 13020,
-      "sha256": "c666952aac12d688"
+      "sha256": "95c777ff1b145ab5"
     },
     {
       "path": "scripts/install_orgflow_showcase.test.ts",
       "bytes": 6396,
-      "sha256": "eeb7acbfb15a1954"
+      "sha256": "dd7d1636d74abddc"
     },
     {
       "path": "scripts/install_orgflow_showcase.ts",
-      "bytes": 12278,
-      "sha256": "842ed8fcd35b1334"
+      "bytes": 12466,
+      "sha256": "9c25ea44457f8c5d"
     },
     {
       "path": "scripts/showcase_http.test.ts",
       "bytes": 4048,
-      "sha256": "4c773080a7cbc890"
+      "sha256": "c781b668078ac716"
     },
     {
       "path": "scripts/validate_and_manifest.py",
       "bytes": 6372,
-      "sha256": "427b5dcc8de38a1c"
+      "sha256": "9a640959c8cdc958"
     }
   ]
 }

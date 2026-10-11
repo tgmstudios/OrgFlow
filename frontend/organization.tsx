@@ -9,7 +9,7 @@ import {
 } from "./api";
 
 const isShowcaseOrganization = (name: string) =>
-  ["Centre Valley Community Pantry (OneFlow Showcase)", "Centre Valley Community Pantry (OrgFlow Showcase)"].includes(name);
+  ["Center Valley Community Pantry (OrgFlow Showcase)", "Centre Valley Community Pantry (OrgFlow Showcase)"].includes(name);
 
 type Lookups = {
   articles: { id: string; title: string }[];
@@ -192,7 +192,7 @@ export function OrganizationPage({
             {org.role === "admin" && org.inviteCode ? (
               <>
                 <p className="section-sub">
-                  Share this code so teammates can join {org.name.replaceAll("OrgFlow Showcase", "OneFlow Showcase")} when they
+                  Share this code so teammates can join {org.name.replaceAll("OrgFlow Showcase", "OrgFlow Showcase")} when they
                   create their account.
                 </p>
                 <div className="invite-code">
@@ -226,8 +226,8 @@ export function OrganizationPage({
             <div className="card panel-wide">
               <div className="section-heading"><h2>Showcase library</h2></div>
               <p className="section-sub">
-                Import the fictional Centre Valley Pantry documents into this private organization.
-                The documents appear as OneFlow Showcase files with working original links, cited
+                Import the fictional Center Valley Pantry documents into this private organization.
+                The documents appear as OrgFlow Showcase files with working original links, cited
                 source text, reporting relationships, and draft procedures for human review.
                 Google and Gmail remain disconnected until separately authorized.
               </p>

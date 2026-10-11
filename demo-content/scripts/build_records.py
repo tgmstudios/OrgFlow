@@ -201,7 +201,7 @@ events=[
 ("Independent handoff rehearsal","20261112T110000","20261112T120000","Priya Patel","No credentials shared in notes"),
 ("Maya final transition","20261115T160000","20261115T163000","Sam Rivera","Check owners and successor checklist")
 ]
-lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//OrgFlow//Fictional Demo//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:Centre Valley Pantry Example"]
+lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//OrgFlow//Fictional Demo//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:Center Valley Pantry Example"]
 for i,(title,start,end,owner,desc) in enumerate(events,1):
     lines+=["BEGIN:VEVENT",f"UID:orgflow-example-{i:03}@example.org","DTSTAMP:20261011T210000Z",
             f"DTSTART;TZID=America/New_York:{start}",f"DTEND;TZID=America/New_York:{end}",

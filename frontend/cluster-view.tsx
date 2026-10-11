@@ -274,7 +274,7 @@ export function ClusterView({
   const leaving = clusters.filter(
     (c) => c.person && c.person.status !== "active" && (members.get(c.id)?.length || 0) > 0,
   );
-  const travelling = new Set(move?.keys ?? [...saving]);
+  const traveling = new Set(move?.keys ?? [...saving]);
   const spot = move ? new Set([move.from, move.to]) : null;
   const dim = (clusterId: string) => !!spot && !spot.has(clusterId);
   const instant = prefersReducedMotion();
@@ -376,7 +376,7 @@ export function ClusterView({
                       "edge twig tone-" +
                       (clusters.find((c) => c.id === d.ownerId)?.tone || "muted") +
                       (dim(d.ownerId) ? " dim" : "") +
-                      (travelling.has(d.key) ? " flowing" : "")
+                      (traveling.has(d.key) ? " flowing" : "")
                     }
                     initial={{ d: curve(pos.root!, pos.root!, 0) }}
                     animate={{ d: curve(at(d.ownerId), at(d.key), 0.1) }}
@@ -473,7 +473,7 @@ export function ClusterView({
                         (selection?.id === d.key ? " selected" : "") +
                         (drag?.key === d.key && drag.moved ? " lifted" : "") +
                         (dim(d.ownerId) ? " dim" : "") +
-                        (travelling.has(d.key) ? " travelling" : "")
+                        (traveling.has(d.key) ? " traveling" : "")
                       }
                       onPointerDown={(e) => down(e, "doc", d.key)}
                     >

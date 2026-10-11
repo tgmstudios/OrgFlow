@@ -11,7 +11,7 @@ The emails are original .eml files plus .txt companions. To demonstrate Gmail in
 The calendar .ics file provides a coherent set of fictional event dates. It does not establish Google Calendar synchronization because that integration is not implemented.
 
 ## Suggested Drive hierarchy
-Make a Drive folder named "OrgFlow Showcase - Centre Valley Pantry" and preserve these subfolders: Operations, Development, Programs, Governance, People And Transfer.
+Make a Drive folder named "OrgFlow Showcase - Center Valley Pantry" and preserve these subfolders: Operations, Development, Programs, Governance, People And Transfer.
 
 Upload all files in the Drive bundle. Open the .txt version of key procedures and convert them into native Google Docs where possible. Keep the matching PDFs nearby for realistic opening and browsing.
 

@@ -74,7 +74,7 @@ export function IndexSources({
   async function removeAll() {
     if (
       !confirm(
-        "Remove all indexed email and document text from OneFlow? Original files and emails stay in Google.",
+        "Remove all indexed email and document text from OrgFlow? Original files and emails stay in Google.",
       )
     )
       return;
@@ -100,7 +100,7 @@ export function IndexSources({
         <h2>Index email &amp; document text</h2>
       </div>
       <p className="section-sub">
-        Lets OneFlow answer questions from your real documents and email, and
+        Lets OrgFlow answer questions from your real documents and email, and
         suggest playbooks for work your team repeats.
       </p>
       {!connected && (
@@ -217,7 +217,7 @@ export function IndexSources({
               <div className="row-main">
                 <strong>{s.title}</strong>
                 <small>
-                  {s.provider === "OrgFlow Showcase" ? "OneFlow Showcase" : s.provider}
+                  {s.provider === "OrgFlow Showcase" ? "OrgFlow Showcase" : s.provider}
                   {s.from && " · " + s.from}
                   {" · "}
                   {fullDate(s.updatedAt)}

@@ -60,7 +60,7 @@ graph={
  "schema":"orgflow-knowledge-graph-concept-v1",
  "status":"ILLUSTRATIVE DESIGN FALLBACK - live Clusters separately implemented in latest main",
  "warning":"This SVG/JSON is an illustrative fallback. The separately implemented in-app Knowledge Clusters view must be captured directly for claims about shipped functionality.",
- "organization":"Centre Valley Community Pantry (fictional)",
+ "organization":"Center Valley Community Pantry (fictional)",
  "nodes":[{"id":n,"title":name,"type":typ,"subtitle":desc,"x":x,"y":y} for n,name,typ,desc,x,y in nodes],
  "edges":[{"source":a,"target":b,"relationship":relation} for a,b,relation in edges]
 }

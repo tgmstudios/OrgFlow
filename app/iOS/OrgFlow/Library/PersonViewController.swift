@@ -95,7 +95,7 @@ final class PersonViewController: UIViewController {
 
         // Transfer
         stack.addArrangedSubview(MapUI.caption("Handoff"))
-        stack.addArrangedSubview(MapUI.body("Before \(person.firstName) moves on, capture what only they know: a voice interview that targets what's undocumented, or an outline built only from OneFlow's records."))
+        stack.addArrangedSubview(MapUI.body("Before \(person.firstName) moves on, capture what only they know: a voice interview that targets what's undocumented, or an outline built only from OrgFlow's records."))
         stack.setCustomSpacing(16, after: stack.arrangedSubviews.last!)
 
         stack.addArrangedSubview(MapUI.button("Plan a voice interview", symbol: "waveform", prominent: true, action: UIAction { [weak self] _ in

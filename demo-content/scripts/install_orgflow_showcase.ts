@@ -26,8 +26,8 @@ const MAIL = join(ROOT, "02_Gmail_Examples");
 const REV = "aae1b41";
 const GITHUB = `https://raw.githubusercontent.com/tgmstudios/c0mpiled/${REV}/demo-content/`;
 const SHOWCASE_ORGANIZATIONS = new Set([
-  "Centre Valley Community Pantry (OneFlow Showcase)",
-  "Centre Valley Community Pantry (OrgFlow Showcase)", // Existing demo workspaces
+  "Center Valley Community Pantry (OrgFlow Showcase)",
+  "Centre Valley Community Pantry (OrgFlow Showcase)", // Workspaces created before the spelling fix
 ]);
 
 type PersonSeed = {
@@ -104,7 +104,7 @@ export async function installShowcase(store: Store, orgId: string, options: { ap
     throw new Error("Refusing to import into default or invalid organization.");
   const org = await store.get("orgs", orgId);
   if (!org || !SHOWCASE_ORGANIZATIONS.has(String(org.name)))
-    throw new Error("Organization must have exact name Centre Valley Community Pantry (OneFlow Showcase); refusing to modify another workspace.");
+    throw new Error("Organization must have exact name Center Valley Community Pantry (OrgFlow Showcase); refusing to modify another workspace.");
   const allFiles = await recursiveFiles(DRIVE);
   const listed = allFiles.filter((p) => ["pdf","docx","md","csv","png"].includes(extname(p).slice(1)));
   const sources = allFiles.filter((p) => [".md",".csv"].includes(extname(p)));
@@ -141,9 +141,9 @@ export async function installShowcase(store: Store, orgId: string, options: { ap
         if (old) continue; // preserve user's organizational folder changes
         await scoped.put("files", {
           id, synthetic:true, name:basename(p),
-          provider:"OneFlow Showcase",
+          provider:"OrgFlow Showcase",
           originalPath,
-          orgflowPath:"/OneFlow Showcase"+originalPath,
+          orgflowPath:"/OrgFlow Showcase"+originalPath,
           url:GITHUB+srcRel.split("/").map(encodeURIComponent).join("/"),
           type:extname(p).slice(1),
           updatedAt:"2026-10-11T21:00:00.000Z",
@@ -158,7 +158,7 @@ export async function installShowcase(store: Store, orgId: string, options: { ap
         if (before && !before.synthetic) throw new Error("Refusing to replace a real indexed source.");
         if (before) continue; // preserve reassignment and indexed source version
         await op.saveSource({
-          id, title: shaName(basename(p)), provider:"OneFlow Showcase",
+          id, title: shaName(basename(p)), provider:"OrgFlow Showcase",
           text:(await readFile(p,"utf8")).slice(0,45000),
           url:GITHUB+(`01_Google_Drive/${rel}`).split("/").map(encodeURIComponent).join("/"),
           updatedAt:"2026-10-11T21:00:00.000Z",

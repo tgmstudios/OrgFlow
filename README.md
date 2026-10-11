@@ -68,7 +68,7 @@ PDFs, CSVs, email examples, a calendar and a verified 90-second ad handoff.
 It is not a customer dataset.
 
 An admin of a newly registered
-`Centre Valley Community Pantry (OrgFlow Showcase)` organization can visit
+`Center Valley Community Pantry (OrgFlow Showcase)` organization can visit
 Organization and choose **Load showcase files and staff**. This imports linked
 original documents and searchable synthetic source text, plus role ownership,
 reporting lines, successors and draft playbooks. It never touches the shared demo

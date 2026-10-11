@@ -39,7 +39,7 @@ nonisolated enum PlaybookDrafter {
             let kind = mode == .handoff ? "a role handoff guide (with a first-30-days onboarding checklist for my successor)" : "a step-by-step process playbook (SOP)"
             return """
                 \(isFirst ? "Draft" : "Revise the same draft into") \(kind) from this reviewed voice interview between \
-                OneFlow (the interviewer) and me. Facts come only from what I said; the interviewer's questions are context. \
+                OrgFlow (the interviewer) and me. Facts come only from what I said; the interviewer's questions are context. \
                 Preserve clear facts, label uncertain details for review, and add open questions where information is missing.
 
                 \(narration)

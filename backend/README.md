@@ -39,7 +39,7 @@ Copy `.env.example` to `.env` (Git-ignored, mode 0600; Bun loads it automaticall
 
 Also read by the code, not in `.env.example`: `REVIEW_INTERVAL_DAYS`, `MONETIZATION_APP_ID`, `MONETIZATION_ENFORCE`.
 
-## Behaviour notes
+## Behavior notes
 
 - PostgreSQL is required. For local development, start `docker compose up -d`, copy `.env.example` to `.env`, then run `bun run prisma:migrate:deploy`. The Docker image includes pgvector. Prisma migrations install the extension and create the app table.
 - To import the legacy SQLite database, make a backup first, then set `SQLITE_SOURCE` and `DATABASE_URL` and run `bun run db:import:sqlite`. The importer is idempotent and upserts by `(kind, id)`.

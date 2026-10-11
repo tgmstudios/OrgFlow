@@ -13,7 +13,7 @@ Compact, current memory for humans and agents (Claude Code, Codex). Product brie
 ## Confirmed human decisions
 
 Product and demo
-- Product is OrgFlow; the original brief is preserved in MVP.md. Hackathon priority: presentation-ready and sellable; work in interview style.
+- Product is OrgFlow (a "OneFlow" rename was reverted 2026-10-11). American spelling everywhere: the demo pantry is "Center Valley", never "Centre". The original brief is preserved in MVP.md. Hackathon priority: presentation-ready and sellable; work in interview style.
 - Capture (source content to employee-approved playbooks) is the demo centerpiece; donor stewardship is the first demo process.
 - Demo a live connection (Gmail and Google Drive, personal Google login); file upload is the fallback.
 - Visual direction: modern, expressive, off-white background, purple accent, professional tone for chat and voice. Primary color #7753CE; keep the teal/lavender/apricot thread palette; no dark mode or theme toggle. Fonts: Newsreader headlines, Geist UI, Geist Mono metadata.
@@ -96,7 +96,7 @@ Deployment
 
 ## Showcase (merged into main 2026-10-11)
 
-- `feat/orgflow-demo-showcase` is merged: `demo-content/` (fictional Centre Valley Community Pantry corpus), an admin-confirmed importer (Organization > Showcase library) that only runs for an organization named `Centre Valley Community Pantry (OrgFlow Showcase)` and refuses the shared workspace, and a People "Reports to" field (same-org, no cycles). Deploy syncs `demo-content/`. See `demo-content/00_START_HERE/WEBSITE_IMPORT_AND_ACCESS.md`.
+- `feat/orgflow-demo-showcase` is merged: `demo-content/` (fictional Center Valley Community Pantry corpus), an admin-confirmed importer (Organization > Showcase library) that only runs for an organization named `Center Valley Community Pantry (OrgFlow Showcase)` and refuses the shared workspace, and a People "Reports to" field (same-org, no cycles). Deploy syncs `demo-content/`. See `demo-content/00_START_HERE/WEBSITE_IMPORT_AND_ACCESS.md`.
 - Shared demo workspace seed (`backend/samples.ts`, meta `samples-v2`): the story is Maria Reyes (Volunteer Coordinator, leaving 2026-10-31, successor Jordan Lee, both reporting to Sam Rivera); Maya Chen was removed from the demo seed and her sample playbooks moved to Priya Patel. Eleven of Maria's showcase documents and emails are indexed with owners, and five PDFs appear in Files. The upgrade only changes untouched sample records. Verified on an in-memory store (fresh and upgrade); not yet verified against production PostgreSQL. The showcase importer still includes Maya as a second leaving person.
 
 ## Handoff notes

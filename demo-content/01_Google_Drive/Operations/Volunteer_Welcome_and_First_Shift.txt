@@ -4,7 +4,7 @@ Approved: October 6, 2026
 Next review: January 6, 2027
 
 ## Why this guide exists
-A first shift should not depend on which coordinator happens to be working that morning. Centre Valley Community Pantry is a fictional nonprofit created for an OrgFlow demonstration. This guide describes one consistent welcome experience so a new volunteer can find the right person, feel comfortable asking questions, and begin useful work safely. No real volunteers or households are represented.
+A first shift should not depend on which coordinator happens to be working that morning. Center Valley Community Pantry is a fictional nonprofit created for an OrgFlow demonstration. This guide describes one consistent welcome experience so a new volunteer can find the right person, feel comfortable asking questions, and begin useful work safely. No real volunteers or households are represented.
 
 ## Before the first shift
 Jordan Lee sends the welcome email at least two days before arrival. It confirms the shift date, side entrance, parking beside the blue loading door, closed-toe shoes, and a contact for schedule changes. Volunteers can ask for accommodations privately. No health information belongs in shared scheduling files.
