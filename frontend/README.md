@@ -25,7 +25,7 @@ bun test server.test.ts
 - `article-meta.tsx`: article owner and review metadata.
 - `motion.tsx`: shared animation helpers (built on `motion`; respects reduced motion).
 - `ambient.tsx`: aurora background, assistant orb, typing placeholder, live voice waveform.
-- `map.tsx`, `map-store.ts`: Knowledge Map (`/map`): documents clustered into groups, drag to regroup, drop a group on a person to hand it over. Map state (groups, owners, handovers) is stored per organization in the browser's localStorage until the API stores it.
+- `knowledge-map.tsx`: Knowledge map (`/knowledge-map`) with two views: Clusters (`cluster-view.tsx`: one cluster per person plus Unassigned, from recorded owners only; drag an item to reassign, drop a person on another to hand everything over) and List (owner pickers per item).
 - `server.ts`: static/proxy server.
 
 Voice needs microphone permission and an authenticated session token from `GET /api/voice/session-token`; after a session, staff edit the transcript, consent to AI drafting, and create a draft. Google and AI features need the backend configured (see [backend README](../backend/README.md)). Sample workspace content is labelled demo data.

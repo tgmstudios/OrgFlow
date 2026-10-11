@@ -8,16 +8,9 @@ import {
   Mic,
   Plus,
   Sparkles,
-  Waypoints,
 } from "lucide-react";
 import { api, fullDate, type Article, type InterviewPlan, type Person } from "./api";
 import { Collapse } from "./motion";
-
-/** What a person holds on the knowledge map: their groups and those groups' documents. */
-export type Mapped = (personId: string) => {
-  groups: { id: string; name: string }[];
-  docs: { key: string; kind: string; id: string; title: string; url?: string }[];
-};
 
 const statusLabel: Record<Person["status"], string> = {
   active: "Active",
@@ -38,12 +31,8 @@ function PersonDetail({
   onRefresh,
   onOpenArticle,
   onOpenRun,
-  mapped,
-  onOpenMap,
   onStartInterview,
 }: {
-  mapped?: Mapped;
-  onOpenMap?: () => void;
   person: Person;
   people: Person[];
   articles: Article[];
@@ -70,7 +59,6 @@ function PersonDetail({
     } | null>(null);
   const others = people.filter((p) => p.id !== person.id);
   const owned = articles.filter((a) => a.ownerId === person.id);
-  const held = mapped?.(person.id);
   const guide = articles.find((a) => a.id === person.handoffArticleId);
   const successor = people.find((p) => p.id === (successorId || person.successorId));
   async function save(e: React.FormEvent) {
@@ -263,49 +251,6 @@ function PersonDetail({
               ))}
             </div>
           )}
-          {held && (
-            <div className="owned mapped">
-              <strong>
-                Holds on the knowledge map ({held.groups.length}{" "}
-                {held.groups.length === 1 ? "group" : "groups"}, {held.docs.length}{" "}
-                {held.docs.length === 1 ? "document" : "documents"})
-              </strong>
-              <div className="chips">
-                {held.groups.map((g) => (
-                  <span className="chip" key={g.id}>
-                    {g.name}
-                  </span>
-                ))}
-              </div>
-              {held.docs.map((d) =>
-                d.kind === "article" ? (
-                  <button
-                    className="text-button"
-                    key={d.key}
-                    type="button"
-                    onClick={() => onOpenArticle(d.id)}
-                  >
-                    <BookOpen size={13} /> {d.title}
-                  </button>
-                ) : (
-                  <a
-                    className="text-button"
-                    key={d.key}
-                    href={d.url}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <FileText size={13} /> {d.title} <ArrowUpRight size={12} />
-                  </a>
-                ),
-              )}
-              {onOpenMap && (
-                <button className="text-button" type="button" onClick={onOpenMap}>
-                  <Waypoints size={13} /> Open the knowledge map
-                </button>
-              )}
-            </div>
-          )}
         </form>
         <div
           className={
@@ -432,25 +377,21 @@ function PersonDetail({
 export function PeoplePage({
   people,
   articles,
+  selectedPersonId,
   onRefresh,
   onOpenArticle,
   onOpenRun,
-  mapped,
-  onOpenMap,
-  initialPersonId,
   onStartInterview,
 }: {
-  mapped?: Mapped;
-  onOpenMap?: () => void;
-  initialPersonId?: string | null;
   people: Person[];
   articles: Article[];
+  selectedPersonId?: string | null;
   onRefresh: () => Promise<void> | void;
   onOpenArticle: (id: string) => void;
   onOpenRun: (id: string) => void;
   onStartInterview: (plan: InterviewPlan) => void;
 }) {
-  const [selectedId, setSelectedId] = useState<string | null>(initialPersonId ?? null),
+  const [selectedId, setSelectedId] = useState<string | null>(selectedPersonId || null),
     [adding, setAdding] = useState(false),
     [name, setName] = useState(""),
     [role, setRole] = useState(""),
@@ -491,8 +432,6 @@ export function PeoplePage({
         onRefresh={onRefresh}
         onOpenArticle={onOpenArticle}
         onOpenRun={onOpenRun}
-        mapped={mapped}
-        onOpenMap={onOpenMap}
         onStartInterview={onStartInterview}
       />
     );

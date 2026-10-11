@@ -45,10 +45,10 @@ Each entry lists the **current default** — what the code does until someone de
     drafts afterwards. Adopt ElevenLabs on iOS (adds their SDK and sends live audio to them)?
     Default: on-device transcription.
 
-13. **Knowledge Map storage and owner reassignment.** Map groups, group owners and handovers live in each
-    browser's localStorage (frontend only); a handover does not change `article.ownerId`, because the article
-    PATCH resets a published playbook to draft on any change, including owner. Store the map server-side and let
-    owner changes keep publish status? Default: browser-only, article owners unchanged.
+13. **Owner changes unpublish playbooks.** The article PATCH returns a published playbook to draft on any
+    change, including a new owner, so reassigning or handing over knowledge (Knowledge map list and clusters)
+    sends published playbooks back for re-approval. Should owner/review-date changes keep publish status?
+    Default: return to draft; the handover preview warns.
 14. **Token encryption key.** Google sessions are stored encrypted. Set `TOKEN_ENCRYPTION_KEY` in production
     secrets and back it up with the database; otherwise a key file is generated in `backend/data/`.
     Default: generated key file.

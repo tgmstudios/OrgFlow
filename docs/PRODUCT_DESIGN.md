@@ -42,6 +42,10 @@ Answers are grounded in approved articles plus indexed email and document excerp
 
 People records (name, role, email) are separate from sign-in accounts. Marking a person as leaving lets staff generate a handoff guide from the playbooks they own, emails they sent (from the index) and notes: responsibilities, timing, relationships, where things live, work in progress, a first-30-days checklist and review questions. It is a draft needing approval. A successor onboarding checklist can then be started from the approved guide.
 
+## Knowledge map
+
+The Knowledge map groups playbooks and indexed source material under their recorded owner, shows unassigned items, and supports manual reassignment. Staff can open an owner's People record to review knowledge and continue Transfer. Assigned indexed sources are included in that person's AI handoff draft; ownership is preserved on reindex.
+
 ## Global agent
 
 Launcher at the top left opens a centered modal, dockable to the bottom right. Chat and Voice are tabs sharing one conversation. Voice uses a private ElevenLabs realtime agent through an authenticated short-lived session token; the key stays server-side.

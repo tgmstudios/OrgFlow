@@ -17,6 +17,7 @@ Product and demo
 - Capture (source content to employee-approved playbooks) is the demo centerpiece; donor stewardship is the first demo process.
 - Demo a live connection (Gmail and Google Drive, personal Google login); file upload is the fallback.
 - Visual direction: modern, expressive, off-white background, purple accent, professional tone for chat and voice. Primary color #7753CE; keep the teal/lavender/apricot thread palette; no dark mode or theme toggle. Fonts: Newsreader headlines, Geist UI, Geist Mono metadata.
+- Build an organization-wide knowledge map showing knowledge alongside its owner, with a direct path to review and transfer it when a person leaves. Source files without ownership metadata must not be assigned by inference.
 - Reference competitor: process.st; the user wants a better version for this use case.
 - Judging time was never recorded; do not assume a fresh time window.
 - No accessibility work and no tests unless needed for personal verification.
@@ -58,7 +59,8 @@ Backend (`backend/`, Bun, port 3003)
 - API contract for the new routes: Swagger at `/docs` and `/openapi.json`.
 
 Web (`frontend/`, React/Bun, port 3002; production at https://orgflow.dev/a/)
-- Home, Files, Knowledge Base, Knowledge Map (`/map`, browser-stored; OPEN_QUESTIONS 13), plus Discover, indexing consent, Checklists, People, Organization views and article owner/review metadata. ElevenLabs live voice interview (WebRTC session token, mute control), editable transcript, consent, then draft. Mobile voice fix deployed in `070ce2e`; the user's device retest is not recorded.
+- Web redesign (2026-10-11): glass surfaces, ambient gradient, iridescent accents, page transitions, breathing assistant orb, typing placeholder, live voice waveform, glowing status indicators.
+- Home, Files, Knowledge Base, Knowledge map, plus Discover, indexing consent, Checklists, People, Organization views and article owner/review metadata. Knowledge map groups playbooks and indexed sources by manually assigned owner, supports reassignment (List view, or drag-and-drop in the interactive Clusters view, which also hands a person's items to another in one step; owner changes return published playbooks to draft, OPEN_QUESTIONS 13), and links to People handoff; assigned sources are included in AI handoff drafts and source ownership persists on reindex. Implemented; typecheck and production build passed, no tests run. Not deployed. ElevenLabs live voice interview (WebRTC session token, mute control), editable transcript, consent, then draft. Mobile voice fix deployed in `070ce2e`; the user's device retest is not recorded.
 
 iOS (`app/iOS`)
 - Ask, Capture and Handoff modes; Library (Knowledge, Files, Upcoming, Checklists); sign-in sheet; billing denial shows "See plans". Base URL from Info.plist `OrgFlowBaseURL` (default `https://orgflow.dev`). Optional on-device Foundation Models drafting is off by default. Provider connection stays on the web. Bundle ID `ryannair05.OrgFlow`. Builds; device behaviour not verified.
@@ -68,6 +70,8 @@ AI providers
 - ElevenLabs Conversational AI private agent "OrgFlow Voice" (server-held key and agent ID); unauthenticated calls return 401.
 
 Deployment
+- Production host (moved 2026-10-11 to AWS account 255260119952, us-east-2): EC2 `i-0b2f19dba772e2f22` (t3.micro, Amazon Linux 2023), Elastic IP `3.12.200.93`, SG `orgflow-web`, instance profile `orgflow-backend-monetization`. SSH: `ssh -i orgflow-prod-key.pem ec2-user@3.12.200.93` (key is git-ignored, kept in the repo root locally and in the GitHub secret `EC2_SSH_KEY`). App in `/opt/app`, units `backend`/`frontend`/`landing`, nginx on port 80 (Cloudflare terminates TLS). The previous host (old account, `3.140.197.206`, `hackathon-landing-app-key.pem`) is retired but not terminated.
+- Monetization: AWS App Monetization app `01a12cef6e537c4288f0b6931dcaeeca` (account 255260119952, us-west-2 control plane, sandbox ARN in `PROD_MONETIZATION_APP_ID`); 3 draft plans without quotas, enforcement off, seller/Stripe registration not done yet.
 - Pushing to `main` deploys via `.github/workflows/deploy.yml` to the existing EC2 server (Region us-east-2 from local config) behind Cloudflare and Nginx (`deploy/`). Server `.env` is preserved across deploys. Production OAuth redirect: `https://orgflow.dev/auth/google/callback`; whether it is saved in the Google client was last reported as missing (`redirect_uri_mismatch`), current status not verified. Google app is in Testing, test users only. Google project `orgflow-20261011`.
 - Microsoft 365, calendar sync (events are synthetic), extraction caching and embeddings: not built.
 
