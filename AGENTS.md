@@ -1,8 +1,28 @@
-# Shared product and collaboration memory
+# OrgFlow agent instructions
 
-Before product work, read [docs/SHARED_MEMORY.md](docs/SHARED_MEMORY.md) for human decisions, current state, open questions, and handoff details, and [docs/MVP.md](docs/MVP.md) for the original OrgFlow brief.
+OrgFlow is institutional memory for nonprofits (Connect, Capture, Ask, Transfer). Before product work read, in order:
 
-Keep the shared memory current when consequential decisions change or work is handed off. Clearly distinguish confirmed human decisions, agent proposals, unverified claims, and implemented behavior. Never store secrets or private source content in memory. Latest explicit user instructions take precedence over saved memory.
+1. [README.md](README.md): what exists, quick start, demo walkthrough.
+2. [docs/SHARED_MEMORY.md](docs/SHARED_MEMORY.md): confirmed human decisions, current state and verification status, superseded decisions, handoff notes.
+3. [docs/OPEN_QUESTIONS.md](docs/OPEN_QUESTIONS.md): **ask the human when a task touches an open question; never decide one silently.** Quote the question and its current default. Record new questions there; once answered, record the answer in SHARED_MEMORY.md and remove the question.
+
+Keep SHARED_MEMORY.md current and short: rewrite rather than append logs, and distinguish confirmed decisions, agent assumptions, implemented behavior and verified behavior ("not verified" when unsure). The latest explicit user instruction beats saved memory.
+
+## Repo layout
+
+- `backend/`: Bun API (articles, organizations, Google indexing, Discover, checklists, people/Transfer, Ask/draft agent, billing); see [backend/README.md](backend/README.md).
+- `frontend/`: React/Bun web app served at `/a/`; see [frontend/README.md](frontend/README.md).
+- `app/iOS/`: UIKit iOS app (Ask, Capture, Handoff, Library, Metal knot); Xcode project `OrgFlow.xcodeproj`.
+- `deploy/` and `.github/workflows/deploy.yml`: Nginx config and deployment. Pushing to `main` deploys production; confirm with the human first.
+- `docs/`: product docs. `landing/`: separate placeholder.
+
+Commands from the repo root: `bun run install:app`, `bun run dev`, `bun run typecheck`, `bun run test`, `bun run build`.
+
+## Conventions
+
+- Use Bun, not Node. Bun conventions are in `backend/CLAUDE.md` (the same text is in `frontend/CLAUDE.md` and `landing/CLAUDE.md`).
+- Never put secrets, tokens, private email content or donor data in code, docs, memory or logs. Credentials live only in Git-ignored `backend/.env` and GitHub Actions secrets.
+- AI output is always a draft; publishing is an explicit human action.
 
 <!-- BEGIN AWS Agent Toolkit rules -->
 # AWS Guidance for the new AWS experience

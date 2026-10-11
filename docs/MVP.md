@@ -37,18 +37,6 @@ Become the permanent institutional memory of every nonprofit, preserving operati
 
 We turn scattered nonprofit emails, documents, and employee knowledge into a living AI-powered playbook that survives staff turnover.
 
-## Hackathon scope
+## Hackathon scope and status
 
-The original MVP above is the broader product direction. The current demo focuses on **Capture**, with live **Gmail and Google Drive** connections and an **upload fallback**. See [shared memory](SHARED_MEMORY.md) for decisions, proposals, and implementation status.
-
-## Luminal Flash in the MVP
-
-The team has substantial free Luminal Flash credits (user-reported). Plan to use them for the AI processing inside **Capture**, starting with the donor stewardship demo. This is a proposed integration design, not implemented behavior. See [the integration plan](LUMINAL_FLASH.md) for the pipeline, verification requirements, and acceptance criteria.
-
-Selected Gmail messages / Drive documents / uploaded text → extract source-backed workflow facts → build a searchable index → draft a donor stewardship playbook → employee reviews citations, fills gaps, and approves.
-
-Luminal's proposed job is extracting facts and drafting the playbook. Embeddings can also use Flash if its available API and models support them; indexing and source storage remain application responsibilities. Existing credits should fund development, evaluation, and demo generation without making the product dependent on permanent free inference.
-
-## Product design and build scope
-
-The user-facing layout and authoring decisions are consolidated in [the product design brief](PRODUCT_DESIGN.md): AI-first Home, external Files explorer, server-hosted Knowledge Base, and a global chat/voice agent. The user authorized building both frontend and backend with subagents and adding Swagger API documentation. See shared memory for implementation status and assumptions.
+The sections above are the broader product direction. The current build implements Connect (Google Drive and Gmail only; Microsoft 365 not built), Capture, Ask and Transfer on web and iOS. For what exists and how to run or demo it, see the [README](../README.md) and its [demo walkthrough](../README.md#demo-walkthrough). Decisions and verification status: [shared memory](SHARED_MEMORY.md). Design: [product design brief](PRODUCT_DESIGN.md). AI provider notes: [Luminal](LUMINAL_FLASH.md). Unresolved questions: [open questions](OPEN_QUESTIONS.md).

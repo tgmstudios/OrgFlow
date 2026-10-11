@@ -1,51 +1,61 @@
-# OrgFlow build brief
+# OrgFlow design brief
 
-Date: 2026-10-11. Confirmed decisions from the human interview unless marked as an assumption. Full chronology: [shared memory](SHARED_MEMORY.md). Original vision: [MVP](MVP.md).
+Confirmed human decisions unless marked as an assumption. Decisions and state: [shared memory](SHARED_MEMORY.md). Original vision: [MVP](MVP.md). Open questions: [OPEN_QUESTIONS](OPEN_QUESTIONS.md).
 
 ## Visual direction
 
-Modern and expressive. Off-white backgrounds and purple accents. Professional chat and voice tone. Main navigation is a left sidebar: Home, Files, Knowledge Base.
+Modern and expressive. Off-white backgrounds, purple accents, professional chat and voice tone. Left sidebar navigation: Home, Files, Knowledge Base, Checklists, People, Organization.
 
 ## Home
 
-AI chat is the primary experience, using a “How can I help?” prompt. Recent files and upcoming events appear below chat. The calendar supports a month grid and agenda list with a toggle. Including both connected meetings and operational deadlines is a working interpretation of the user's “yes,” not an explicit selection.
+AI chat is primary ("How can I help?"). Recent files and upcoming events sit below it; the calendar has a month grid and agenda list with a toggle. Calendar events are synthetic samples; no calendar sync exists.
 
-## Files
+## Organizations and roles
 
-Index files across providers; originals remain in Google Drive, OneDrive, SharePoint, and similar systems. Start from each provider's native folder structure. Staff can reorganize links inside OrgFlow without moving source files. Clicking a file opens its original provider.
+Each organization's data is isolated. Sign-up creates a new organization (the creator is admin) or joins one by invite code (member); sign-up with neither joins the shared demo workspace, which carries clearly labelled sample playbooks and people. Admins see and rotate the invite code. An audit log records publishing, reviews, runs, indexing and handoffs. Whether new sign-ups should default to a private organization, and who may approve, are open questions.
 
-Gmail and Google Drive were selected for the first live demo; other providers are product direction rather than confirmed live MVP integrations. Donor stewardship remains the demo process.
+## Connect and Files
 
-## Knowledge Base
+Files are an index across providers; originals stay in Google Drive and similar systems. Start from the provider's folder structure; staff can rearrange links inside OrgFlow only. Clicking a file opens the original provider. Gmail and Google Drive (read-only OAuth) are the live providers; Outlook, SharePoint and OneDrive are product direction, not built.
 
-OrgFlow hosts all knowledge-base content on its servers. PostgreSQL is the user's probable database choice. Categories appear in a sidebar and staff can create and rename them.
+Indexing is explicit and consented: staff choose to index the text of recent Google Docs and emails. Indexed text stays in OrgFlow, feeds Ask and Discover, may be sent to the AI provider (Luminal), and can be removed per source or entirely.
 
-Support manual authoring, AI assistance, drafting from connected sources, and knowledge capture through chat/voice. Articles use rich text. Autosave edits as drafts; publishing is a separate human action. Any staff member may approve and publish. Agent-created content and changes require approval before publication.
+## Knowledge Base and approval
+
+OrgFlow hosts all knowledge-base content. Categories form a sidebar; staff create and rename them. Articles are rich text, authored manually, drafted by AI from sources, or captured via chat/voice. Edits autosave as drafts; Publish is a separate human action and preserves a published snapshot. Any staff member may approve and publish. Agent-created content always arrives as a draft.
+
+## Capture: Discover, drafting and living playbooks
+
+- Discover scans indexed emails and documents for recurring workflows and proposes candidate playbooks with evidence. Staff can draft a playbook from a candidate (saved as a draft article) or dismiss it.
+- Voice capture: on the web, a live ElevenLabs interview produces an editable transcript, then (after consent) a draft; on iOS, on-device transcription feeds the drafter.
+- Playbooks have an owner and a review date (90 days by default). The owner confirms a playbook is still accurate; overdue ones show as "due for review".
+
+## Checklists
+
+A published playbook's list items become a runnable checklist (steps, assignee, due date, per-step notes and completion). Runs complete automatically when all steps are done.
+
+## Ask
+
+Answers are grounded in approved articles plus indexed email and document excerpts retrieved by keyword (BM25). Citations are labelled by source type (article, email excerpt, document excerpt, file location). Drafts are used only when explicitly selected and are marked unapproved.
+
+## Transfer: people and handoff
+
+People records (name, role, email) are separate from sign-in accounts. Marking a person as leaving lets staff generate a handoff guide from the playbooks they own, emails they sent (from the index) and notes: responsibilities, timing, relationships, where things live, work in progress, a first-30-days checklist and review questions. It is a draft needing approval. A successor onboarding checklist can then be started from the approved guide.
 
 ## Global agent
 
-Launcher at the top left. Open a centered modal with the option to dock at the bottom right. Chat and Voice are tabs in the same window and preserve the conversation on switching. Live spoken interviews with follow-up questions are the agent's stated interpretation of an ambiguous “yes”; voice-note-only behavior was not chosen explicitly.
+Launcher at the top left opens a centered modal, dockable to the bottom right. Chat and Voice are tabs sharing one conversation. Voice uses a private ElevenLabs realtime agent through an authenticated short-lived session token; the key stays server-side.
 
-## Authorized implementation choices
+## Implementation choices (agent assumptions)
 
-The user requested subagents, frontend and backend implementation, reasonable assumptions along the way, and Swagger documentation once the backend is ready.
-
-- React through Bun HTML imports, following the repository's Bun instructions.
-- Tiptap open-source editor with rich-text, image, and checklist extensions. Save structured JSON; image binaries need separate server storage.
-- Bun HTTP API, PostgreSQL via configuration; persistent SQLite fallback for local development if PostgreSQL is unavailable, clearly labeled.
-- Swagger UI at `/docs` and `/swagger`; machine-readable OpenAPI at `/openapi.json`.
-- Local development only until authentication and organization authorization exist. No cloud deployment requested.
-- Synthetic demo content clearly marked; no provider shown as connected unless a real connection exists.
-- ElevenLabs realtime voice through a private agent and an authenticated, short-lived signed session URL. The agent's API key remains server-side; the provider's data handling applies after a staff member starts a voice session.
-
-These implementation choices are agent assumptions, not independently confirmed human selections. Implementation status and validation results belong in shared memory and project READMEs.
+React via Bun HTML imports, Tiptap editor, Bun HTTP API, PostgreSQL via `DATABASE_URL` with SQLite for local development, Swagger at `/docs` and `/openapi.json`, billing through the AWS Monetization sandbox (enforcement off). Sample content is always labelled.
 
 ## iOS app (voice-first companion)
 
-Status: implemented, builds; not yet verified on device or with a real account.
+Status: implemented, builds; not verified on a physical device. Programmatic UIKit, Metal "Living Thread" knot, iOS 27 target.
 
-- Knot-centred home with three modes: Ask (answers from approved knowledge), Capture (narrate a process by voice to draft a playbook), and Handoff (narrate a role to draft a handoff guide with a first-30-days onboarding checklist).
-- Capture and Handoff produce drafts only. Agent-created content requires human approval before publication, consistent with the Knowledge Base rules above; Ask cannot use a draft until staff approve and publish it.
-- Drafting defaults to the backend agent (`mode: "draft"`). An optional "Draft on this iPhone" toggle (off by default, Apple Intelligence required) structures the narration on device; only the finished draft is sent to the server.
-- Library is read-and-approve: drafts awaiting review, articles, indexed files, and upcoming meetings and deadlines. There is no rich-text editing on iOS; editing stays on the web.
-- Provider connections (Google Drive, Gmail) stay on the web at orgflow.dev; the iOS app does not handle them.
+- Three modes: Ask (answers from approved knowledge and consented excerpts), Capture (narrate a process to draft a playbook), Handoff (narrate a role to draft a handoff guide with a first-30-days checklist).
+- Transcription is on device. Drafting defaults to the backend agent (`mode: "draft"`); an optional "Draft on this iPhone" setting (off by default, needs Apple Intelligence) structures the narration locally and sends only the finished draft.
+- Capture and Handoff produce drafts only; staff open the draft and tap "Approve & publish".
+- Library has Knowledge, Files, Upcoming and Checklists (run checklists). There is no rich-text editing on iOS.
+- Provider connections and indexing stay on the web; sign-in is in-app.
