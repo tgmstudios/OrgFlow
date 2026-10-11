@@ -8,7 +8,7 @@
     "dev": "bun run dev.ts",
     "install:app": "bun install --cwd backend && bun install --cwd frontend",
     "typecheck": "bun run --cwd backend typecheck && bun run --cwd frontend typecheck",
-    "test": "bun test ./backend",
-    "build": "bun build ./frontend/index.html --outdir ./frontend/dist --target browser"
+    "test": "bun test ./backend ./frontend/server.test.ts",
+    "build": "bun run --cwd frontend build"
   }
 }

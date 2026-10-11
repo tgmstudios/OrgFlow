@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "start": "bun run index.ts",
-    "typecheck": "bun check"
+    "typecheck": "bun check",
+    "build": "bun build ./index.html --outdir ./dist --target browser --public-path /a/ --minify"
   },
   "devDependencies": {
     "@types/bun": "latest",

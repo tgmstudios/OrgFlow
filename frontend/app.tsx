@@ -65,9 +65,20 @@ async function api(path: string, method = "GET", body?: any) {
 }
 const date = (d: string) =>
   new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+const pagePaths: Record<string, string> = {
+  Home: "/",
+  Files: "/files",
+  "Knowledge Base": "/knowledge-base",
+};
+const currentPage = () =>
+  location.pathname.replace(/^\/a(?=\/|$)/, "").startsWith("/knowledge-base")
+    ? "Knowledge Base"
+    : location.pathname.replace(/^\/a(?=\/|$)/, "").startsWith("/files")
+      ? "Files"
+      : "Home";
 function App() {
   const [data, setData] = useState<Data | null>(null),
-    [page, setPage] = useState("Home"),
+    [page, setPageState] = useState(currentPage),
     [error, setError] = useState(""),
     [query, setQuery] = useState(""),
     [category, setCategory] = useState("all"),
@@ -90,6 +101,17 @@ function App() {
     [consent, setConsent] = useState(false),
     [captureProvider, setCaptureProvider] = useState("drive"),
     [captureError, setCaptureError] = useState("");
+  function setPage(next: string) {
+    setPageState(next);
+    const prefix = /^\/a(?:\/|$)/.test(location.pathname) ? "/a" : "";
+    const path = prefix + (pagePaths[next] ?? "/");
+    if (location.pathname !== path) history.pushState({}, "", path);
+  }
+  useEffect(() => {
+    const onPop = () => setPageState(currentPage());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
   const recognition = useRef<any>(null);
   const [mode, setMode] = useState<"ask" | "draft">("ask");
   const refresh = async () => {

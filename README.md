@@ -16,7 +16,19 @@ bun run dev
 - OpenAPI: http://localhost:3003/openapi.json
 - Backend health: http://localhost:3003/health
 
-The frontend proxies API requests to the backend. Both bind to loopback by default. This is a single-workspace local MVP; staff authentication and organization authorization must be implemented before external hosting.
+The frontend proxies API requests to the backend. Both bind to loopback by default. This is a single-workspace MVP; the public deployment is a demonstration workspace. Staff authentication and organization authorization are required before using private organizational content.
+
+## Production URLs
+
+Pushes to `main` deploy through GitHub Actions to the existing server.
+
+- App: https://orgflow.dev/a/
+- Files: https://orgflow.dev/a/files
+- Knowledge Base: https://orgflow.dev/a/knowledge-base
+- Swagger: https://orgflow.dev/docs
+- OpenAPI: https://orgflow.dev/openapi.json
+
+Production builds use `/a/` asset URLs and disable the Bun development server. Nginx preserves `/api/` paths and routes Swagger/authentication to the backend. Deployment configuration is versioned under `deploy/`; source synchronization preserves remote `.env` files, database records and uploaded images. Server secrets must be configured separately and are never copied from the development workspace.
 
 ## Features
 

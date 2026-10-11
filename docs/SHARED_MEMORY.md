@@ -237,3 +237,13 @@ Material limits: single-workspace localhost prototype without staff authenticati
 ### Commit/push integration — 2026-10-11
 
 User requested committing and pushing all work. Local MVP commit d993296 was created after 22 passing tests and a credential scan. Remote main had advanced with ccabf74 (submission video branding “Org Flow”). Merged remote changes, preserving the newer video branding in the three conflicting video documents. This is a repository update, not a new human product decision; app branding remains as implemented in this interview.
+
+## Production route fix — 2026-10-11
+
+Confirmed user request: fix “Blocked: Host header does not match the dev server” and serve the frontend under orgflow.dev/a/.
+
+Correction to earlier agent handoff: an existing `.github/workflows/deploy.yml` already deployed main to the existing EC2 server. The 1029c29 deployment succeeded. Earlier “no public deployment” statements described what the agent assumed, not the actual pipeline state. Public site is proxied through Cloudflare; selected AWS Region was read from local configuration as us-east-2. No new resources are needed for this fix.
+
+Implemented change pending live verification: production frontend serves prebuilt/minified assets under /a/, with /a/files and /a/knowledge-base URLs and browser history; Bun development/HMR is disabled. Versioned Nginx config fixes the old API-prefix stripping, uses upstream host headers, routes docs/auth/health, and redirects old /frontend links to /a/. Deployment preserves remote .env/data/uploads and builds before service restarts. Backend allows the configured public HTTPS frontend origin. Server credentials are not copied from local development.
+
+Validation before deploy: 24 tests/117 assertions, typechecks, production build and browser checks for /a/ assets, deep-link reloads, Back navigation and Swagger. Public demo still lacks staff authentication/organization isolation; private organizational content must wait for that work. Remote backend has no .env configured; no paid AI credentials were installed by this change.
