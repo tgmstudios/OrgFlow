@@ -2,7 +2,7 @@
 
 Your nonprofit's knowledge shouldn't leave when your employees do. OrgFlow is an AI-powered institutional memory platform for nonprofits: it turns scattered emails, documents and employee knowledge into living, human-approved playbooks that survive staff turnover. Think Process Street plus AI knowledge management, built for organizations with 10-200 staff.
 
-Status: implemented and typechecking; AI paths partly verified live; nothing verified on a physical iPhone; latest changes not yet deployed. Details: [docs/SHARED_MEMORY.md](docs/SHARED_MEMORY.md).
+Status: PostgreSQL/Prisma production cutover is deployed and verified; AI paths partly verified live; nothing verified on a physical iPhone. Details: [docs/SHARED_MEMORY.md](docs/SHARED_MEMORY.md).
 
 ## Capabilities
 
