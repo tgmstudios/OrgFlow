@@ -251,3 +251,9 @@ Validation before deploy: 24 tests/117 assertions, typechecks, production build 
 ### Production routing verified — 2026-10-11
 
 Commit 185c19d deployed successfully through GitHub Actions run 38168088224. Live HTTPS returned 200 for /a/, /a/files, /a/knowledge-base, /api/bootstrap, /docs, Swagger assets and /openapi.json; /frontend/ returned 308 to /a/. A real browser verified page navigation, direct deep-link reloads, Back navigation, bundled assets and Swagger without runtime errors. The dev-server Host-header error is resolved. Public application URL: https://orgflow.dev/a/ . Swagger: https://orgflow.dev/docs . No new AWS resources were created. Unrelated concurrent workspace files were left untouched.
+
+### Production AI environment synced — 2026-10-11
+
+User authorized syncing the backend AI configuration to resolve the missing LUMINAL_API_KEY error. Synced only local LUMINAL_* settings over SSH into `/opt/app/backend/.env`, preserving other production settings, with file permissions 0600. Restarted the backend successfully. Deployment excludes .env files, so future pushes preserve these settings. No credentials entered Git or browser assets.
+
+Verified after the sign-in deployment (00d9774): public health returns 200 and anonymous agent requests return 401. Synthetic live Ask and Draft calls through the deployed adapter each returned 200; the draft verification used an in-memory save callback and did not add a production article. This verifies inference and draft conversion, not organization isolation or private provider-data access.
