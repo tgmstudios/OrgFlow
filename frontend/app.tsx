@@ -341,7 +341,6 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
         (transcript ? transcript + "\n\n" : "") +
         `${speaker === "user" ? "Staff" : "OrgFlow"}: ${message}`,
       );
-      setMessages((current) => [...current, { role: speaker, content: message }]);
     },
   });
   const [data, setData] = useState<Data | null>(null),

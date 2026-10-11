@@ -1,13 +1,14 @@
-const port = Number(process.env.PORT ?? 3001);
+import { buildLanding } from "./build";
+import { createLandingHandler } from "./server";
 
+// The existing service invokes index.ts directly. Build at startup so the
+// unchanged deployment does not depend on rsync copying a dist directory.
+await buildLanding();
+const port = Number(process.env.PORT ?? 3001);
 Bun.serve({
   port,
-  routes: {
-    "/": () =>
-      new Response("<h1>Landing</h1>", {
-        headers: { "Content-Type": "text/html" },
-      }),
-  },
+  hostname: process.env.HOST ?? "127.0.0.1",
+  fetch: createLandingHandler(),
+  development: false,
 });
-
-console.log(`landing listening on :${port}`);
+console.log(`OrgFlow landing ready at http://localhost:${port}`);

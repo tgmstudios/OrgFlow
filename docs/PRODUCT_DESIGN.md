@@ -52,7 +52,7 @@ Launcher at the top left opens a centered modal, dockable to the bottom right. C
 
 ## Implementation choices (agent assumptions)
 
-React via Bun HTML imports, Tiptap editor, Bun HTTP API, PostgreSQL via `DATABASE_URL` with SQLite for local development, Swagger at `/docs` and `/openapi.json`, billing through the AWS Monetization sandbox (enforcement off). Sample content is always labelled.
+React via Bun HTML imports, Tiptap editor, Bun HTTP API, Prisma with PostgreSQL via `DATABASE_URL` (pgvector extension for semantic file indexing), Swagger at `/docs` and `/openapi.json`, billing through the AWS Monetization sandbox (enforcement off). Sample content is always labelled.
 
 ## iOS app (voice-first companion)
 

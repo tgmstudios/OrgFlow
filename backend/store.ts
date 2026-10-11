@@ -1,7 +1,6 @@
-import { Database } from "bun:sqlite";
-import { SQL } from "bun";
-import { mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Prisma, PrismaClient } from "./generated/prisma/client";
+
 export type Entity = { id: string; [key: string]: unknown };
 export interface Store {
   mode: string;
@@ -11,71 +10,72 @@ export interface Store {
   delete(kind: string, id: string): Promise<void>;
   close(): Promise<void>;
 }
-export async function openStore(
-  options: { databaseUrl?: string; sqlitePath?: string } = {},
-): Promise<Store> {
-  if (options.databaseUrl) {
-    const sql = new SQL(options.databaseUrl);
-    await sql`CREATE TABLE IF NOT EXISTS orgflow_entities(kind TEXT NOT NULL,id TEXT NOT NULL,data JSONB NOT NULL,PRIMARY KEY(kind,id))`;
-    return {
-      mode: "postgresql",
-      async list(kind) {
-        return (
-          await sql`SELECT data FROM orgflow_entities WHERE kind=${kind} ORDER BY id`
-        ).map((r: any) => r.data);
-      },
-      async get(kind, id) {
-        return (
-          (
-            await sql`SELECT data FROM orgflow_entities WHERE kind=${kind} AND id=${id}`
-          )[0]?.data ?? null
-        );
-      },
-      async put(kind, value) {
-        await sql`INSERT INTO orgflow_entities(kind,id,data) VALUES(${kind},${value.id},${JSON.stringify(value)}::jsonb) ON CONFLICT(kind,id) DO UPDATE SET data=EXCLUDED.data`;
-      },
-      async delete(kind, id) {
-        await sql`DELETE FROM orgflow_entities WHERE kind=${kind} AND id=${id}`;
-      },
-      async close() {
-        await sql.close();
-      },
-    };
-  }
-  const path = options.sqlitePath ?? "./data/orgflow.sqlite";
-  if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });
-  const db = new Database(path, { create: true });
-  db.exec(
-    "PRAGMA journal_mode=WAL;CREATE TABLE IF NOT EXISTS entities(kind TEXT NOT NULL,id TEXT NOT NULL,data TEXT NOT NULL,PRIMARY KEY(kind,id))",
-  );
+
+export async function openStore(databaseUrl = process.env.DATABASE_URL): Promise<Store> {
+  if (!databaseUrl) throw new Error("DATABASE_URL is required; OrgFlow uses PostgreSQL for all persistence.");
+  const adapter = new PrismaPg({ connectionString: databaseUrl });
+  const prisma = new PrismaClient({ adapter });
   return {
-    mode: "sqlite-development",
+    mode: "postgresql",
     async list(kind) {
-      return (
-        db
-          .query("SELECT data FROM entities WHERE kind=? ORDER BY id")
-          .all(kind) as { data: string }[]
-      ).map((r) => JSON.parse(r.data));
+      const rows = await prisma.entity.findMany({
+        where: { kind },
+        orderBy: { id: "asc" },
+        select: { data: true },
+      });
+      return rows.map((row) => row.data as Entity);
     },
     async get(kind, id) {
-      const r = db
-        .query("SELECT data FROM entities WHERE kind=? AND id=?")
-        .get(kind, id) as { data: string } | null;
-      return r ? JSON.parse(r.data) : null;
+      const row = await prisma.entity.findUnique({
+        where: { kind_id: { kind, id } },
+        select: { data: true },
+      });
+      return (row?.data as Entity | undefined) ?? null;
     },
     async put(kind, value) {
-      db.query(
-        "INSERT INTO entities(kind,id,data) VALUES(?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data",
-      ).run(kind, value.id, JSON.stringify(value));
+      const data = value as Prisma.InputJsonValue;
+      await prisma.entity.upsert({
+        where: { kind_id: { kind, id: value.id } },
+        create: { kind, id: value.id, data },
+        update: { data },
+      });
     },
     async delete(kind, id) {
-      db.query("DELETE FROM entities WHERE kind=? AND id=?").run(kind, id);
+      await prisma.entity.deleteMany({ where: { kind, id } });
     },
     async close() {
-      db.close();
+      await prisma.$disconnect();
     },
   };
 }
+
+/** Isolated test fixture storage. Production and local app runs always use PostgreSQL. */
+export function createMemoryStore(): Store {
+  const rows = new Map<string, Entity>();
+  return {
+    mode: "memory-test",
+    async list(kind) {
+      return [...rows.entries()]
+        .filter(([key]) => key.startsWith(`${kind}\u0000`))
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([, value]) => structuredClone(value));
+    },
+    async get(kind, id) {
+      const value = rows.get(`${kind}\u0000${id}`);
+      return value ? structuredClone(value) : null;
+    },
+    async put(kind, value) {
+      rows.set(`${kind}\u0000${value.id}`, structuredClone(value));
+    },
+    async delete(kind, id) {
+      rows.delete(`${kind}\u0000${id}`);
+    },
+    async close() {
+      rows.clear();
+    },
+  };
+}
+
 export async function seed(store: Store) {
   if (await store.get("meta", "seed")) return;
   const now = new Date().toISOString();

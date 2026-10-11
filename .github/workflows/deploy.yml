@@ -106,7 +106,11 @@ jobs:
             for svc in landing frontend backend; do
               cd /opt/app/$svc
               ~/.bun/bin/bun install --frozen-lockfile
-              if [ "$svc" = backend ]; then bash /opt/app/deploy/install-monetization-sdk.sh; fi
+              if [ "$svc" = backend ]; then
+                ~/.bun/bin/bun run prisma:generate
+                ~/.bun/bin/bun run prisma:migrate:deploy
+                bash /opt/app/deploy/install-monetization-sdk.sh
+              fi
               sudo systemctl restart $svc
             done
             sudo systemctl reload nginx

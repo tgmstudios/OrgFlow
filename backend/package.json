@@ -5,15 +5,25 @@
   "private": true,
   "scripts": {
     "start": "bun run index.ts",
-    "typecheck": "bun check"
+    "typecheck": "bun check",
+    "prisma:generate": "bunx --bun prisma generate",
+    "prisma:migrate:deploy": "bunx --bun prisma migrate deploy",
+    "db:import:sqlite": "bun run migrate-sqlite-to-postgres.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/pg": "^8.23.1",
+    "prisma": "7"
   },
   "peerDependencies": {
     "typescript": "^7"
   },
   "dependencies": {
-    "swagger-ui-dist": "^5.33.1"
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "7",
+    "dotenv": "^18.0.7",
+    "pg": "^8.23.1",
+    "swagger-ui-dist": "^5.33.1",
+    "unpdf": "^1.8.1"
   }
 }

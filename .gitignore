@@ -1,4 +1,5 @@
 node_modules/
+backend/generated/
 dist/
 *.log
 .env

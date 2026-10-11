@@ -6,7 +6,7 @@
   },
   "scripts": {
     "dev": "bun run dev.ts",
-    "install:app": "bun install --cwd backend && bun install --cwd frontend",
+    "install:app": "bun install --cwd backend && bun install --cwd frontend && DATABASE_URL=postgresql://orgflow:generate-only@localhost:5432/orgflow bun run --cwd backend prisma:generate",
     "typecheck": "bun run --cwd backend typecheck && bun run --cwd frontend typecheck",
     "test": "bun test ./backend ./frontend/server.test.ts",
     "build": "bun run --cwd frontend build"
