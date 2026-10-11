@@ -3,7 +3,36 @@ import { randomBytes, createHash } from "node:crypto";
 type Item = Record<string, any>;
 export type GoogleDependencies = {
   upsertFile: (file: Item) => Promise<void>;
+  /** Stores one indexed source's text (replacing any earlier index of it). */
+  saveSource?: (source: {
+    id: string;
+    title: string;
+    provider: "Google Drive" | "Gmail";
+    url: string;
+    from?: string;
+    updatedAt: string;
+    text: string;
+  }) => Promise<void>;
 };
+
+const textTypes = ["text/plain", "text/markdown", "text/csv"];
+const googleDocType = "application/vnd.google-apps.document";
+/** Runs `work` over `items` with at most `limit` in flight; failed items are skipped. */
+async function pool<T, R>(items: T[], limit: number, work: (item: T) => Promise<R>): Promise<R[]> {
+  const results: R[] = [];
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, async () => {
+      while (next < items.length) {
+        const item = items[next++]!;
+        try {
+          results.push(await work(item));
+        } catch {}
+      }
+    }),
+  );
+  return results;
+}
 type Session = {
   accessToken: string;
   refreshToken?: string;
@@ -111,6 +140,49 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
       if (!pageToken) break;
     }
     return { files, limited: Boolean(pageToken) };
+  }
+  async function driveText(request: Request, file: Item, limit = 12000) {
+    const source = await google(
+      request,
+      file.mimeType === googleDocType
+        ? `https://www.googleapis.com/drive/v3/files/${file.id}/export?mimeType=text/plain`
+        : `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`,
+    );
+    const reader = source.body?.getReader();
+    let text = "";
+    if (reader) {
+      const decoder = new TextDecoder();
+      try {
+        while (text.length < limit) {
+          const part = await reader.read();
+          if (part.done) break;
+          text += decoder.decode(part.value, { stream: true });
+        }
+      } finally {
+        await reader.cancel();
+      }
+    }
+    return text.slice(0, limit);
+  }
+  async function gmailMessage(request: Request, id: string) {
+    const data = (await (
+      await google(
+        request,
+        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(id)}?format=full`,
+      )
+    ).json()) as Item;
+    const header = (name: string) =>
+      data.payload?.headers?.find((h: Item) => h.name.toLowerCase() === name)?.value as
+        | string
+        | undefined;
+    return {
+      id: data.id as string,
+      title: header("subject") || "Untitled email",
+      from: header("from"),
+      date: header("date"),
+      text: messageText(data.payload || {}),
+      url: `https://mail.google.com/mail/u/0/#all/${data.id}`,
+    };
   }
   function returnTo(request: Request, value: string | null): string | undefined {
     if (!value?.startsWith("/") || value.startsWith("//")) return undefined;
@@ -315,6 +387,89 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
             "Indexed metadata only. Original files remain in Google Drive.",
         });
       }
+      if (
+        path === "/api/integrations/google/index" &&
+        request.method === "POST"
+      ) {
+        // Reads the text of recent Google Docs and emails into the organization's search index so
+        // Ask can answer from them and Discover can find recurring work. Requires explicit consent.
+        const body = (await request.json().catch(() => ({}))) as Item;
+        if (body.consent !== true)
+          return json(
+            { error: "Confirm consent to index Drive and Gmail text first." },
+            400,
+          );
+        if (!dependencies.saveSource)
+          return json({ error: "Indexing is not available." }, 503);
+        const save = dependencies.saveSource;
+        const includeDrive = body.drive !== false;
+        const includeGmail = body.gmail !== false;
+        let drive = 0, gmail = 0;
+        if (includeDrive) {
+          const { files } = await driveFiles(request);
+          const readable = files
+            .filter((f) => f.mimeType === googleDocType || textTypes.includes(f.mimeType))
+            .sort((a, b) => String(b.modifiedTime).localeCompare(String(a.modifiedTime)))
+            .slice(0, Math.min(Number(body.maxDocuments) || 40, 80));
+          drive = (
+            await pool(readable, 6, async (file) => {
+              const text = await driveText(request, file, 30000);
+              if (!text.trim()) return 0;
+              await save({
+                id: `drive-${file.id}`,
+                title: file.name,
+                provider: "Google Drive",
+                url:
+                  file.webViewLink ||
+                  `https://drive.google.com/file/d/${encodeURIComponent(file.id)}/view`,
+                updatedAt: file.modifiedTime || new Date().toISOString(),
+                text,
+              });
+              return 1;
+            })
+          ).reduce<number>((a, b) => a + b, 0);
+        }
+        if (includeGmail) {
+          const query = new URLSearchParams({
+            maxResults: String(Math.min(Number(body.maxEmails) || 60, 150)),
+            q: String(
+              body.gmailQuery ||
+                "newer_than:365d -category:promotions -category:social -category:forums -in:chats",
+            ).slice(0, 300),
+          });
+          const list = (await (
+            await google(
+              request,
+              `https://gmail.googleapis.com/gmail/v1/users/me/messages?${query}`,
+            )
+          ).json()) as Item;
+          gmail = (
+            await pool((list.messages || []) as Item[], 6, async (item) => {
+              const message = await gmailMessage(request, item.id);
+              if (!message.text.trim()) return 0;
+              const date = message.date ? new Date(message.date) : null;
+              await save({
+                id: `gmail-${message.id}`,
+                title: message.title,
+                provider: "Gmail",
+                url: message.url,
+                from: message.from,
+                updatedAt:
+                  date && !Number.isNaN(date.getTime())
+                    ? date.toISOString()
+                    : new Date().toISOString(),
+                text: message.text,
+              });
+              return 1;
+            })
+          ).reduce<number>((a, b) => a + b, 0);
+        }
+        return json({
+          indexed: { drive, gmail },
+          notice:
+            "Indexed text stays in OrgFlow and is used to answer questions and suggest playbooks. Remove it any time.",
+        });
+      }
       if (path === "/api/sources/google" && request.method === "GET") {
         const provider = url.searchParams.get("provider") || "drive";
         if (provider === "drive") {
@@ -377,27 +532,17 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
         if (!/^[\w-]{1,200}$/.test(id))
           return json({ error: "Invalid source ID." }, 400);
         if (match[1] === "gmail") {
-          const data = (await (
-            await google(
-              request,
-              `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`,
-            )
-          ).json()) as Item;
-          const title =
-            data.payload?.headers?.find(
-              (h: Item) => h.name.toLowerCase() === "subject",
-            )?.value || "Untitled email";
-          const text = messageText(data.payload || {});
-          if (!text)
+          const message = await gmailMessage(request, id);
+          if (!message.text)
             return json(
               { error: "This email has no supported plain-text body." },
               422,
             );
           return json({
             id: `gmail-${id}`,
-            title,
-            text,
-            url: `https://mail.google.com/mail/u/0/#all/${id}`,
+            title: message.title,
+            text: message.text,
+            url: message.url,
           });
         }
         const data = (await (
@@ -406,43 +551,15 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
             `https://www.googleapis.com/drive/v3/files/${id}?fields=id,name,mimeType,webViewLink`,
           )
         ).json()) as Item;
-        const googleDoc =
-          data.mimeType === "application/vnd.google-apps.document";
-        if (
-          !googleDoc &&
-          !["text/plain", "text/markdown", "text/csv"].includes(data.mimeType)
-        )
+        if (data.mimeType !== googleDocType && !textTypes.includes(data.mimeType))
           return json(
-            {
-              error:
-                "Capture currently supports Google Docs and plain-text/Markdown/CSV files. Use a text upload for other formats.",
-            },
+            { error: "Only Google Docs and plain-text files can be read." },
             422,
           );
-        const source = await google(
-          request,
-          googleDoc
-            ? `https://www.googleapis.com/drive/v3/files/${id}/export?mimeType=text/plain`
-            : `https://www.googleapis.com/drive/v3/files/${id}?alt=media`,
-        );
-        const reader = source.body?.getReader();
-        let text = "";
-        if (reader) {
-          const decoder = new TextDecoder();
-          try {
-            while (text.length < 12000) {
-              const part = await reader.read();
-              if (part.done) break;
-              text += decoder.decode(part.value, { stream: true });
-            }
-          } finally {
-            await reader.cancel();
-          }
-        }
         return json({
           id: `drive-${id}`,
           title: data.name,
-          text: text.slice(0, 12000),
+          text: await driveText(request, data),
           url: data.webViewLink,
         });
       }

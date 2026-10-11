@@ -1,37 +1,48 @@
 # OrgFlow backend
 
-From this directory run `bun install`, then `bun run index.ts`. Tests: `bun test`. Type check: `bun run typecheck`.
+Bun HTTP API on `http://localhost:3003` (binds 127.0.0.1; override with `HOST`/`PORT`). Swagger UI at `/docs` (also `/swagger`), OpenAPI at `/openapi.json`, health at `/health`. Swagger assets are served locally.
 
-Default address: `http://localhost:3003`, bound to 127.0.0.1. Swagger UI: `/docs` or `/swagger`. OpenAPI: `/openapi.json`. Swagger assets are served locally.
+```sh
+bun install
+bun run index.ts      # or `bun run start`
+bun test              # tests (mocked OAuth, synthetic AI content)
+bun run typecheck
+```
 
-This is a **single-workspace build with basic email/password accounts**: `POST /api/auth/signup|login|logout`, `GET /api/auth/me`. Passwords are Argon2id-hashed (`Bun.password`); sessions are server-side records referenced by an HttpOnly, SameSite=Lax `orgflow_session` cookie (7 days). All `/api/*` routes except `/api/auth/*` return 401 without a session; failed logins are rate limited per email. Any signed-in account sees the whole workspace (no roles or organization isolation yet), and sign-up is open. Browser writes from unexpected origins are rejected. Set `FRONTEND_ORIGIN` to the browser origin (default `http://localhost:3002`) and `FRONTEND_REDIRECT_URL` when OAuth should return to a path below that origin. `HOST` and `PORT` override the bind address.
+From the repo root, `bun run dev` starts backend and frontend together.
 
-## Persistence
+## Modules
 
-`DATABASE_URL` enables PostgreSQL via Bun SQL. Startup creates an `orgflow_entities` table with JSONB records. A configured PostgreSQL failure stops startup rather than silently changing databases.
-
-Without `DATABASE_URL`, persistent SQLite development storage is used at `./data/orgflow.sqlite`; override with `SQLITE_PATH`. Startup and bootstrap metadata disclose this fallback. Local data is ignored by Git. Run from the backend directory for a predictable default path.
-
-First startup seeds synthetic articles, file links and events, labeled in bootstrap metadata and individual entities. Sample provider links are placeholders. Connections start disconnected; events are not a live calendar feed.
-
-Articles autosave as drafts. Edits preserve `publishedContent`, `publishedTitle`, and `publishedCategoryId`; explicit `POST /api/articles/:id/publish` updates the published version. PATCH cannot publish. Staff authentication and organization authorization are prerequisites before deployment.
-
-File PATCH changes only `orgflowPath`, never source URL/path. Categories support creation and rename.
-
-## Images
-
-POST `/api/uploads` accepts multipart field `file`: PNG, JPEG, GIF or WebP, at most 5 MB, with signature checks. SVG is excluded. Images live in ignored `data/uploads/` and are served through `/api/uploads/:generated-name`. Authenticated access and managed object storage remain deployment work.
+- `index.ts`: server entry; longer idle timeout for AI and indexing routes.
+- `app.ts`: routing, articles, categories, files, bootstrap, auth routes, origin checks.
+- `operations.ts`: consented source index, Discover, runnable checklists, people and Transfer, periodic review, organization info, audit log.
+- `workspace.ts`: per-organization data isolation (the original shared workspace is org `default`).
+- `retrieval.ts`: BM25 retrieval over indexed text and articles.
+- `luminal.ts`: server-only Luminal JSON completion (OpenAI-compatible).
+- `agent.ts`: Ask and draft agent (`POST /api/agent`), citation validation.
+- `google.ts`: read-only Google OAuth (PKCE), Drive metadata sync, Docs/Gmail readers and indexing.
+- `auth.ts`: email/password accounts (Argon2id), HttpOnly session cookie, roles, invite codes, login rate limit.
+- `monetization.ts`: AWS Monetization sandbox entitlement checks and metering.
+- `elevenlabs.ts`: ephemeral WebRTC token for the private voice agent (`GET /api/voice/session-token`).
+- `samples.ts`: labelled sample playbooks and people for the shared demo workspace (added once; new organizations start empty).
+- `store.ts`: persistence (PostgreSQL or SQLite). `uploads.ts`: image uploads. `openapi.ts`: API description.
 
 ## Configuration
 
-Use credential-free `.env.example` as a guide. Bun automatically reads `.env`. Keep credentials server-side, ignored, and out of diagnostics.
+Copy `.env.example` to `.env` (Git-ignored, mode 0600; Bun loads it automatically). Keep secrets server-side and out of logs. Variables in `.env.example`:
 
-`LUMINAL_API_KEY` enables the server-only agent. Missing configuration produces a clear error. AI saves drafts and never publishes. Explorer metadata supports document discovery; it never establishes facts about file contents. Explicitly selected source text requires AI consent.
+- AI: `LUMINAL_API_KEY`, `LUMINAL_BASE_URL`, `LUMINAL_MODEL`, `LUMINAL_IMAGES_BASE_URL`, `LUMINAL_IMAGES_MODEL`
+- Voice: `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`
+- Google: `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` (see [Google setup](../docs/GOOGLE_SETUP.md))
+- Storage and origins: `DATABASE_URL`, `FRONTEND_ORIGIN`, `FRONTEND_REDIRECT_URL`, `HOST`, `PORT`
 
-`ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID` enable `GET /api/voice/session-token`. This authenticated route returns an ephemeral WebRTC token for the private realtime voice agent; never expose the API key or session token in logs or client configuration.
+Also read by the code, not in `.env.example`: `SQLITE_PATH`, `REVIEW_INTERVAL_DAYS`, `MONETIZATION_APP_ID`, `MONETIZATION_ENFORCE`.
 
-Google OAuth setup instructions: `../docs/GOOGLE_SETUP.md`. Implemented routes start at `/auth/google/start`; the state-cookie/PKCE callback is `/auth/google/callback`. Session tokens remain in server memory and require reconnection after restart. `/api/integrations/google/sync` indexes Drive metadata only and preserves custom OrgFlow folder paths; `/api/sources/google` lists Drive files/Gmail subjects and the per-source GET reads explicitly selected text. Google Docs and plain text/Markdown/CSV files are supported; email capture requires a plain-text MIME body. Calendar, SharePoint and OneDrive connections are not implemented. OAuth secrets belong only in ignored `.env`; no service-account key is needed for the selected personal-user flow.
+## Behaviour notes
 
-## Limits
-
-Bun tests cover draft/publication behavior, categories, immutable provider paths, local documentation and synthetic labels. PostgreSQL requires a configured database for an integration check; SQLite fallback has been tested. Concurrent edits currently use last-write-wins. Authentication, organization isolation and live calendar integration remain future work.
+- Without `DATABASE_URL`, data persists to SQLite at `./data/orgflow.sqlite` (run from this directory). A configured PostgreSQL failure stops startup instead of falling back; PostgreSQL has not been integration-tested here.
+- Without `LUMINAL_API_KEY`, AI routes return 503 `AI_NOT_CONFIGURED`. AI saves drafts only; publishing is `POST /api/articles/:id/publish`.
+- All `/api/*` routes except `/api/auth/*` need the session cookie. Browser writes from unexpected origins are rejected.
+- Google tokens are held in server memory; a restart requires reconnecting.
+- Image uploads (`POST /api/uploads`): PNG/JPEG/GIF/WebP, at most 5 MB, stored in ignored `data/uploads/`.
+- Concurrent edits are last-write-wins.

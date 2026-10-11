@@ -1,4 +1,5 @@
 import type { Store } from "./store";
+import { DEFAULT_ORG, STARTER_CATEGORIES, inviteCode, runInOrg } from "./workspace";
 
 export class AuthError extends Error {
   constructor(
@@ -9,7 +10,14 @@ export class AuthError extends Error {
   }
 }
 
-export type User = { id: string; email: string; name: string };
+export type User = {
+  id: string;
+  email: string;
+  name: string;
+  /** Organization the account belongs to; accounts created before organizations use the default. */
+  orgId: string;
+  role: "admin" | "member";
+};
 
 const COOKIE = "orgflow_session";
 const SESSION_MS = 7 * 24 * 60 * 60 * 1000;
@@ -35,6 +43,8 @@ const publicUser = (u: any): User => ({
   id: u.id,
   email: u.email,
   name: u.name,
+  orgId: u.orgId ?? DEFAULT_ORG,
+  role: u.role ?? (u.orgId ? "member" : "admin"),
 });
 
 export type AuthHooks = {
@@ -148,10 +158,37 @@ export function createAuth(store: Store, hooks: AuthHooks = {}) {
         throw new AuthError(400, "Password must be 8–200 characters");
       if (await store.get("users", id))
         throw new AuthError(409, "An account with this email already exists");
+      // Join with an invite code, start a new organization, or (neither) join the shared demo workspace.
+      let orgId = DEFAULT_ORG;
+      let role: User["role"] = "member";
+      const code =
+        typeof body.inviteCode === "string" ? body.inviteCode.trim().toUpperCase() : "";
+      const orgName =
+        typeof body.organization === "string" ? body.organization.trim().slice(0, 120) : "";
+      if (code) {
+        const org = (await store.list("orgs")).find((o) => o.inviteCode === code);
+        if (!org) throw new AuthError(400, "That invite code isn't valid");
+        orgId = org.id;
+      } else if (orgName) {
+        orgId = crypto.randomUUID();
+        role = "admin";
+        await store.put("orgs", {
+          id: orgId,
+          name: orgName,
+          inviteCode: inviteCode(),
+          createdBy: id,
+          createdAt: new Date().toISOString(),
+        });
+        await runInOrg(orgId, async () => {
+          for (const category of STARTER_CATEGORIES) await store.put("categories", category);
+        });
+      }
       const user = {
         id,
         email,
         name,
+        orgId,
+        role,
         passwordHash: await Bun.password.hash(password),
         createdAt: new Date().toISOString(),
       };

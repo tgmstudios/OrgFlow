@@ -4,6 +4,8 @@ import { createAgentHandler } from "./agent";
 import { uploads } from "./uploads";
 import { createGoogleHandler } from "./google";
 import { elevenLabsVoice } from "./elevenlabs";
+import { createOperations } from "./operations";
+import { DEFAULT_ORG, runInOrg, scopedStore } from "./workspace";
 import { createAuth, AuthError } from "./auth";
 import {
   EVENT_ASK,
@@ -44,14 +46,18 @@ export function document(v: unknown): unknown {
   return v;
 }
 export async function bootstrap(store: Store) {
-  const [categories, articles, files, events] = await Promise.all(
-    ["categories", "articles", "files", "events"].map((k) => store.list(k)),
+  const [categories, articles, files, events, people, runs, candidates, sources] = await Promise.all(
+    ["categories", "articles", "files", "events", "people", "runs", "candidates", "sources"].map((k) => store.list(k)),
   );
   return {
     categories,
     articles,
     files,
     events,
+    people,
+    runs,
+    candidates: (candidates ?? []).filter((c) => c.status !== "dismissed"),
+    sources,
     integrations: [
       "Google Drive",
       "Gmail",
@@ -74,16 +80,19 @@ export async function bootstrap(store: Store) {
   };
 }
 export function createApp(
-  store: Store,
+  baseStore: Store,
   options: { requireAuth?: boolean } = {},
 ) {
   const requireAuth = options.requireAuth ?? true;
+  // Workspace data is scoped to the signed-in user's organization (see workspace.ts).
+  const store = scopedStore(baseStore);
   const auth = createAuth(store, {
     sessionCookies: (req, user) => sessionCookies(req, user.id),
     clearCookies: clearSessionCookies,
     refreshWhenMissing: "mai_pricing_url",
   });
   const google = createGoogleHandler({
+    saveSource: (source) => operations.saveSource(source),
     upsertFile: async (file) => {
       const current = await store.get("files", file.id);
       await store.put("files", {
@@ -95,6 +104,7 @@ export function createApp(
   });
   const agent = createAgentHandler({
     bootstrap: async () => ({ ...(await bootstrap(store)), demo: false }),
+    search: (query) => operations.search(query),
     saveDraft: async (input) => {
       const current = input.id ? await store.get("articles", input.id) : null;
       if (input.id && !current) throw new Error("Article not found");
@@ -121,7 +131,12 @@ export function createApp(
       return value;
     },
   });
-  return async (req: Request): Promise<Response> => {
+  const operations = createOperations({
+    store,
+    agent: (req) => agent(req),
+    currentUser: (req) => auth.currentUser(req),
+  });
+  const handle = async (req: Request): Promise<Response> => {
     const path = new URL(req.url).pathname;
     const json = (data: unknown, status = 200) =>
       Response.json(data, { status });
@@ -159,7 +174,8 @@ export function createApp(
       if (requireAuth && !open && !(await auth.currentUser(req)))
         throw new ApiError(401, "Sign in required");
       const googleEvent =
-        (req.method === "POST" && path === "/api/integrations/google/sync") ||
+        (req.method === "POST" &&
+          ["/api/integrations/google/sync", "/api/integrations/google/index"].includes(path)) ||
         (req.method === "GET" &&
           /^\/api\/sources\/google\/[^/]+\/[^/]+$/.test(path))
           ? EVENT_GOOGLE_IMPORT
@@ -196,6 +212,12 @@ export function createApp(
         if (user && event && response.ok) await meter(user.id, event);
         return response;
       }
+      const operationResponse = await operations.handle(
+        req,
+        path,
+        requireAuth ? await auth.currentUser(req) : null,
+      );
+      if (operationResponse) return operationResponse;
       if (req.method === "GET" && path === "/health")
         return json({ status: "ok", storage: store.mode });
       if (req.method === "GET" && path === "/openapi.json")
@@ -303,6 +325,10 @@ export function createApp(
         if (kind === "articles") {
           if (body.title !== undefined) v.title = nonempty(body.title, "title");
           if (body.content !== undefined) v.content = document(body.content);
+          if (body.ownerId !== undefined)
+            v.ownerId = body.ownerId === null ? undefined : nonempty(body.ownerId, "ownerId");
+          if (body.reviewDueAt !== undefined)
+            v.reviewDueAt = body.reviewDueAt === null ? undefined : nonempty(body.reviewDueAt, "reviewDueAt", 40);
           if (body.categoryId !== undefined) {
             v.categoryId = nonempty(body.categoryId, "categoryId");
             if (!(await store.get("categories", v.categoryId as string)))
@@ -312,6 +338,7 @@ export function createApp(
           v.updatedAt = new Date().toISOString();
         }
       } else if (req.method === "POST" && kind === "articles" && publish) {
+        const publisher = requireAuth ? await auth.currentUser(req) : null;
         v = {
           ...v,
           status: "published",
@@ -321,7 +348,11 @@ export function createApp(
           publishedCategoryId: v.categoryId,
           publishedAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          // Approval record, and when the owner should next confirm it is still accurate.
+          publishedBy: publisher ? { id: publisher.id, name: publisher.name } : null,
+          reviewDueAt: operations.reviewDueAt(),
         };
+        await operations.audit(publisher, "article.publish", { articleId: v.id });
       } else throw new ApiError(404, "Not found");
       await store.put(kind, v);
       return json(v);
@@ -331,5 +362,10 @@ export function createApp(
       console.error("API request failed");
       return json({ error: "Internal server error" }, 500);
     }
+  };
+  return async (req: Request): Promise<Response> => {
+    // Everything after this point reads and writes the signed-in user's organization.
+    const user = requireAuth ? await auth.currentUser(req).catch(() => null) : null;
+    return runInOrg(user?.orgId ?? DEFAULT_ORG, () => handle(req));
   };
 }

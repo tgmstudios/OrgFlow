@@ -1,3 +1,4 @@
+> Project context: read /AGENTS.md first (product memory and docs/OPEN_QUESTIONS.md — ask the human about open questions instead of deciding them).
 
 Default to using Bun instead of Node.js.
 
