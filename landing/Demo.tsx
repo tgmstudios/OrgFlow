@@ -19,139 +19,10 @@ import {
 } from "lucide-react";
 import "./demo.css";
 
+import GuidedDemo from "./GuidedDemo";
+import { sources, questions, initialSteps, type SampleSource } from "./sample-data";
+
 type Mode = "answer" | "capture" | "handoff";
-type SampleSource = {
-  id: string;
-  title: string;
-  kind: string;
-  label: string;
-  paragraphs: { heading: string; text: string }[];
-};
-
-const sources: SampleSource[] = [
-  {
-    id: "welcome",
-    title: "Volunteer welcome notes",
-    kind: "Sample Google Drive document",
-    label: "Volunteer operations",
-    paragraphs: [
-      {
-        heading: "Before the first shift",
-        text: "Ask each new volunteer to complete the interest form and read the orientation sheet. Both links are in the welcome email. Add their name and availability to the weekly volunteer rota.",
-      },
-      {
-        heading: "On Saturday morning",
-        text: "New volunteers arrive at 8:30 a.m. for a food safety briefing, before the pantry opens at 9 a.m. Pair each new volunteer with someone who has worked a shift before.",
-      },
-      {
-        heading: "After the shift",
-        text: "Ask how the first shift went and confirm availability for the following week. Jo Garcia coordinates the weekly rota and answers scheduling questions.",
-      },
-    ],
-  },
-  {
-    id: "handoff",
-    title: "Miriam’s coordinator handoff",
-    kind: "Sample uploaded text note",
-    label: "Staff knowledge",
-    paragraphs: [
-      {
-        heading: "What I always tell a new volunteer",
-        text: "Send the welcome email before their first Saturday. It links to our interest form and orientation sheet. Tell them to arrive at 8:30 a.m. and wear closed shoes.",
-      },
-      {
-        heading: "The small things that help",
-        text: "Introduce them to their shift partner before the food safety briefing. At the end of the shift, check in and ask whether they would like to return the next week. Record their answer on the rota so Jo can plan ahead.",
-      },
-    ],
-  },
-  {
-    id: "opening",
-    title: "Saturday pantry opening",
-    kind: "Published sample playbook",
-    label: "Pantry operations",
-    paragraphs: [
-      {
-        heading: "8:00 a.m. · Prepare the pantry",
-        text: "The shift coordinator unlocks the pantry, checks the fridge temperature log and sets out the collection tables. Record any temperature concern and notify the pantry manager before using the food.",
-      },
-      {
-        heading: "8:30 a.m. · Welcome the team",
-        text: "Welcome new volunteers, introduce their shift partners and give the food safety briefing. Assign roles for check-in, packing and collection.",
-      },
-      {
-        heading: "9:00 a.m. · Open for collection",
-        text: "Open the front doors at 9 a.m. The check-in volunteer welcomes visitors while the packing team prepares food parcels.",
-      },
-    ],
-  },
-];
-
-const questions = [
-  {
-    question: "How do we welcome a new volunteer?",
-    intro:
-      "Start before their first Saturday. Here’s the welcome process in your pantry’s notes.",
-    steps: [
-      [
-        "Send the welcome email",
-        "Include the interest form and orientation sheet. Add their availability to the weekly rota.",
-      ],
-      [
-        "Make the first shift feel familiar",
-        "Ask them to arrive at 8:30 a.m. for a food safety briefing, then pair them with an experienced volunteer.",
-      ],
-      [
-        "Check in before they leave",
-        "Ask how it went and confirm whether they can return next week. Jo Garcia coordinates the rota.",
-      ],
-    ],
-    sourceIds: ["welcome", "handoff"],
-  },
-  {
-    question: "What happens before the pantry opens?",
-    intro:
-      "The Saturday opening playbook sets out the morning, from the first key in the door to the first visitor.",
-    steps: [
-      [
-        "8:00 a.m. · Get the space ready",
-        "The shift coordinator unlocks the pantry, checks the fridge temperature log and sets out collection tables.",
-      ],
-      [
-        "8:30 a.m. · Bring the team together",
-        "Welcome new volunteers, give the food safety briefing and assign roles for check-in, packing and collection.",
-      ],
-      [
-        "9:00 a.m. · Welcome visitors",
-        "Open the front doors. The check-in volunteer welcomes visitors while the packing team prepares food parcels.",
-      ],
-    ],
-    sourceIds: ["opening"],
-  },
-  {
-    question: "Who looks after the volunteer rota?",
-    intro:
-      "Jo Garcia coordinates the weekly rota and answers scheduling questions.",
-    steps: [
-      [
-        "Keep availability in one place",
-        "Add each new volunteer’s name and availability to the weekly rota.",
-      ],
-      [
-        "Record next week’s plans",
-        "At the end of a first shift, confirm whether the volunteer can return and record their answer for Jo.",
-      ],
-    ],
-    sourceIds: ["welcome", "handoff"],
-  },
-];
-
-const initialSteps = [
-  "Send the welcome email with the interest form and orientation sheet. Ask the volunteer to wear closed shoes.",
-  "Add their name and availability to the weekly rota. Confirm arrival at 8:30 a.m. on their first Saturday.",
-  "Introduce their shift partner and give the food safety briefing before the pantry opens at 9 a.m.",
-  "Check in at the end of the shift. Record next week’s availability on the rota for Jo Garcia.",
-];
 
 const modes: {
   id: Mode;
@@ -169,7 +40,7 @@ const modes: {
   },
 ];
 
-export default function Demo() {
+function FullDemo({ active }: { active: boolean }) {
   const id = useId();
   const [mode, setMode] = useState<Mode>("answer");
   const [question, setQuestion] = useState(0);
@@ -213,6 +84,10 @@ export default function Demo() {
     window.addEventListener("orgflow:demo-mode", onDemoMode);
     return () => window.removeEventListener("orgflow:demo-mode", onDemoMode);
   }, []);
+
+  useEffect(() => {
+    if (!active) setSource(null);
+  }, [active]);
 
   useEffect(() => {
     if (!source) return;
@@ -344,27 +219,7 @@ export default function Demo() {
   };
 
   return (
-    <section
-      id="demo"
-      className="demo-section"
-      aria-labelledby={`${id}-heading`}
-    >
-      <div className="of-demo-intro">
-        <div>
-          <p className="section-label">A LITTLE CLARITY. TRY IT YOURSELF.</p>
-          <h2 id={`${id}-heading`}>
-            One person’s know-how.
-            <br />
-            <span>A whole team’s next step.</span>
-          </h2>
-        </div>
-        <p>
-          Step inside Willow Creek Food Pantry, a fictional organization. Find
-          an answer, turn notes into a playbook, then see how someone new can
-          pick it up.
-        </p>
-      </div>
-
+    <div className="of-demo-full">
       <div
         className="of-demo-tabs"
         role="tablist"
@@ -1098,18 +953,49 @@ export default function Demo() {
         )}
       </div>
 
-      <div className="of-demo-below">
-        <p>
-          This is what continuity can look like.
-          <span>Your own knowledge is the next place to start.</span>
-        </p>
-        <a href="https://orgflow.dev/a/" className="of-demo-open-app">
-          Open OrgFlow <ArrowRight size={16} aria-hidden="true" />
-        </a>
-      </div>
       <p className="of-demo-sr-status" role="status" aria-live="polite">
         {status}
       </p>
+    </div>
+  );
+}
+
+
+export default function Demo() {
+  const id = useId();
+  const [expanded, setExpanded] = useState(false);
+  const exploreRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const reveal = (event: Event) => {
+      const next = (event as CustomEvent<unknown>).detail;
+      if (next === "answer" || next === "capture" || next === "handoff")
+        setExpanded(true);
+    };
+    window.addEventListener("orgflow:demo-mode", reveal);
+    return () => window.removeEventListener("orgflow:demo-mode", reveal);
+  }, []);
+  return (
+    <section id="demo" className="demo-section" aria-labelledby={`${id}-heading`}>
+      <div className="of-demo-intro">
+        <h2 id={`${id}-heading`}>See what stays.</h2>
+        <p>A first shift at Willow Creek Food Pantry, a fictional nonprofit.</p>
+      </div>
+      <div hidden={expanded}><GuidedDemo /></div>
+      <div className="of-demo-explore-row">
+        <button
+          ref={exploreRef}
+          className="of-demo-explore"
+          aria-expanded={expanded}
+          aria-controls={`${id}-full-example`}
+          onClick={() => setExpanded((current) => !current)}
+        >
+          {expanded ? "Back to the simple example" : "Explore the full example"}
+          <ArrowRight size={16} aria-hidden="true" />
+        </button>
+      </div>
+      <div id={`${id}-full-example`} hidden={!expanded}>
+        <FullDemo active={expanded} />
+      </div>
     </section>
   );
 }

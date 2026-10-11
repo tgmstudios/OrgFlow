@@ -1760,3 +1760,89 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* A quiet introduction keeps the guided example in focus. */
+.demo-section {
+  max-width:1400px;
+  padding:85px 64px 80px;
+}
+.of-demo-intro {
+  align-items:center;
+  gap:35px;
+  margin-bottom:36px;
+}
+.of-demo-intro h2 {
+  margin:0;
+  font:550 clamp(36px,4.1vw,58px)/1.13 Manrope,sans-serif;
+  letter-spacing:-2.7px;
+}
+.of-demo-intro>p {
+  max-width:320px;
+  margin:0;
+  font-size:14px;
+  line-height:1.75;
+}
+.of-demo-explore-row {
+  display:flex;
+  justify-content:center;
+  margin:18px 0 0;
+}
+.of-demo-explore {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  min-height:44px;
+  padding:8px 0;
+  border:0;
+  background:none;
+  color:#705183;
+  font-size:12px;
+  line-height:1.5;
+}
+.of-demo-explore:hover {
+  color:#5d34b0;
+}
+.of-demo-full {
+  margin-top:19px;
+}
+.demo-section [hidden] {
+  display:none!important;
+}
+@media(max-width:1120px) {
+  .demo-section {
+    padding-inline:30px;
+  }
+}
+@media(max-width:900px) {
+  .demo-section {
+    padding-top:70px;
+    padding-bottom:65px;
+  }
+  .of-demo-intro>p {
+    font-size:13px;
+    max-width:255px;
+  }
+}
+@media(max-width:650px) {
+  .demo-section {
+    padding:58px 22px 58px;
+  }
+  .of-demo-intro {
+    display:block;
+    margin-bottom:25px;
+  }
+  .of-demo-intro h2 {
+    font-size:35px;
+    letter-spacing:-1.6px;
+  }
+  .of-demo-intro>p {
+    margin-top:15px;
+    max-width:330px;
+    font-size:13px;
+    line-height:1.7;
+  }
+  .of-demo-explore-row {
+    margin-top:13px;
+  }
+}

@@ -17,11 +17,11 @@ bun run start
 
 Preview: **http://localhost:3001**. Keep the last command running while reviewing. `PORT=3011 bun run start` selects another port if 3001 is occupied. Restart the server after editing website files to rebuild the preview. The root repository's build and verification scripts target the product, so run these landing commands directly.
 
-Review at viewport widths 1440, 1024, 768, and 375 pixels. Exercise the hero's “Bring it together” control, all three product example tabs, question selection, source dialogs, source selection and consent, draft editing and publishing, onboarding checkboxes, reset, FAQ disclosures, and the mobile menu. Use Tab, Shift+Tab, Enter, Space, and Escape to review keyboard controls. Also review with reduced motion enabled and check the browser console and network panel for errors or missing assets.
+Review at viewport widths 1440, 1024, 768, and 375 pixels. Exercise the hero’s “Bring it together” control, then follow the guided example from “See the answer” through its citation, source preview, editable procedure, review, publication, and successor checklist. “Explore the full example” reveals the three original workspace modes, question selection, source selection and consent, draft editing and publishing, and onboarding checkboxes. Check both reset controls, the four FAQ disclosures, and the mobile menu. Use Tab, Shift+Tab, Enter, Space, and Escape to review keyboard controls. Also review with reduced motion enabled and check the browser console and network panel for errors or missing assets.
 
 ## Files and runtime
 
-`App.tsx` contains the page, navigation, pricing, and FAQ. `Demo.tsx` contains the deterministic fictional food pantry walkthrough. `style.css` and `demo.css` provide responsive layout and motion. `index.html` provides page metadata, and `public/` contains the favicon, social preview artwork, crawler files, and licensed local fonts. `main.tsx` hydrates the prerendered React page.
+`App.tsx` contains the six section page, navigation, pricing, and FAQ. `GuidedDemo.tsx` contains the focused default journey. `Demo.tsx` retains the richer optional workspace, and both use the fictional sources in `sample-data.ts`. `style.css`, `refinement.css`, `demo.css`, and `guided-demo.css` provide responsive layout and motion. `index.html` provides page metadata, and `public/` contains the favicon, social preview artwork, crawler files, and licensed local fonts. `main.tsx` hydrates the prerendered React page.
 
 `build.ts` creates minified browser bundles in ignored `dist/` with root asset URLs, copies `public/`, and prerenders the page into static HTML. `index.ts` rebuilds before starting the static server on loopback port 3001. This supports the existing service's direct `bun run index.ts` entrypoint and the deployment pipeline, which excludes `dist/` during synchronization. It does not require a separate landing build step or a `NODE_ENV` override. A failed build stops startup.
 
@@ -49,3 +49,24 @@ After the finished landing commit is reviewed, an authorized maintainer can push
 The existing Nginx routing remains authoritative: `/` goes to port 3001, `/a/` to 3002, and `/api/`, `/auth/`, `/docs`, `/swagger`, `/openapi.json`, and `/health` to 3003. The landing does not proxy or implement those product routes. No Nginx, backend, frontend, AWS, or payment configuration changes are required.
 
 The existing workflow synchronizes source, installs each service with `bun install --frozen-lockfile`, builds the application, and restarts services. Landing builds itself at startup. After an authorized deployment, inspect the live homepage and its assets, then verify `/a/`, an application deep link, backend health, Swagger, and OpenAPI. Confirm the application's sign-in flow separately without adding private content to the demonstration workspace.
+
+## Simplicity refinement handoff
+
+Confirmed direction: preserve the premium visual identity and existing functionality while reducing repetition and the number of choices shown initially. All refinement changes are confined to `landing/`, on the existing `feat/orgflow-premium-landing` branch. No dependency, production application, backend, deployment, or infrastructure changes are included.
+
+The page now has six main sections: hero, one knowledge handoff story, guided demonstration, compact product overview, pricing with essential FAQ, and the purple closing. The problem and how it works sections are combined. Human control moves into the draft review stage. The separate audience section is removed, and the larger feature presentation becomes one article visual with three concise capabilities. Four FAQ questions sit beside pricing. The proposed founding price and shared demonstration workspace limitation remain explicit.
+
+Measurements compare baseline `06ad974` with the finished default interaction state in Chrome at a 1440 by 900 viewport, after fonts load and sections are revealed. Word counts use rendered `body.innerText` separated by whitespace. Closed disclosures and the hidden full workspace are excluded by the browser. The outside demo count subtracts `#demo.innerText` from the total.
+
+| Measurement | Original | Refined |
+| --- | ---: | ---: |
+| Main sections | 10 | 6 |
+| Initial rendered words | 1,244 | 488 |
+| Words outside the demo | 1,014 | 448 |
+| Desktop page height | 7,994px | 4,515px |
+| Demo position from page top | 2,357px | 1,433px |
+| Mobile page height at 375px | 10,677px | 5,313px |
+
+Validation: `bun run typecheck`, seven server tests with 82 assertions, and `bun run build` pass. Actual browser checks at 1440, 1024, 768, and 375 pixels cover navigation, application destinations, hero transformation, all four FAQs, mobile menu dismissal, keyboard focus, fonts and assets, and reduced motion. Both demonstration journeys pass source focus trapping and restoration, consent gating, edit validation, explicit publication, published snapshot preservation, checklists, reset, and optional workspace state preservation. Automated accessibility checks report zero violations on the page at every width and across 28 guided states. Browser checks found no console, page, missing asset, or horizontal overflow errors and no live AI requests. Before and after desktop and mobile screenshots were inspected.
+
+The preview remains `http://localhost:3001`. Review and authorize any later push, merge, or deployment separately.
