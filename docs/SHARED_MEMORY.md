@@ -210,7 +210,7 @@ Implementation assumptions for this build: use React + Bun HTML imports + Tiptap
 ### Google OAuth production setup — 2026-10-11
 
 - Confirmed Google accepts `https://orgflow.dev/auth/google/callback` for the OrgFlow OAuth client; it reaches Google sign-in without a redirect mismatch.
-- Added GitHub Actions secrets for the production OAuth client ID, secret, and callback URI. The deployment now writes them with `FRONTEND_ORIGIN=https://orgflow.dev` to the server-only `backend/.env` (permissions `0600`), retaining other existing server configuration. Values are not recorded here or in Git.
+- Added GitHub Actions secrets for the production OAuth client ID, secret, and callback URI. The deployment writes them with `FRONTEND_ORIGIN=https://orgflow.dev/a/` to the server-only `backend/.env` (permissions `0600`), retaining other existing server configuration. Values are not recorded here or in Git.
 - Deployed commit `3114670` successfully. Live callback routing returns the expected protected-state error; initiating a connection requires an authenticated OrgFlow session. No Google user consent or private-source access was performed.
 - User subsequently received Google `Error 400: redirect_uri_mismatch` for the exact production callback. The URL was not actually saved in the OAuth client's Authorized redirect URIs, despite a non-interactive probe reaching Google sign-in. Add `https://orgflow.dev/auth/google/callback` in the browser client editor, then retry. This browser-only client setting remains pending.
 
