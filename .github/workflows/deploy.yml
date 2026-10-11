@@ -42,11 +42,15 @@ jobs:
           GOOGLE_CLIENT_ID: ${{ secrets.PROD_GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.PROD_GOOGLE_CLIENT_SECRET }}
           GOOGLE_REDIRECT_URI: ${{ secrets.PROD_GOOGLE_REDIRECT_URI }}
+          ELEVENLABS_API_KEY: ${{ secrets.PROD_ELEVENLABS_API_KEY }}
+          ELEVENLABS_AGENT_ID: ${{ secrets.PROD_ELEVENLABS_AGENT_ID }}
         run: |
           printf '%s\n' \
             "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" \
             "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" \
             "GOOGLE_REDIRECT_URI=$GOOGLE_REDIRECT_URI" \
+            "ELEVENLABS_API_KEY=$ELEVENLABS_API_KEY" \
+            "ELEVENLABS_AGENT_ID=$ELEVENLABS_AGENT_ID" \
             "FRONTEND_ORIGIN=https://orgflow.dev" \
             "FRONTEND_REDIRECT_URL=https://orgflow.dev/a/" \
             | ssh "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" '
