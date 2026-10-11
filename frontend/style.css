@@ -1254,6 +1254,50 @@ td small {
   margin: 6px auto;
   max-width: 350px;
 }
+.voice-transcript {
+  max-width: 540px;
+  margin: 14px auto 2px;
+  padding: 12px;
+  text-align: left;
+  border: 1px solid #ece1f3;
+  border-radius: 12px;
+  background: #fffdfa;
+}
+.voice-transcript > label:first-child {
+  display: block;
+  margin-bottom: 7px;
+  color: #5c4968;
+  font-size: 11px;
+  font-weight: 650;
+}
+.voice-transcript textarea {
+  display: block;
+  width: 100%;
+  min-height: 110px;
+  max-height: 180px;
+  resize: vertical;
+  padding: 9px;
+  border: 1px solid #e8ddef;
+  border-radius: 8px;
+  background: white;
+  color: #544a59;
+  font: inherit;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.voice-transcript .voice-consent {
+  display: flex;
+  margin: 9px 0;
+  padding: 0;
+  text-align: left;
+}
+.voice-transcript .text-button {
+  margin-top: 6px;
+  padding: 7px 9px;
+  border: 1px solid #e8ddef;
+  border-radius: 7px;
+  background: #f7f1fb;
+}
 .error {
   padding: 15px 30px;
   background: #fff0e8;

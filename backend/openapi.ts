@@ -267,7 +267,6 @@ export const openapi = {
         "Create a short-lived signed WebSocket URL for the private ElevenLabs voice agent",
         object({ signedUrl: string, agentId: string }, ["signedUrl", "agentId"]),
         undefined,
-        true,
       ),
     },
     "/api/uploads": {

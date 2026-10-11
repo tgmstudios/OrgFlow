@@ -221,7 +221,16 @@ async function openHosted(
 }
 
 function App({ user, onLogout }: { user: User; onLogout: () => void }) {
-  const realtimeVoice = useConversation();
+  const realtimeVoice = useConversation({
+    onMessage: ({ message, role }) => {
+      const speaker = role === "user" ? "user" : "assistant";
+      setVoiceTranscript((transcript) =>
+        (transcript ? transcript + "\n\n" : "") +
+        `${speaker === "user" ? "Staff" : "OrgFlow"}: ${message}`,
+      );
+      setMessages((current) => [...current, { role: speaker, content: message }]);
+    },
+  });
   const [data, setData] = useState<Data | null>(null),
     [page, setPageState] = useState(currentPage),
     [error, setError] = useState(""),
@@ -236,6 +245,8 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     [messages, setMessages] = useState<Message[]>([]),
     [input, setInput] = useState(""),
     [busy, setBusy] = useState(false),
+    [voiceTranscript, setVoiceTranscript] = useState(""),
+    [voiceDraftConsent, setVoiceDraftConsent] = useState(false),
     [voiceNote, setVoiceNote] = useState(""),
     [provider, setProvider] = useState("All providers"),
     [folder, setFolder] = useState(""),
@@ -336,7 +347,9 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     setBusy(true);
     try {
       const r = await api("/agent", "POST", {
-        messages: next.map(({ role, content }) => ({ role, content })),
+        messages: next
+          .slice(-24)
+          .map(({ role, content }) => ({ role, content })),
         mode: requestedMode,
         articleId: active || undefined,
         ...(sources.length ? { sources, sourcesConsent: consent } : {}),
@@ -365,11 +378,35 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     setVoiceNote("Connecting securely to OrgFlow Voice…");
     try {
       const { signedUrl } = await api("/voice/signed-url");
-      await realtimeVoice.startSession({ signedUrl, userId: user.id });
+      setVoiceTranscript("");
+      setVoiceDraftConsent(false);
+      await realtimeVoice.startSession({
+        signedUrl,
+        connectionType: "websocket",
+        userId: user.id,
+      });
       setVoiceNote("Connected. You can speak naturally.");
     } catch (e: any) {
       setVoiceNote(e.message || "Unable to start the voice session.");
     }
+  }
+  function draftFromVoice() {
+    if (!voiceDraftConsent) {
+      setVoiceNote("Approve sharing this transcript with the drafting AI first.");
+      return;
+    }
+    const transcript = voiceTranscript.slice(-5000);
+    if (!transcript.trim()) {
+      setVoiceNote("There is no voice transcript to draft from yet.");
+      return;
+    }
+    setMode("draft");
+    setVoiceNote("Sending the reviewed transcript to the drafting AI…");
+    send(
+      "Create a concise SOP draft from this reviewed voice interview transcript. Preserve clear facts, label uncertain details for review, and add open questions where information is missing.\n\n" +
+        transcript,
+      "draft",
+    );
   }
   const selected = data?.articles.find((a) => a.id === active);
   const files = (data?.files || []).filter(
@@ -729,6 +766,40 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
               {voiceNote ||
                 "Live audio is handled by ElevenLabs after you start a secure voice session."}
             </p>
+            {voiceTranscript && (
+              <div className="voice-transcript">
+                <label htmlFor="voice-transcript">Review interview transcript</label>
+                <textarea
+                  id="voice-transcript"
+                  aria-label="Review interview transcript"
+                  value={voiceTranscript.slice(-5000)}
+                  maxLength={5000}
+                  onChange={(e) => setVoiceTranscript(e.target.value)}
+                  disabled={realtimeVoice.status !== "disconnected"}
+                />
+                <label className="consent voice-consent">
+                  <input
+                    type="checkbox"
+                    checked={voiceDraftConsent}
+                    onChange={(e) => setVoiceDraftConsent(e.target.checked)}
+                    disabled={realtimeVoice.status !== "disconnected"}
+                  />
+                  Share this transcript with the drafting AI to create an
+                  OrgFlow draft.
+                </label>
+                <button
+                  className="text-button"
+                  onClick={draftFromVoice}
+                  disabled={
+                    busy ||
+                    realtimeVoice.status !== "disconnected" ||
+                    !voiceDraftConsent
+                  }
+                >
+                  <Sparkles size={14} /> Create reviewable SOP draft
+                </button>
+              </div>
+            )}
           </div>
         )}
         <form
