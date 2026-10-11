@@ -34,7 +34,17 @@ nonisolated enum PlaybookDrafter {
     }
 
     /// Frames a narration for the drafter. `isFirst` is false for follow-up detail on the same draft.
-    static func frame(_ narration: String, mode: AskMode, isFirst: Bool) -> String {
+    static func frame(_ narration: String, mode: AskMode, isFirst: Bool, interview: Bool = false) -> String {
+        if interview {
+            let kind = mode == .handoff ? "a role handoff guide (with a first-30-days onboarding checklist for my successor)" : "a step-by-step process playbook (SOP)"
+            return """
+                \(isFirst ? "Draft" : "Revise the same draft into") \(kind) from this reviewed voice interview between \
+                OrgFlow (the interviewer) and me. Facts come only from what I said; the interviewer's questions are context. \
+                Preserve clear facts, label uncertain details for review, and add open questions where information is missing.
+
+                \(narration)
+                """
+        }
         guard isFirst else {
             return "More detail to add to the same draft (dictated by voice; ignore filler words and fix obvious transcription errors):\n\n\(narration)"
         }

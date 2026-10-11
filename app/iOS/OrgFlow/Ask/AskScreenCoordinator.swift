@@ -76,9 +76,102 @@ final class AskScreenCoordinator {
     func toggleMicrophone() {
         switch state {
         case .listening: Task { await stopListening() }
+        case .interviewing: Task { await finishInterview() }
         case .transcribing: break
-        default: Task { await startListening() }
+        default:
+            if usesInterview { Task { await startInterview() } } else { Task { await startListening() } }
         }
+    }
+
+    // MARK: - Live interview (ElevenLabs)
+
+    /// Capture and Handoff talk with OrgFlow's voice agent unless the person chose dictation. Ask dictates.
+    var voiceStyle: VoiceStyle = VoiceStyle.saved {
+        didSet { VoiceStyle.saved = voiceStyle }
+    }
+
+    var usesInterview: Bool { mode != .ask && voiceStyle == .conversation }
+
+    @ObservationIgnored private var interview: VoiceInterviewSession?
+    /// The latest line of the live call, for captions.
+    private(set) var interviewCaption: String?
+    private(set) var interviewCaptionFromAgent = true
+    /// Receives the call transcript when a call ends with something said, ready to draft.
+    @ObservationIgnored var onInterviewFinished: ((String) -> Void)?
+    /// The next submitted narration came from an interview transcript.
+    @ObservationIgnored private var draftIsInterview = false
+
+    /// Knot input: the interview's voices while talking with OrgFlow, otherwise the microphone.
+    func currentVoiceFeatures() -> AudioFeatureSnapshot {
+        interview?.currentFeatures() ?? capture.currentFeatures()
+    }
+
+    func startInterview() async {
+        guard interview == nil, !state.isCapturing, !state.isInterviewing else { return }
+        guard await MicrophoneCaptureController.requestPermission() else {
+            state = .error(.permissionDenied)
+            return
+        }
+        let session = VoiceInterviewSession()
+        interview = session
+        draftBeforeVoice = draft.isEmpty ? "" : draft.trimmingCharacters(in: .whitespacesAndNewlines) + "\n"
+        state = .interviewing(.connecting)
+        session.onPhase = { [weak self] phase in
+            guard let self, interview === session else { return }
+            switch phase {
+            case .connecting: state = .interviewing(.connecting)
+            case .listening(let muted): state = .interviewing(.listening(muted: muted))
+            case .agentSpeaking: state = .interviewing(.agentSpeaking)
+            case .ended: break
+            }
+        }
+        session.onTranscript = { [weak self] lines in
+            guard let self, interview === session else { return }
+            interviewCaption = lines.last?.text
+            interviewCaptionFromAgent = lines.last?.fromAgent ?? true
+        }
+        session.onEnded = { [weak self] reason in
+            guard let self, interview === session else { return }
+            if let reason { Self.log.error("Interview ended: \(reason, privacy: .public)") }
+            Task { await self.finishInterview() }
+        }
+        do {
+            try await session.start()
+        } catch {
+            guard interview === session else { return }
+            interview = nil
+            Self.log.error("Interview start failed: \(String(describing: error), privacy: .public)")
+            switch error as? OrgFlowAPIError {
+            case .signInRequired:
+                user = nil
+                state = .error(.signInRequired)
+                onSignInRequested?()
+            case .planRequired(let detail):
+                state = .error(.planRequired(detail))
+            case .server(_, let message):
+                state = .error(.captureFailed(message))
+            default:
+                state = .error(.captureFailed("Couldn't start the conversation with OrgFlow. Try again, or switch to Dictate."))
+            }
+        }
+    }
+
+    /// Ends the call and hands its transcript on to be drafted.
+    func finishInterview() async {
+        guard let session = interview else { return }
+        interview = nil
+        let text = await session.finish()
+        interviewCaption = nil
+        state = isEditing ? .typing : .idle
+        // Only draft when the person actually said something.
+        guard session.lines.contains(where: { !$0.fromAgent }) else { return }
+        let combined = (draftBeforeVoice + text).trimmingCharacters(in: .whitespacesAndNewlines)
+        draftIsInterview = true
+        onInterviewFinished?(combined)
+    }
+
+    func setInterviewMuted(_ muted: Bool) {
+        Task { await interview?.setMuted(muted) }
     }
 
     func startListening() async {
@@ -179,7 +272,7 @@ final class AskScreenCoordinator {
 
     func submit(_ rawText: String) {
         let text = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, state != .thinking, state != .responding else { return }
+        guard !text.isEmpty, state != .thinking, state != .responding, !state.isInterviewing else { return }
         if state.isCapturing {
             // Sending mid-capture: keep what the user sees, stop the microphone immediately.
             capture.stop()
@@ -191,7 +284,9 @@ final class AskScreenCoordinator {
         }
         draft = ""
         UserDefaults.standard.set(true, forKey: AskScreenCoordinator.hasAskedKey)
-        let entry = ConversationEntry(id: UUID(), prompt: text, mode: mode)
+        var entry = ConversationEntry(id: UUID(), prompt: text, mode: mode)
+        if draftIsInterview, mode != .ask { entry.fromInterview = true }
+        draftIsInterview = false
         entries.append(entry)
         run(entry.id)
     }
@@ -253,7 +348,7 @@ final class AskScreenCoordinator {
     private func runCapture(_ entry: ConversationEntry) {
         state = .thinking
         let id = entry.id
-        let turns = captureTurns + [PlaybookDrafter.Turn(role: "user", content: PlaybookDrafter.frame(entry.prompt, mode: entry.mode, isFirst: captureArticleID == nil))]
+        let turns = captureTurns + [PlaybookDrafter.Turn(role: "user", content: PlaybookDrafter.frame(entry.prompt, mode: entry.mode, isFirst: captureArticleID == nil, interview: entry.fromInterview == true))]
         let articleID = captureArticleID
         answerTask?.cancel()
         answerTask = Task { [weak self] in
@@ -320,6 +415,7 @@ final class AskScreenCoordinator {
     func setMode(_ newMode: AskMode) {
         guard newMode != mode, state != .thinking, state != .responding else { return }
         if state.isCapturing { Task { await stopListening() } }
+        if state.isInterviewing { Task { await finishInterview() } }
         if isConversationActive { newConversation() }
         mode = newMode
         resetCapture()
@@ -349,7 +445,7 @@ final class AskScreenCoordinator {
         resetCapture()
         if saved.mode != .ask {
             for (index, entry) in saved.entries.enumerated() {
-                captureTurns.append(.init(role: "user", content: PlaybookDrafter.frame(entry.prompt, mode: saved.mode, isFirst: index == 0)))
+                captureTurns.append(.init(role: "user", content: PlaybookDrafter.frame(entry.prompt, mode: saved.mode, isFirst: index == 0, interview: entry.fromInterview == true)))
                 captureTurns.append(.init(role: "assistant", content: entry.answer))
             }
             captureArticleID = saved.entries.last { $0.draftArticleID != nil }?.draftArticleID
@@ -437,6 +533,9 @@ final class AskScreenCoordinator {
     func enterBackground() {
         if state.isCapturing {
             Task { await stopListening() }
+        }
+        if state.isInterviewing {
+            Task { await finishInterview() }
         }
     }
 

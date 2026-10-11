@@ -31,6 +31,7 @@ nonisolated struct RemoteKnowledgeAgent: KnowledgeAgentProviding {
         let sourceType: String?
         let url: String?
         let provider: String?
+        let from: String?
         let orgflowPath: String?
         let synthetic: Bool?
         let selectedDraft: Bool?
@@ -86,6 +87,10 @@ nonisolated struct RemoteKnowledgeAgent: KnowledgeAgentProviding {
         case "file metadata":
             labels.append("File location only")
             labels += [source.provider, source.orgflowPath].compactMap { $0?.isEmpty == false ? $0 : nil }
+        case "email excerpt":
+            labels.append("Email" + (source.from.flatMap { $0.isEmpty ? nil : " · " + $0 } ?? ""))
+        case "document excerpt":
+            labels.append("Document" + (source.provider.flatMap { $0.isEmpty ? nil : " · " + $0 } ?? ""))
         default:
             if source.selectedDraft == true || source.status == "draft" {
                 labels.append("Unapproved draft")

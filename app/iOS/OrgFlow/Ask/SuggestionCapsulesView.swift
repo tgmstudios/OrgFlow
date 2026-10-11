@@ -3,6 +3,8 @@ import UIKit
 nonisolated struct Suggestion: Hashable, Sendable {
     let symbol: String
     let text: String
+    /// Set for a suggested playbook: tapping drafts it from the candidate's evidence.
+    var candidateID: String?
 
     static let defaults: [Suggestion] = [
         Suggestion(symbol: "person.badge.plus", text: "Onboard a new team member"),

@@ -109,11 +109,126 @@ nonisolated struct Article: Decodable, Sendable, Hashable, Identifiable {
     let publishedAt: String?
     let sources: [ArticleSource]?
     let synthetic: Bool?
+    let publishedBy: PersonReference?
+    /// ISO 8601. A published article is due for review once this has passed.
+    let reviewDueAt: String?
+    let reviewedAt: String?
+    let ownerId: String?
 
     var isDraft: Bool { status == "draft" }
     var hasPublishedVersion: Bool { publishedContent != nil }
     var isSample: Bool { synthetic == true }
     var displayTitle: String { publishedTitle ?? title }
+
+    var reviewDueDate: Date? { OrgFlowDates.parse(reviewDueAt) }
+    var publishedDate: Date? { OrgFlowDates.parse(publishedAt) }
+    var reviewedDate: Date? { OrgFlowDates.parse(reviewedAt) }
+
+    /// Published knowledge whose periodic review date has passed.
+    var isDueForReview: Bool {
+        guard hasPublishedVersion || !isDraft, let due = reviewDueDate else { return false }
+        return due < Date()
+    }
+}
+
+/// `{id, name}` — who approved, started, or completed something.
+nonisolated struct PersonReference: Codable, Sendable, Hashable {
+    let id: String
+    let name: String
+}
+
+nonisolated struct Person: Decodable, Sendable, Hashable, Identifiable {
+    let id: String
+    let name: String
+    let role: String?
+    let email: String?
+    /// "active", "leaving", or "left".
+    let status: String?
+    let leaveDate: String?
+    let successorId: String?
+    let handoffArticleId: String?
+}
+
+nonisolated struct ChecklistStep: Decodable, Sendable, Hashable, Identifiable {
+    let id: String
+    let text: String
+    var done: Bool
+    let doneAt: String?
+    let doneBy: PersonReference?
+    let note: String?
+
+    var doneDate: Date? { OrgFlowDates.parse(doneAt) }
+}
+
+nonisolated struct ChecklistRun: Decodable, Sendable, Hashable, Identifiable {
+    let id: String
+    let articleId: String?
+    let title: String
+    let assigneeId: String?
+    let dueAt: String?
+    let startedBy: PersonReference?
+    let startedAt: String?
+    /// "active" or "completed".
+    var status: String
+    var completedAt: String?
+    var steps: [ChecklistStep]
+
+    var isCompleted: Bool { status == "completed" }
+    var completedCount: Int { steps.filter(\.done).count }
+    var startedDate: Date? { OrgFlowDates.parse(startedAt) }
+    var completedDate: Date? { OrgFlowDates.parse(completedAt) }
+}
+
+nonisolated struct CandidateEvidence: Decodable, Sendable, Hashable, Identifiable {
+    let id: String
+    let title: String
+    let provider: String?
+    let url: String?
+    let from: String?
+    let updatedAt: String?
+}
+
+/// A recurring workflow the backend found in indexed email and documents, offered as a playbook to draft.
+nonisolated struct PlaybookCandidate: Decodable, Sendable, Hashable, Identifiable {
+    let id: String
+    let title: String
+    let summary: String?
+    let frequency: String?
+    let evidence: [CandidateEvidence]
+    /// "suggested", "drafted", or "dismissed".
+    let status: String
+    let articleId: String?
+    let createdAt: String?
+
+    var isSuggested: Bool { status == "suggested" }
+}
+
+nonisolated struct IndexedSource: Decodable, Sendable, Hashable, Identifiable {
+    let id: String
+    let title: String
+    let provider: String?
+    let url: String?
+    let from: String?
+    let updatedAt: String?
+    let indexedAt: String?
+    let chunkCount: Int?
+    let preview: String?
+}
+
+nonisolated struct OrganizationMember: Decodable, Sendable, Hashable, Identifiable {
+    let id: String
+    let name: String
+    let email: String?
+    let role: String?
+}
+
+/// `GET /api/org`. `inviteCode` is only present for admins.
+nonisolated struct OrganizationInfo: Decodable, Sendable, Hashable, Identifiable {
+    let id: String
+    let name: String
+    let role: String?
+    let inviteCode: String?
+    let members: [OrganizationMember]
 }
 
 nonisolated struct WorkspaceFile: Decodable, Sendable, Hashable, Identifiable {
@@ -146,6 +261,27 @@ nonisolated struct Workspace: Decodable, Sendable {
     var articles: [Article]
     var files: [WorkspaceFile]
     var events: [WorkspaceEvent]
+    var people: [Person]
+    var runs: [ChecklistRun]
+    var candidates: [PlaybookCandidate]
+    var sources: [IndexedSource]
+
+    private enum CodingKeys: String, CodingKey { case categories, articles, files, events, people, runs, candidates, sources }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        categories = try container.decode([WorkspaceCategory].self, forKey: .categories)
+        articles = try container.decode([Article].self, forKey: .articles)
+        files = try container.decode([WorkspaceFile].self, forKey: .files)
+        events = try container.decode([WorkspaceEvent].self, forKey: .events)
+        people = try container.decodeIfPresent([Person].self, forKey: .people) ?? []
+        runs = try container.decodeIfPresent([ChecklistRun].self, forKey: .runs) ?? []
+        candidates = try container.decodeIfPresent([PlaybookCandidate].self, forKey: .candidates) ?? []
+        sources = try container.decodeIfPresent([IndexedSource].self, forKey: .sources) ?? []
+    }
+
+    var suggestedCandidates: [PlaybookCandidate] { candidates.filter(\.isSuggested) }
+    func person(_ id: String?) -> Person? { id.flatMap { id in people.first { $0.id == id } } }
 
     func category(_ id: String) -> WorkspaceCategory? { categories.first { $0.id == id } }
     func article(_ id: String) -> Article? { articles.first { $0.id == id } }

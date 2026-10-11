@@ -12,10 +12,15 @@ final class SignInViewController: UIViewController, UITextFieldDelegate {
     private let nameField = UITextField()
     private let emailField = UITextField()
     private let passwordField = UITextField()
+    private let organizationField = UITextField()
+    private let inviteCodeField = UITextField()
+    private let workspaceChoice = UISegmentedControl(items: ["Demo workspace", "New organization", "Invite code"])
     private let errorLabel = UILabel()
     private let primaryButton = UIButton(configuration: .prominentGlass())
     private let switchButton = UIButton(configuration: .plain())
     private lazy var nameRow = fieldRow(nameField)
+    private lazy var organizationRow = fieldRow(organizationField)
+    private lazy var inviteCodeRow = fieldRow(inviteCodeField)
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -36,6 +41,20 @@ final class SignInViewController: UIViewController, UITextFieldDelegate {
         passwordField.isSecureTextEntry = true
         passwordField.returnKeyType = .go
 
+        configure(organizationField, placeholder: "Organization name", content: .organizationName)
+        organizationField.autocapitalizationType = .words
+        configure(inviteCodeField, placeholder: "Invite code", content: .oneTimeCode)
+        inviteCodeField.autocapitalizationType = .none
+        inviteCodeField.returnKeyType = .next
+
+        workspaceChoice.selectedSegmentIndex = 0
+        workspaceChoice.setTitleTextAttributes([.font: ContinuityTheme.Font.text(12, weight: .medium)], for: .normal)
+        workspaceChoice.addAction(UIAction { [weak self] _ in
+            guard let self else { return }
+            errorLabel.text = nil
+            UIView.animate(springDuration: 0.35) { self.refresh() }
+        }, for: .valueChanged)
+
         errorLabel.font = ContinuityTheme.Font.text(14)
         errorLabel.textColor = UIColor(hex: 0xB5603A)
         errorLabel.numberOfLines = 0
@@ -53,7 +72,7 @@ final class SignInViewController: UIViewController, UITextFieldDelegate {
         }, for: .primaryActionTriggered)
 
         let stack = UIStackView(arrangedSubviews: [
-            titleLabel, subtitleLabel, nameRow, fieldRow(emailField), fieldRow(passwordField), errorLabel, primaryButton, switchButton,
+            titleLabel, subtitleLabel, nameRow, fieldRow(emailField), fieldRow(passwordField), workspaceChoice, organizationRow, inviteCodeRow, errorLabel, primaryButton, switchButton,
         ])
         stack.axis = .vertical
         stack.spacing = 12
@@ -108,6 +127,14 @@ final class SignInViewController: UIViewController, UITextFieldDelegate {
             : "Use the account you use for OrgFlow on the web."
         nameRow.isHidden = !isCreatingAccount
         nameRow.alpha = isCreatingAccount ? 1 : 0
+        let choice = workspaceChoice.selectedSegmentIndex
+        workspaceChoice.isHidden = !isCreatingAccount
+        workspaceChoice.alpha = isCreatingAccount ? 1 : 0
+        organizationRow.isHidden = !(isCreatingAccount && choice == 1)
+        organizationRow.alpha = organizationRow.isHidden ? 0 : 1
+        inviteCodeRow.isHidden = !(isCreatingAccount && choice == 2)
+        inviteCodeRow.alpha = inviteCodeRow.isHidden ? 0 : 1
+        workspaceChoice.isEnabled = !isWorking
         primaryButton.configuration?.title = isCreatingAccount ? "Create account" : "Sign in"
         primaryButton.configuration?.showsActivityIndicator = isWorking
         primaryButton.isEnabled = !isWorking
@@ -120,6 +147,8 @@ final class SignInViewController: UIViewController, UITextFieldDelegate {
         switch textField {
         case nameField: emailField.becomeFirstResponder()
         case emailField: passwordField.becomeFirstResponder()
+        case passwordField where isCreatingAccount && workspaceChoice.selectedSegmentIndex == 1: organizationField.becomeFirstResponder()
+        case passwordField where isCreatingAccount && workspaceChoice.selectedSegmentIndex == 2: inviteCodeField.becomeFirstResponder()
         default: submit()
         }
         return true
@@ -130,12 +159,21 @@ final class SignInViewController: UIViewController, UITextFieldDelegate {
         let email = (emailField.text ?? "").trimmingCharacters(in: .whitespaces)
         let password = passwordField.text ?? ""
         let name = (nameField.text ?? "").trimmingCharacters(in: .whitespaces)
+        let choice = workspaceChoice.selectedSegmentIndex
+        let organization = isCreatingAccount && choice == 1 ? (organizationField.text ?? "").trimmingCharacters(in: .whitespaces) : ""
+        let inviteCode = isCreatingAccount && choice == 2 ? (inviteCodeField.text ?? "").trimmingCharacters(in: .whitespaces) : ""
+        if isCreatingAccount, choice == 1, organization.isEmpty { errorLabel.text = "Enter a name for your organization."; refresh(); return }
+        if isCreatingAccount, choice == 2, inviteCode.isEmpty { errorLabel.text = "Enter the invite code you were given."; refresh(); return }
         errorLabel.text = nil
         isWorking = true
         Task {
             do {
                 let user = isCreatingAccount
-                    ? try await OrgFlowAPI.shared.signUp(name: name, email: email, password: password)
+                    ? try await OrgFlowAPI.shared.signUp(
+                        name: name, email: email, password: password,
+                        organization: organization.isEmpty ? nil : organization,
+                        inviteCode: inviteCode.isEmpty ? nil : inviteCode
+                    )
                     : try await OrgFlowAPI.shared.signIn(email: email, password: password)
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
                 onSignedIn?(user)

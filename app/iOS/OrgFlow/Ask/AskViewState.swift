@@ -8,6 +8,8 @@ enum AskViewState: Equatable {
     case listening(speechDetected: Bool)
     /// Capture has stopped and the transcriber is finalizing the tail of the utterance.
     case transcribing
+    /// A live spoken interview with OrgFlow's voice agent (Capture and Handoff).
+    case interviewing(InterviewPhase)
     case thinking
     case responding
     case error(AskError)
@@ -15,6 +17,36 @@ enum AskViewState: Equatable {
     var isCapturing: Bool {
         if case .listening = self { return true }
         return false
+    }
+
+    var isInterviewing: Bool {
+        if case .interviewing = self { return true }
+        return false
+    }
+}
+
+enum InterviewPhase: Equatable {
+    case connecting
+    case listening(muted: Bool)
+    case agentSpeaking
+}
+
+/// How Capture and Handoff take voice: a live interview with OrgFlow (default), or on-device dictation.
+enum VoiceStyle: Int, CaseIterable {
+    case conversation
+    case dictation
+
+    var title: String {
+        switch self {
+        case .conversation: "Talk with OrgFlow"
+        case .dictation: "Dictate"
+        }
+    }
+
+    private static let key = "orgflow.voiceStyle"
+    static var saved: VoiceStyle {
+        get { VoiceStyle(rawValue: UserDefaults.standard.integer(forKey: key)) ?? .conversation }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: key) }
     }
 }
 
@@ -91,6 +123,8 @@ struct ConversationEntry: Identifiable, Equatable, Codable {
     var mode: AskMode = .ask
     /// The draft article this narration produced or revised (Capture and Handoff).
     var draftArticleID: String?
+    /// The narration is a transcript of a live interview with OrgFlow's voice agent.
+    var fromInterview: Bool?
     var answer: String = ""
     var citations: [Citation] = []
     var status: Status = .thinking

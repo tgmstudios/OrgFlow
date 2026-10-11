@@ -6,6 +6,10 @@
 	objectVersion = 110;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		CE63790C307C0FDF00E11EB8 /* ElevenLabs in Frameworks */ = {isa = PBXBuildFile; productRef = CE63790B307C0FDF00E11EB8 /* ElevenLabs */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		CE6378E2307C0FDE00E11EB8 /* OrgFlow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OrgFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -35,6 +39,7 @@
 		CE6378DF307C0FDE00E11EB8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				CE63790C307C0FDF00E11EB8 /* ElevenLabs in Frameworks */,
 			);
 		};
 /* End PBXFrameworksBuildPhase section */
@@ -73,6 +78,9 @@
 				CE6378E4307C0FDE00E11EB8 /* OrgFlow */,
 			);
 			name = OrgFlow;
+			packageProductDependencies = (
+				CE63790B307C0FDF00E11EB8 /* ElevenLabs */,
+			);
 			productName = OrgFlow;
 			productReference = CE6378E2307C0FDE00E11EB8 /* OrgFlow.app */;
 			productType = "com.apple.product-type.application";
@@ -100,6 +108,9 @@
 			);
 			mainGroup = CE6378D9307C0FDE00E11EB8;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				CE63790A307C0FDF00E11EB8 /* XCRemoteSwiftPackageReference "elevenlabs-swift-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CE6378E3307C0FDE00E11EB8 /* Products */;
 			projectDirPath = "";
@@ -335,6 +346,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		CE63790A307C0FDF00E11EB8 /* XCRemoteSwiftPackageReference "elevenlabs-swift-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/elevenlabs/elevenlabs-swift-sdk";
+			requirement = {
+				kind = exactVersion;
+				version = 3.4.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		CE63790B307C0FDF00E11EB8 /* ElevenLabs */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CE63790A307C0FDF00E11EB8 /* XCRemoteSwiftPackageReference "elevenlabs-swift-sdk" */;
+			productName = ElevenLabs;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = CE6378DA307C0FDE00E11EB8 /* Project object */;
 	validationLevel = 1;

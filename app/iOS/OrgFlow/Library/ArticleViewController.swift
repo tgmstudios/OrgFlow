@@ -17,9 +17,18 @@ extension Article {
     var visibleContent: RichTextNode? { isDraft ? content : (publishedContent ?? content) }
     var visibleTitle: String { isDraft ? title : displayTitle }
     var updatedDate: Date? { OrgFlowDates.parse(updatedAt) }
+
+    /// True when the published version has list items a checklist can be run from.
+    var hasRunnableChecklist: Bool {
+        guard hasPublishedVersion || !isDraft, let doc = publishedContent ?? content else { return false }
+        func containsListItem(_ node: RichTextNode) -> Bool {
+            node.type == "listItem" || node.type == "taskItem" || (node.content ?? []).contains(where: containsListItem)
+        }
+        return containsListItem(doc)
+    }
 }
 
-enum OrgFlowDates {
+nonisolated enum OrgFlowDates {
     static func parse(_ string: String?) -> Date? {
         guard let string else { return nil }
         return (try? Date(string, strategy: Date.ISO8601FormatStyle(includingFractionalSeconds: true))) ?? (try? Date(string, strategy: .iso8601))
@@ -28,6 +37,11 @@ enum OrgFlowDates {
 
 final class ArticleViewController: UIViewController {
     var onPublished: ((Article) -> Void)?
+    /// Called after the article is marked reviewed.
+    var onReviewed: ((Article) -> Void)?
+    /// Called when a checklist run is started or changed from this screen.
+    var onRunChanged: ((ChecklistRun) -> Void)?
+    var onRunDeleted: ((String) -> Void)?
 
     private var article: Article?
     private var workspace: Workspace?
@@ -223,6 +237,27 @@ final class ArticleViewController: UIViewController {
             updated.text = "Updated " + date.formatted(date: .abbreviated, time: .shortened)
             stack.addArrangedSubview(updated)
         }
+        if article.hasPublishedVersion || !article.isDraft {
+            if article.publishedBy != nil || article.publishedDate != nil {
+                let approved = UILabel()
+                approved.font = ContinuityTheme.Font.text(13)
+                approved.textColor = ContinuityTheme.Color.secondaryInk
+                approved.numberOfLines = 0
+                var parts = [article.publishedBy.map { "Approved by \($0.name)" } ?? "Approved"]
+                if let date = article.publishedDate { parts.append(date.formatted(date: .abbreviated, time: .omitted)) }
+                approved.text = parts.joined(separator: " · ")
+                stack.addArrangedSubview(approved)
+            }
+            if let due = article.reviewDueDate {
+                let review = UILabel()
+                let overdue = article.isDueForReview
+                review.font = ContinuityTheme.Font.text(13, weight: overdue ? .semibold : .regular)
+                review.textColor = overdue ? UIColor(hex: 0xB5603A) : ContinuityTheme.Color.secondaryInk
+                review.numberOfLines = 0
+                review.text = (overdue ? "Review due " : "Next review ") + due.formatted(date: .abbreviated, time: .omitted)
+                stack.addArrangedSubview(review)
+            }
+        }
         if let last = stack.arrangedSubviews.last { stack.setCustomSpacing(22, after: last) }
 
         let body = UITextView()
@@ -263,7 +298,20 @@ final class ArticleViewController: UIViewController {
             for source in sources { stack.addArrangedSubview(sourceRow(source)) }
         }
 
-        navigationItem.rightBarButtonItem = UIBarButtonItem(systemItem: .action, primaryAction: UIAction { [weak self] _ in self?.share() })
+        let shareItem = UIBarButtonItem(systemItem: .action, primaryAction: UIAction { [weak self] _ in self?.share() })
+        var menuActions: [UIMenuElement] = []
+        if article.hasRunnableChecklist, article.hasPublishedVersion || !article.isDraft {
+            menuActions.append(UIAction(title: "Run checklist", image: UIImage(systemName: "checklist")) { [weak self] _ in self?.startChecklist() })
+        }
+        if article.reviewDueAt != nil, article.hasPublishedVersion || !article.isDraft {
+            menuActions.append(UIAction(title: "Mark reviewed", image: UIImage(systemName: "checkmark.seal")) { [weak self] _ in self?.markReviewed() })
+        }
+        if menuActions.isEmpty {
+            navigationItem.rightBarButtonItems = [shareItem]
+        } else {
+            let more = UIBarButtonItem(image: UIImage(systemName: "ellipsis"), menu: UIMenu(children: menuActions))
+            navigationItem.rightBarButtonItems = [more, shareItem]
+        }
         updateBottomBar()
     }
 
@@ -336,12 +384,50 @@ final class ArticleViewController: UIViewController {
         }
     }
 
+    private func startChecklist() {
+        guard let article else { return }
+        Task {
+            do {
+                let run = try await OrgFlowAPI.shared.startRun(articleID: article.id, title: article.displayTitle)
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                onRunChanged?(run)
+                let checklist = ChecklistViewController(run: run, people: workspace?.people ?? [])
+                checklist.onChanged = onRunChanged
+                checklist.onDeleted = onRunDeleted
+                navigationController?.pushViewController(checklist, animated: true)
+            } catch {
+                showAlert("Couldn't start the checklist", error)
+            }
+        }
+    }
+
+    private func markReviewed() {
+        guard let article else { return }
+        Task {
+            do {
+                let reviewed = try await OrgFlowAPI.shared.markReviewed(articleID: article.id)
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                self.article = reviewed
+                render()
+                onReviewed?(reviewed)
+            } catch {
+                showAlert("Couldn't mark as reviewed", error)
+            }
+        }
+    }
+
+    private func showAlert(_ title: String, _ error: Error) {
+        let alert = UIAlertController(title: title, message: error.localizedDescription, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+
     private func share() {
         guard let article else { return }
         var items: [Any] = [article.visibleTitle]
         if let text = article.visibleContent?.plainText, !text.isEmpty { items.append(text) }
         let controller = UIActivityViewController(activityItems: [items.compactMap { $0 as? String }.joined(separator: "\n\n")], applicationActivities: nil)
-        controller.popoverPresentationController?.sourceItem = navigationItem.rightBarButtonItem
+        controller.popoverPresentationController?.sourceItem = navigationItem.rightBarButtonItems?.last
         present(controller, animated: true)
     }
 }

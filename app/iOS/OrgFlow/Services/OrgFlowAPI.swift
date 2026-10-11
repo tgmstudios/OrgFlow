@@ -4,6 +4,10 @@ nonisolated struct OrgFlowUser: Sendable, Decodable, Equatable {
     let id: String
     let email: String
     let name: String
+    /// Organization the account belongs to ("default" is the shared demo workspace).
+    let orgId: String?
+    /// "admin" or "member".
+    let role: String?
 }
 
 /// Workspace content used to ground on-device suggestions. Only titles are read.
@@ -102,9 +106,15 @@ nonisolated struct OrgFlowAPI: Sendable {
         return try decodeUser(await send("api/auth/login", body: Body(email: email, password: password)))
     }
 
-    func signUp(name: String, email: String, password: String) async throws -> OrgFlowUser {
-        struct Body: Encodable { let name, email, password: String }
-        return try decodeUser(await send("api/auth/signup", body: Body(name: name, email: email, password: password)))
+    /// With neither `organization` nor `inviteCode` the account joins the shared demo workspace.
+    func signUp(name: String, email: String, password: String, organization: String? = nil, inviteCode: String? = nil) async throws -> OrgFlowUser {
+        struct Body: Encodable { let name, email, password: String; let organization, inviteCode: String? }
+        let body = Body(name: name, email: email, password: password, organization: organization, inviteCode: inviteCode)
+        return try decodeUser(await send("api/auth/signup", body: body))
+    }
+
+    func organization() async throws -> OrganizationInfo {
+        try JSONDecoder().decode(OrganizationInfo.self, from: await get("api/org"))
     }
 
     func signOut() async {
@@ -154,6 +164,51 @@ nonisolated struct OrgFlowAPI: Sendable {
         let body = Body(messages: messages.map { Message(role: $0.role, content: String($0.content.prefix(6000))) }, articleId: articleID)
         let response = try JSONDecoder().decode(Response.self, from: await send("api/agent", body: body, timeout: 90))
         return (response.message, response.draft)
+    }
+
+    /// Approval renewal: the owner confirms a published playbook is still accurate.
+    func markReviewed(articleID: String) async throws -> Article {
+        struct Empty: Encodable {}
+        return try JSONDecoder().decode(Article.self, from: await send("api/articles/\(articleID)/review", body: Empty()))
+    }
+
+    // MARK: Candidates
+
+    /// Drafts a playbook (saved as a draft article) from a suggested candidate's evidence.
+    func draftCandidate(id: String) async throws -> (message: String, draft: Article) {
+        struct Response: Decodable { let message: String; let draft: Article }
+        struct Empty: Encodable {}
+        let response = try JSONDecoder().decode(Response.self, from: await send("api/candidates/\(id)/draft", body: Empty(), timeout: 90))
+        return (response.message, response.draft)
+    }
+
+    func dismissCandidate(id: String) async throws {
+        struct Empty: Encodable {}
+        _ = try await send("api/candidates/\(id)/dismiss", body: Empty())
+    }
+
+    // MARK: Checklist runs
+
+    func startRun(articleID: String, title: String? = nil, assigneeID: String? = nil) async throws -> ChecklistRun {
+        struct Body: Encodable { let title: String?; let assigneeId: String? }
+        return try JSONDecoder().decode(ChecklistRun.self, from: await send("api/articles/\(articleID)/runs", body: Body(title: title, assigneeId: assigneeID)))
+    }
+
+    func setStep(runID: String, stepID: String, done: Bool) async throws -> ChecklistRun {
+        struct Body: Encodable { let done: Bool }
+        return try JSONDecoder().decode(ChecklistRun.self, from: await send("api/runs/\(runID)/steps/\(stepID)", method: "PATCH", body: Body(done: done)))
+    }
+
+    func deleteRun(id: String) async throws {
+        _ = try await send("api/runs/\(id)", method: "DELETE", body: Optional<String>.none)
+    }
+
+    // MARK: Voice
+
+    /// Short-lived WebRTC token for OrgFlow's private ElevenLabs interview agent.
+    func voiceSessionToken() async throws -> String {
+        struct Token: Decodable { let conversationToken: String }
+        return try JSONDecoder().decode(Token.self, from: await get("api/voice/session-token")).conversationToken
     }
 
     // MARK: Billing

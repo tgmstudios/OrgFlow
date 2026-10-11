@@ -4,7 +4,7 @@ final class LibraryViewController: UIViewController {
     var onSignInRequested: (() -> Void)?
     var onAsk: ((String) -> Void)?
 
-    private enum Segment: Int { case knowledge, files, upcoming }
+    private enum Segment: Int { case knowledge, files, upcoming, checklists }
 
     private nonisolated struct Section: Hashable, Sendable {
         let id: String
@@ -15,6 +15,8 @@ final class LibraryViewController: UIViewController {
         case article(Article, awaiting: Bool)
         case file(WorkspaceFile)
         case event(WorkspaceEvent)
+        case candidate(PlaybookCandidate)
+        case run(ChecklistRun, assignee: String?)
     }
 
     private enum Phase {
@@ -26,10 +28,11 @@ final class LibraryViewController: UIViewController {
     private var workspace: Workspace?
     private var phase: Phase = .loading
     private var isFetching = false
+    private var isDrafting = false
     private var segment: Segment = .knowledge
     private var sectionCount = 0
 
-    private let segmentedControl = UISegmentedControl(items: ["Knowledge", "Files", "Upcoming"])
+    private let segmentedControl = UISegmentedControl(items: ["Knowledge", "Files", "Upcoming", "Checklists"])
     private var collectionView: UICollectionView!
     private var dataSource: UICollectionViewDiffableDataSource<Section, Item>!
 
@@ -134,12 +137,48 @@ final class LibraryViewController: UIViewController {
                 .font: ContinuityTheme.Font.text(13, weight: .semibold),
                 .foregroundColor: article.isDraft || article.isSample ? article.statusColor : ContinuityTheme.Color.teal,
             ])
+            if article.isDueForReview {
+                line.append(NSAttributedString(string: "  ·  Review due", attributes: [
+                    .font: ContinuityTheme.Font.text(13, weight: .semibold), .foregroundColor: UIColor(hex: 0xB5603A),
+                ]))
+            }
             if let date = article.updatedDate {
                 line.append(NSAttributedString(string: "  ·  " + Self.relative(date), attributes: [
                     .font: ContinuityTheme.Font.text(13), .foregroundColor: ContinuityTheme.Color.secondaryInk,
                 ]))
             }
             content.secondaryAttributedText = line
+            accessories = [.disclosureIndicator()]
+        case .candidate(let candidate):
+            content.text = candidate.title
+            content.textProperties.font = ContinuityTheme.Font.display(18, weight: .medium)
+            content.image = UIImage(systemName: "sparkles")
+            let detail = NSMutableAttributedString()
+            var lead = [candidate.frequency, candidate.evidence.isEmpty ? nil : "\(candidate.evidence.count) emails and documents"].compactMap { $0 }
+            lead = lead.filter { !$0.isEmpty }
+            if !lead.isEmpty {
+                detail.append(NSAttributedString(string: lead.joined(separator: "  ·  "), attributes: [
+                    .font: ContinuityTheme.Font.text(13, weight: .semibold), .foregroundColor: ContinuityTheme.Color.teal,
+                ]))
+            }
+            if let summary = candidate.summary, !summary.isEmpty {
+                if detail.length > 0 { detail.append(NSAttributedString(string: "\n")) }
+                detail.append(NSAttributedString(string: summary, attributes: [
+                    .font: ContinuityTheme.Font.text(13), .foregroundColor: ContinuityTheme.Color.secondaryInk,
+                ]))
+            }
+            content.secondaryAttributedText = detail
+            content.secondaryTextProperties.numberOfLines = 3
+            accessories = [.disclosureIndicator()]
+        case .run(let run, let assignee):
+            content.text = run.title
+            content.textProperties.font = ContinuityTheme.Font.text(16, weight: .medium)
+            content.image = UIImage(systemName: run.isCompleted ? "checkmark.circle.fill" : "checklist")
+            content.imageProperties.tintColor = run.isCompleted ? ContinuityTheme.Color.teal : ContinuityTheme.Color.secondaryInk
+            var parts = ["\(run.completedCount) of \(run.steps.count)"]
+            if let assignee { parts.append(assignee) }
+            if let started = run.startedDate { parts.append("Started " + started.formatted(.dateTime.month(.abbreviated).day())) }
+            content.secondaryText = parts.joined(separator: "  ·  ")
             accessories = [.disclosureIndicator()]
         case .file(let file):
             content.text = file.name
@@ -199,6 +238,7 @@ final class LibraryViewController: UIViewController {
             case .knowledge: buildKnowledge(workspace, into: &snapshot)
             case .files: buildFiles(workspace, into: &snapshot)
             case .upcoming: buildUpcoming(workspace, into: &snapshot)
+            case .checklists: buildChecklists(workspace, into: &snapshot)
             }
         }
         sectionCount = snapshot.numberOfSections
@@ -207,6 +247,12 @@ final class LibraryViewController: UIViewController {
     }
 
     private func buildKnowledge(_ workspace: Workspace, into snapshot: inout NSDiffableDataSourceSnapshot<Section, Item>) {
+        let suggested = workspace.suggestedCandidates
+        if !suggested.isEmpty {
+            let section = Section(id: "suggested", title: "Suggested playbooks")
+            snapshot.appendSections([section])
+            snapshot.appendItems(suggested.map { .candidate($0) }, toSection: section)
+        }
         let drafts = workspace.articles.filter(\.isDraft)
         if !drafts.isEmpty {
             let section = Section(id: "awaiting", title: "Awaiting review")
@@ -219,6 +265,19 @@ final class LibraryViewController: UIViewController {
             let section = Section(id: "category-" + category.id, title: category.name)
             snapshot.appendSections([section])
             snapshot.appendItems(articles.map { .article($0, awaiting: false) }, toSection: section)
+        }
+    }
+
+    private func buildChecklists(_ workspace: Workspace, into snapshot: inout NSDiffableDataSourceSnapshot<Section, Item>) {
+        func newestFirst(_ runs: [ChecklistRun]) -> [ChecklistRun] {
+            runs.sorted { ($0.startedDate ?? .distantPast) > ($1.startedDate ?? .distantPast) }
+        }
+        let active = newestFirst(workspace.runs.filter { !$0.isCompleted })
+        let completed = newestFirst(workspace.runs.filter(\.isCompleted))
+        for (id, title, runs) in [("active", "In progress", active), ("completed", "Completed", completed)] where !runs.isEmpty {
+            let section = Section(id: id, title: title)
+            snapshot.appendSections([section])
+            snapshot.appendItems(runs.map { .run($0, assignee: workspace.person($0.assigneeId)?.name) }, toSection: section)
         }
     }
 
@@ -294,6 +353,10 @@ final class LibraryViewController: UIViewController {
                     config.image = UIImage(systemName: "calendar")
                     config.text = "Nothing upcoming"
                     config.secondaryText = "Meetings and deadlines will show up here."
+                case .checklists:
+                    config.image = UIImage(systemName: "checklist")
+                    config.text = "No checklists yet"
+                    config.secondaryText = "Run a checklist from a published playbook with steps."
                 }
                 config.imageProperties.tintColor = ContinuityTheme.Color.secondaryInk
                 contentUnavailableConfiguration = config
@@ -325,22 +388,124 @@ final class LibraryViewController: UIViewController {
     }
 }
 
+extension LibraryViewController {
+    func pushArticle(_ article: Article) {
+        let controller = ArticleViewController(article: article, workspace: workspace)
+        controller.onPublished = { [weak self] published in
+            guard let self else { return }
+            replaceArticle(published)
+            rebuild()
+            reload()
+        }
+        controller.onReviewed = { [weak self] reviewed in
+            self?.replaceArticle(reviewed)
+            self?.rebuild()
+        }
+        controller.onRunChanged = { [weak self] run in self?.upsertRun(run) }
+        controller.onRunDeleted = { [weak self] id in self?.removeRun(id) }
+        navigationController?.pushViewController(controller, animated: true)
+    }
+
+    private func replaceArticle(_ article: Article) {
+        if let index = workspace?.articles.firstIndex(where: { $0.id == article.id }) {
+            workspace?.articles[index] = article
+        }
+    }
+
+    private func pushChecklist(_ run: ChecklistRun) {
+        let controller = ChecklistViewController(run: run, people: workspace?.people ?? [])
+        controller.onChanged = { [weak self] in self?.upsertRun($0) }
+        controller.onDeleted = { [weak self] in self?.removeRun($0) }
+        navigationController?.pushViewController(controller, animated: true)
+    }
+
+    private func upsertRun(_ run: ChecklistRun) {
+        guard workspace != nil else { return }
+        if let index = workspace?.runs.firstIndex(where: { $0.id == run.id }) {
+            workspace?.runs[index] = run
+        } else {
+            workspace?.runs.append(run)
+        }
+        rebuild()
+    }
+
+    private func removeRun(_ id: String) {
+        workspace?.runs.removeAll { $0.id == id }
+        rebuild()
+    }
+
+    private func presentCandidateActions(_ candidate: PlaybookCandidate, from indexPath: IndexPath) {
+        let sheet = UIAlertController(title: candidate.title, message: candidate.summary, preferredStyle: .actionSheet)
+        sheet.addAction(UIAlertAction(title: "Draft playbook", style: .default) { [weak self] _ in self?.draft(candidate) })
+        sheet.addAction(UIAlertAction(title: "Dismiss", style: .destructive) { [weak self] _ in self?.dismissCandidate(candidate) })
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let cell = collectionView.cellForItem(at: indexPath) {
+            sheet.popoverPresentationController?.sourceView = cell
+            sheet.popoverPresentationController?.sourceRect = cell.bounds
+        }
+        present(sheet, animated: true)
+    }
+
+    private func draft(_ candidate: PlaybookCandidate) {
+        guard !isDrafting else { return }
+        isDrafting = true
+        var progress = UIContentUnavailableConfiguration.loading()
+        progress.text = "Drafting playbook…"
+        progress.secondaryText = "Reading \(candidate.evidence.count) emails and documents."
+        contentUnavailableConfiguration = progress
+        collectionView.isUserInteractionEnabled = false
+        Task {
+            defer {
+                isDrafting = false
+                collectionView.isUserInteractionEnabled = true
+                updateBackground()
+            }
+            do {
+                let result = try await OrgFlowAPI.shared.draftCandidate(id: candidate.id)
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                workspace?.candidates.removeAll { $0.id == candidate.id }
+                if workspace?.articles.contains(where: { $0.id == result.draft.id }) == false { workspace?.articles.append(result.draft) }
+                rebuild()
+                pushArticle(result.draft)
+                reload()
+            } catch {
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                let alert = UIAlertController(title: "Couldn't draft the playbook", message: error.localizedDescription, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                present(alert, animated: true)
+            }
+        }
+    }
+
+    private func dismissCandidate(_ candidate: PlaybookCandidate) {
+        let previous = workspace?.candidates
+        workspace?.candidates.removeAll { $0.id == candidate.id }
+        rebuild()
+        Task {
+            do {
+                try await OrgFlowAPI.shared.dismissCandidate(id: candidate.id)
+            } catch {
+                if let previous { workspace?.candidates = previous }
+                rebuild()
+                let alert = UIAlertController(title: "Couldn't dismiss the suggestion", message: error.localizedDescription, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                present(alert, animated: true)
+            }
+        }
+    }
+}
+
 extension LibraryViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         collectionView.deselectItem(at: indexPath, animated: true)
         guard let item = dataSource.itemIdentifier(for: indexPath) else { return }
         switch item {
         case .article(let article, _):
-            let controller = ArticleViewController(article: article, workspace: workspace)
-            controller.onPublished = { [weak self] published in
-                guard let self else { return }
-                if let index = workspace?.articles.firstIndex(where: { $0.id == published.id }) {
-                    workspace?.articles[index] = published
-                }
-                rebuild()
-                reload()
-            }
-            navigationController?.pushViewController(controller, animated: true)
+            pushArticle(article)
+        case .candidate(let candidate):
+            presentCandidateActions(candidate, from: indexPath)
+        case .run(let run, _):
+            pushChecklist(run)
         case .file(let file):
             if let url = file.url.flatMap({ URL(string: $0) }), url.scheme == "https" {
                 UIApplication.shared.open(url)

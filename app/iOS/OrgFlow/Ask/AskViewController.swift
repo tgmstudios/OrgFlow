@@ -29,6 +29,29 @@ final class AskViewController: UIViewController {
     private let composer = PromptComposerView()
     private let errorNotice = ErrorNoticeView()
 
+    // Voice (Capture and Handoff). Talking with OrgFlow replaces the text field with live captions and
+    // call controls; Dictate keeps the text field. A pair of glass pills chooses between them.
+    private let voiceRow = UIStackView()
+    private let captionLabel = UILabel()
+    private let startTalkingButton = UIButton(configuration: .prominentGlass())
+    private let muteButton = UIButton(configuration: .glass())
+    private let doneButton = UIButton(configuration: .prominentGlass())
+    private let callControls = UIStackView()
+    private let stylePills = UIStackView()
+    private var stylePillButtons: [VoiceStyle: UIButton] = [:]
+    private var suggestionsAboveVoiceRow: NSLayoutConstraint!
+    private var suggestionsAboveComposer: NSLayoutConstraint!
+    private var voiceRowAboveComposer: NSLayoutConstraint!
+    private var voiceRowAtBottom: NSLayoutConstraint!
+    private var appliedVoiceLayout: VoiceLayout?
+
+    private enum VoiceLayout: Equatable {
+        case hidden            // Ask: text field only
+        case dictation         // pills above the text field
+        case talkIdle          // no text field: Start talking + pills
+        case talking           // no text field: captions + Mute / Done
+    }
+
     // Atmosphere: soft color fields that the glass controls refract.
     private let tealField = CAGradientLayer()
     private let lavenderField = CAGradientLayer()
@@ -49,6 +72,10 @@ final class AskViewController: UIViewController {
     private var appliedMode: AskMode?
     /// Ask suggestions: starters until the workspace's own are written on device.
     private var askSuggestions = Suggestion.defaults
+    /// Recurring workflows found in indexed email and documents, offered in Capture.
+    private var candidates: [PlaybookCandidate] = []
+    private var hasAppeared = false
+    private let draftingIndicator = UIActivityIndicatorView(style: .medium)
 
     init(coordinator: AskScreenCoordinator) {
         self.coordinator = coordinator
@@ -75,10 +102,70 @@ final class AskViewController: UIViewController {
     /// Replaces the starter capsules with questions written on device from this workspace's content.
     private func loadSuggestions() async {
         guard coordinator.user != nil,
-              let workspace = try? await OrgFlowAPI.shared.workspace(),
-              let generated = await SuggestionGenerator.suggestions(for: workspace.summary) else { return }
+              let workspace = try? await OrgFlowAPI.shared.workspace() else { return }
+        setCandidates(workspace.suggestedCandidates)
+        guard let generated = await SuggestionGenerator.suggestions(for: workspace.summary) else { return }
         askSuggestions = generated
         if coordinator.mode == .ask { suggestions.setSuggestions(generated, animated: true) }
+    }
+
+    /// Refreshes only the suggested playbooks (cheap; no on-device generation).
+    private func loadCandidates() async {
+        guard coordinator.user != nil, let workspace = try? await OrgFlowAPI.shared.workspace() else { return }
+        setCandidates(workspace.suggestedCandidates)
+    }
+
+    private func setCandidates(_ new: [PlaybookCandidate]) {
+        candidates = new
+        if coordinator.mode == .capture { suggestions.setSuggestions(capsules(for: .capture), animated: true) }
+    }
+
+    private func capsules(for mode: AskMode) -> [Suggestion] {
+        switch mode {
+        case .ask: askSuggestions
+        case .capture: candidates.prefix(3).map { Suggestion(symbol: "sparkles", text: $0.title, candidateID: $0.id) } + Self.starters(for: .capture)
+        case .handoff: Self.starters(for: .handoff)
+        }
+    }
+
+    private func confirmDraft(candidateID: String) {
+        guard let candidate = candidates.first(where: { $0.id == candidateID }) else { return }
+        let count = candidate.evidence.count
+        let noun = count == 1 ? "email or document" : "emails and documents"
+        let alert = UIAlertController(
+            title: "Draft a playbook from \(count) \(noun)?",
+            message: "\u{201C}\(candidate.title)\u{201D} is drafted from indexed text and saved for your team to approve.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Draft playbook", style: .default) { [weak self] _ in self?.draft(candidate) })
+        presenter.present(alert, animated: true)
+    }
+
+    private func draft(_ candidate: PlaybookCandidate) {
+        suggestions.isUserInteractionEnabled = false
+        draftingIndicator.startAnimating()
+        Task {
+            defer {
+                draftingIndicator.stopAnimating()
+                suggestions.isUserInteractionEnabled = true
+            }
+            do {
+                let result = try await OrgFlowAPI.shared.draftCandidate(id: candidate.id)
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                setCandidates(candidates.filter { $0.id != candidate.id })
+                let article = ArticleViewController(article: result.draft, workspace: nil)
+                article.onPublished = { [coordinator] published in coordinator.markPublished(published) }
+                presenter.present(UINavigationController(rootViewController: article), animated: true)
+            } catch let error as OrgFlowAPIError where error == .signInRequired {
+                presentSignIn()
+            } catch {
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                let alert = UIAlertController(title: "Couldn't draft the playbook", message: error.localizedDescription, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                presenter.present(alert, animated: true)
+            }
+        }
     }
 
     /// The view controller to present from: the top of whatever sheet is showing.
@@ -134,8 +221,8 @@ final class AskViewController: UIViewController {
         modeControl.selectedSegmentIndex = mode.rawValue
         let copy: (headline: String, subtitle: String, placeholder: String) = switch mode {
         case .ask: ("Knowledge\nmoves forward.", "Ask what your organization already knows.", "Ask OrgFlow anything…")
-        case .capture: ("Show how the\nwork gets done.", "Talk through a process. OrgFlow drafts the playbook, and your team approves it.", "Describe a process, or hold the knot…")
-        case .handoff: ("Leave it in\ngood hands.", "Walk through your role. OrgFlow drafts a handoff and onboarding guide for whoever's next.", "Describe your role, or hold the knot…")
+        case .capture: ("Show how the\nwork gets done.", "Talk through a process. OrgFlow drafts the playbook, and your team approves it.", "Describe a process…")
+        case .handoff: ("Leave it in\ngood hands.", "Walk through your role. OrgFlow drafts a handoff and onboarding guide for whoever's next.", "Describe your role…")
         }
         let update = {
             let attributes = self.headlineLabel.attributedText?.attributes(at: 0, effectiveRange: nil) ?? [:]
@@ -148,12 +235,14 @@ final class AskViewController: UIViewController {
             update()
         }
         composer.placeholder = copy.placeholder
-        suggestions.setSuggestions(mode == .ask ? askSuggestions : Self.starters(for: mode), animated: animated)
+        suggestions.setSuggestions(capsules(for: mode), animated: animated)
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         refreshKnotBackdrop()
+        if hasAppeared { Task { await loadCandidates() } }
+        hasAppeared = true
     }
 
     func sceneDidEnterBackground() {
@@ -297,6 +386,14 @@ final class AskViewController: UIViewController {
         view.addSubview(heroStack)
         view.addSubview(hintLabel)
         view.addSubview(suggestions)
+        draftingIndicator.hidesWhenStopped = true
+        draftingIndicator.color = ContinuityTheme.Color.teal
+        draftingIndicator.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(draftingIndicator)
+        NSLayoutConstraint.activate([
+            draftingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            draftingIndicator.bottomAnchor.constraint(equalTo: suggestions.topAnchor, constant: -12),
+        ])
 
         let gutter = ContinuityTheme.Metrics.gutter
         knotFillsLanding = knotView.bottomAnchor.constraint(equalTo: suggestions.topAnchor, constant: -20)
@@ -345,18 +442,146 @@ final class AskViewController: UIViewController {
             composer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             composer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             composer.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor, constant: -10),
-            suggestions.bottomAnchor.constraint(equalTo: composer.topAnchor, constant: -14),
             errorNotice.leadingAnchor.constraint(equalTo: composer.leadingAnchor),
             errorNotice.trailingAnchor.constraint(equalTo: composer.trailingAnchor),
             errorNotice.bottomAnchor.constraint(equalTo: composer.topAnchor, constant: -12),
         ])
         view.keyboardLayoutGuide.usesBottomSafeArea = true
+        buildVoiceRow()
+    }
+
+    private func buildVoiceRow() {
+        func capsule(_ button: UIButton, title: String, symbol: String, prominent: Bool) {
+            var config = button.configuration ?? (prominent ? .prominentGlass() : .glass())
+            config.cornerStyle = .capsule
+            config.baseBackgroundColor = prominent ? ContinuityTheme.Color.teal : nil
+            config.baseForegroundColor = prominent ? .white : ContinuityTheme.Color.ink
+            config.image = UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: 14, weight: .semibold))
+            config.imagePadding = 7
+            config.attributedTitle = AttributedString(title, attributes: AttributeContainer([.font: ContinuityTheme.Font.text(16, weight: .semibold)]))
+            config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 18, bottom: 12, trailing: 20)
+            button.configuration = config
+        }
+        capsule(startTalkingButton, title: "Start talking", symbol: "waveform", prominent: true)
+        capsule(muteButton, title: "Mute", symbol: "mic.fill", prominent: false)
+        capsule(doneButton, title: "Done", symbol: "checkmark", prominent: true)
+
+        // Style pills: the selected one is prominent glass, the other plain glass.
+        stylePills.axis = .horizontal
+        stylePills.spacing = 8
+        for style in VoiceStyle.allCases {
+            let button = UIButton(configuration: .glass())
+            button.addAction(UIAction { [weak self] _ in
+                guard let self, coordinator.voiceStyle != style else { return }
+                UISelectionFeedbackGenerator().selectionChanged()
+                coordinator.voiceStyle = style
+            }, for: .primaryActionTriggered)
+            stylePillButtons[style] = button
+            stylePills.addArrangedSubview(button)
+        }
+        styleStylePills()
+
+        captionLabel.numberOfLines = 3
+        captionLabel.textAlignment = .center
+        captionLabel.font = ContinuityTheme.Font.display(19)
+        captionLabel.textColor = ContinuityTheme.Color.ink
+        captionLabel.lineBreakMode = .byTruncatingHead
+
+        callControls.axis = .horizontal
+        callControls.spacing = 10
+        callControls.addArrangedSubview(muteButton)
+        callControls.addArrangedSubview(doneButton)
+
+        voiceRow.axis = .vertical
+        voiceRow.alignment = .center
+        voiceRow.spacing = 14
+        for sub in [captionLabel, startTalkingButton, callControls, stylePills] as [UIView] {
+            voiceRow.addArrangedSubview(sub)
+            sub.isHidden = true
+        }
+        captionLabel.widthAnchor.constraint(equalTo: voiceRow.widthAnchor, constant: -24).isActive = true
+        voiceRow.translatesAutoresizingMaskIntoConstraints = false
+        voiceRow.alpha = 0
+        voiceRow.isHidden = true
+        view.addSubview(voiceRow)
+        suggestionsAboveVoiceRow = suggestions.bottomAnchor.constraint(equalTo: voiceRow.topAnchor, constant: -14)
+        suggestionsAboveComposer = suggestions.bottomAnchor.constraint(equalTo: composer.topAnchor, constant: -14)
+        voiceRowAboveComposer = voiceRow.bottomAnchor.constraint(equalTo: composer.topAnchor, constant: -12)
+        voiceRowAtBottom = voiceRow.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -8)
+        NSLayoutConstraint.activate([
+            voiceRow.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            voiceRow.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            voiceRowAboveComposer,
+            suggestionsAboveComposer,
+        ])
+    }
+
+    private func styleStylePills() {
+        for (style, button) in stylePillButtons {
+            let selected = style == coordinator.voiceStyle
+            var config: UIButton.Configuration = selected ? .prominentGlass() : .glass()
+            config.cornerStyle = .capsule
+            config.baseBackgroundColor = selected ? ContinuityTheme.Color.ink : nil
+            config.baseForegroundColor = selected ? .white : ContinuityTheme.Color.secondaryInk
+            config.image = UIImage(systemName: style == .conversation ? "bubble.left.and.text.bubble.right" : "text.cursor",
+                                   withConfiguration: UIImage.SymbolConfiguration(pointSize: 12, weight: .semibold))
+            config.imagePadding = 6
+            config.attributedTitle = AttributedString(style.title, attributes: AttributeContainer([.font: ContinuityTheme.Font.text(13, weight: .semibold)]))
+            config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 13, bottom: 8, trailing: 14)
+            button.configuration = config
+        }
+    }
+
+    private func voiceLayout() -> VoiceLayout {
+        guard coordinator.mode != .ask else { return .hidden }
+        if coordinator.state.isInterviewing { return .talking }
+        if coordinator.state.isCapturing { return .hidden }
+        return coordinator.voiceStyle == .conversation ? .talkIdle : .dictation
+    }
+
+    /// Applies the voice layout for the mode, voice style and call state.
+    private func applyVoiceRow(animated: Bool) {
+        let layout = voiceLayout()
+        if case .interviewing(let phase) = coordinator.state {
+            let muted = phase == .listening(muted: true)
+            muteButton.configuration?.image = UIImage(systemName: muted ? "mic.slash.fill" : "mic.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: 14, weight: .semibold))
+            muteButton.configuration?.attributedTitle = AttributedString(muted ? "Unmute" : "Mute", attributes: AttributeContainer([.font: ContinuityTheme.Font.text(16, weight: .semibold)]))
+            muteButton.isEnabled = phase != .connecting
+            captionLabel.text = coordinator.interviewCaption ?? (phase == .connecting ? "Connecting to OrgFlow…" : nil)
+            captionLabel.textColor = coordinator.interviewCaptionFromAgent ? ContinuityTheme.Color.ink : ContinuityTheme.Color.teal
+        }
+        hintLabel.text = coordinator.usesInterview ? "Tap to talk with OrgFlow  ·  Drag to turn" : "Hold to speak  ·  Drag to turn"
+        guard layout != appliedVoiceLayout else { return }
+        let first = appliedVoiceLayout == nil
+        appliedVoiceLayout = layout
+        styleStylePills()
+        let composerShown = layout == .hidden || layout == .dictation
+        let changes = {
+            NSLayoutConstraint.deactivate([self.suggestionsAboveVoiceRow, self.suggestionsAboveComposer, self.voiceRowAboveComposer, self.voiceRowAtBottom])
+            NSLayoutConstraint.activate([
+                layout == .hidden ? self.suggestionsAboveComposer : self.suggestionsAboveVoiceRow,
+                composerShown ? self.voiceRowAboveComposer : self.voiceRowAtBottom,
+            ])
+            self.setVisible(self.voiceRow, layout != .hidden)
+            self.setVisible(self.composer, composerShown)
+            self.setVisible(self.captionLabel, layout == .talking)
+            self.setVisible(self.callControls, layout == .talking)
+            self.setVisible(self.startTalkingButton, layout == .talkIdle)
+            self.setVisible(self.stylePills, layout == .talkIdle || layout == .dictation)
+            self.view.layoutIfNeeded()
+        }
+        if !first && animated {
+            UIView.animate(springDuration: 0.5, bounce: 0.12, options: [.allowUserInteraction, .beginFromCurrentState], animations: changes)
+        } else {
+            changes()
+        }
     }
 
     private func wire() {
-        knotView.audioSource = { [capture = coordinator.capture] in capture.currentFeatures() }
+        knotView.audioSource = { [weak coordinator] in coordinator?.currentVoiceFeatures() ?? .silent }
         knotView.onHoldBegan = { [weak self] in
-            guard let self, !self.coordinator.state.isCapturing else { return }
+            guard let self, !self.coordinator.state.isCapturing, !self.coordinator.state.isInterviewing,
+                  !self.coordinator.usesInterview else { return }
             self.heldToTalk = true
             self.dismissHint()
             self.coordinator.toggleMicrophone()
@@ -366,7 +591,28 @@ final class AskViewController: UIViewController {
             self.heldToTalk = false
             if self.coordinator.state.isCapturing { self.coordinator.toggleMicrophone() }
         }
-        knotView.onTap = { [weak self] in self?.dismissHint() }
+        knotView.onTap = { [weak self] in
+            guard let self else { return }
+            dismissHint()
+            // Talking with OrgFlow needs no holding: a tap starts the call.
+            if coordinator.usesInterview, !coordinator.state.isInterviewing, voiceLayout() == .talkIdle {
+                startTalking()
+            }
+        }
+        startTalkingButton.addAction(UIAction { [weak self] _ in self?.startTalking() }, for: .primaryActionTriggered)
+        coordinator.onInterviewFinished = { [weak self] transcript in
+            // The call's transcript goes straight to drafting (after consent, the first time).
+            self?.send(transcript)
+        }
+        muteButton.addAction(UIAction { [weak self] _ in
+            guard let self, case .interviewing(let phase) = coordinator.state else { return }
+            coordinator.setInterviewMuted(phase != .listening(muted: true))
+        }, for: .primaryActionTriggered)
+        doneButton.addAction(UIAction { [weak self] _ in
+            guard let self else { return }
+            UIImpactFeedbackGenerator(style: .medium, view: doneButton).impactOccurred()
+            coordinator.toggleMicrophone()
+        }, for: .primaryActionTriggered)
 
         composer.onSend = { [weak self] text in self?.send(text) }
         composer.onMicTap = { [weak self] in
@@ -381,7 +627,9 @@ final class AskViewController: UIViewController {
 
         suggestions.onSelect = { [weak self] suggestion in
             guard let self else { return }
-            if coordinator.mode == .ask {
+            if let candidateID = suggestion.candidateID {
+                confirmDraft(candidateID: candidateID)
+            } else if coordinator.mode == .ask {
                 composer.text = suggestion.text
                 send(suggestion.text)
             } else {
@@ -433,6 +681,11 @@ final class AskViewController: UIViewController {
         }])
     }
 
+    private func startTalking() {
+        UIImpactFeedbackGenerator(style: .soft, view: view).impactOccurred()
+        coordinator.toggleMicrophone()
+    }
+
     @objc private func dismissKeyboard() {
         composer.blur()
     }
@@ -481,7 +734,8 @@ final class AskViewController: UIViewController {
                 guard let self else { return }
                 coordinator.signOut()
                 askSuggestions = Suggestion.defaults
-                if coordinator.mode == .ask { suggestions.setSuggestions(Suggestion.defaults, animated: true) }
+                candidates = []
+                suggestions.setSuggestions(capsules(for: coordinator.mode), animated: true)
             }
         } else {
             UIAction(title: "Sign in to OrgFlow", image: UIImage(systemName: "person.crop.circle")) { [weak self] _ in
@@ -551,14 +805,17 @@ final class AskViewController: UIViewController {
             appliedEntries = entries
         }
 
+        _ = coordinator.voiceStyle
+        applyVoiceRow(animated: appliedState != nil)
+
         guard state != appliedState || conversation != appliedConversation else { return }
         let animated = appliedState != nil
         appliedState = state
         let conversationChanged = conversation != appliedConversation
         appliedConversation = conversation
 
-        composer.isListening = state.isCapturing
-        composer.isSendEnabled = state != .thinking && state != .responding && state != .transcribing
+        composer.isListening = state.isCapturing || state.isInterviewing
+        composer.isSendEnabled = state != .thinking && state != .responding && state != .transcribing && !state.isInterviewing
         composer.statusText = statusText(for: state)
         knotView.mode = knotMode(for: state, conversation: conversation)
         knotView.condensation = conversation ? 1 : 0
@@ -622,6 +879,8 @@ final class AskViewController: UIViewController {
         case .idle, .error: conversation ? .responding : .idle
         case .typing: .quiet
         case .listening: .listening
+        // The whole call flows like listening; both voices travel through the thread as light.
+        case .interviewing(let phase): phase == .connecting ? .thinking : .listening
         case .transcribing: .quiet
         case .thinking: .thinking
         case .responding: .responding
@@ -635,6 +894,9 @@ final class AskViewController: UIViewController {
             if heldToTalk { return speech ? "Listening · release to finish" : "Listening · keep holding" }
             return speech ? "Listening · hearing you" : "Listening"
         case .transcribing: return "Finishing transcript"
+        case .interviewing(.connecting): return "Connecting to OrgFlow…"
+        case .interviewing(.listening(let muted)): return muted ? "Muted · tap Unmute to keep talking" : "OrgFlow is listening · tap Done when finished"
+        case .interviewing(.agentSpeaking): return "OrgFlow is speaking"
         default: return nil
         }
     }
@@ -660,7 +922,8 @@ final class AskViewController: UIViewController {
             DispatchQueue.main.async { [weak self] in self?.refreshKnotBackdrop() }
         }
 
-        let composerTop = composer.convert(composer.bounds, to: view).minY
+        let composerTop = min(composer.isHidden ? .infinity : composer.convert(composer.bounds, to: view).minY,
+                              voiceRow.isHidden ? .infinity : voiceRow.frame.minY)
         conversationView.contentInsetBottom = max(0, view.bounds.height - composerTop) + 16 - view.safeAreaInsets.bottom
     }
 
