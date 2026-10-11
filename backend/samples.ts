@@ -37,17 +37,16 @@ const SHOWCASE_DOCS: { rel: string; title: string; ownerId: string; pdf?: boolea
   { rel: "Programs/Outcomes_Jul_Sep.csv", title: "Outcomes Jul Sep", ownerId: "person-sam" },
 ];
 const SHOWCASE_MAIL: { rel: string; title: string; ownerId: string }[] = [
-  { rel: "01_Welcome_to_Your_First_Shift.txt", title: "Welcome to Your First Shift", ownerId: "person-jordan" },
-  { rel: "02_October_Schedule_Reminder.txt", title: "October Schedule Reminder", ownerId: "person-jordan" },
-  { rel: "08_Superseded_Arrival_Time.txt", title: "Superseded Arrival Time", ownerId: "person-jordan" },
+  { rel: "01_Welcome_to_Your_First_Shift.txt", title: "Welcome to Your First Shift", ownerId: "person-sam" },
+  { rel: "02_October_Schedule_Reminder.txt", title: "October Schedule Reminder", ownerId: "person-sam" },
+  { rel: "08_Superseded_Arrival_Time.txt", title: "Superseded Arrival Time", ownerId: "person-sam" },
   { rel: "09_Maria_to_Jordan_Handoff.txt", title: "Maria to Jordan Handoff", ownerId: "person-maria" },
 ];
 
 // The demo story follows the showcase corpus (demo-content/): Maria Reyes, Volunteer Coordinator for six
-// years, is leaving; Jordan Lee takes over; Sam Rivera supervises both.
+// years, is leaving; Sam Rivera supervises the volunteer program.
 const people = [
-  { id: "person-maria", name: "Maria Reyes", role: "Volunteer Coordinator", email: "maria@example.org", status: "leaving", leaveDate: "2026-10-31", successorId: "person-jordan", managerId: "person-sam" },
-  { id: "person-jordan", name: "Jordan Lee", role: "Incoming Volunteer Coordinator", email: "jordan@example.org", status: "active", managerId: "person-sam" },
+  { id: "person-maria", name: "Maria Reyes", role: "Volunteer Coordinator", email: "maria@example.org", status: "leaving", leaveDate: "2026-10-31", managerId: "person-sam" },
   { id: "person-sam", name: "Sam Rivera", role: "Operations Manager", email: "sam@example.org", status: "active" },
   { id: "person-priya", name: "Priya Patel", role: "Development Associate", email: "priya@example.org", status: "active" },
 ];
@@ -211,9 +210,9 @@ async function upgradeToShowcaseStory(store: Store) {
   for (const person of people) {
     const current = await store.get("people", person.id);
     if (!current) await store.put("people", { ...person, synthetic: true, createdAt: now });
-    else if (current.synthetic === true && person.id === "person-jordan" && current.role === "Volunteer Coordinator")
-      await store.put("people", { ...current, role: person.role, managerId: person.managerId });
   }
+  const jordan = await store.get("people", "person-jordan");
+  if (jordan?.synthetic === true && jordan.name === "Jordan Lee") await store.delete("people", "person-jordan");
   for (const article of articles) {
     const current = await store.get("articles", article.id);
     if (!current || (pristine(current) && ["article-volunteer-schedule", "article-volunteer-welcome"].includes(article.id)))
