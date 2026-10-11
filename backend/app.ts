@@ -3,6 +3,8 @@ import { openapi } from "./openapi";
 import { createAgentHandler } from "./agent";
 import { uploads } from "./uploads";
 import { createGoogleHandler } from "./google";
+import { storeVault } from "./vault";
+import { changedSources } from "./health";
 import { elevenLabsVoice } from "./elevenlabs";
 import { createOperations } from "./operations";
 import { DEFAULT_ORG, runInOrg, scopedStore } from "./workspace";
@@ -49,9 +51,14 @@ export async function bootstrap(store: Store) {
   const [categories, articles, files, events, people, runs, candidates, sources] = await Promise.all(
     ["categories", "articles", "files", "events", "people", "runs", "candidates", "sources"].map((k) => store.list(k)),
   );
+  const index = new Map((sources ?? []).map((s) => [s.id, s]));
   return {
     categories,
-    articles,
+    // Flag articles whose cited documents changed in the index after they were captured.
+    articles: (articles ?? []).map((a) => {
+      const changed = changedSources(a, index);
+      return changed.length ? { ...a, sourceChanges: changed } : a;
+    }),
     files,
     events,
     people,
@@ -92,6 +99,7 @@ export function createApp(
     refreshWhenMissing: "mai_pricing_url",
   });
   const google = createGoogleHandler({
+    vault: storeVault(baseStore),
     saveSource: (source) => operations.saveSource(source),
     upsertFile: async (file) => {
       const current = await store.get("files", file.id);
@@ -124,6 +132,8 @@ export function createApp(
         categoryId,
         content: document(input.content),
         sources: input.sources ?? current?.sources ?? [],
+        evidence: input.evidence ?? current?.evidence ?? [],
+        conflicts: input.conflicts ?? current?.conflicts ?? [],
         status: "draft",
         updatedAt: new Date().toISOString(),
       };

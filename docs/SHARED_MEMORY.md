@@ -49,9 +49,10 @@ Agent assumptions (not explicit human choices)
 Overall: implemented in code, builds and typechecks. AI paths partly verified live: Ask with email excerpts verified on synthetic data. Discover and handoff drafting were not verified live (the AI provider returned 503 during testing). Nothing verified on a physical iPhone. The latest changes (organizations, indexing, Discover, checklists, People/Transfer, review, audit, samples, iOS Capture/Handoff/Library) are not deployed. Run `bun run test` and `bun run typecheck` for current test results; counts were not re-verified.
 
 Backend (`backend/`, Bun, port 3003)
+- Turnover features ported onto this implementation (2026-10-11): verbatim-quote verification of AI citations (`evidence.ts`; `evidence`/`grounding`/`conflicts` in agent responses and on drafts), knowledge health and role/person risk (`health.ts`, `GET /api/insights/health`), gap-driven voice interview plans (`POST /api/people/:id/interview`, sent to the live agent as a contextual update), a no-AI handoff outline (`POST /api/people/:id/handoff` with `mode: "outline"`), changed-source flags (cited index version vs current index), and encrypted persistent Google sessions (`vault.ts`, AES-256-GCM, key from `TOKEN_ENCRYPTION_KEY` or `data/token.key`). Automated tests (50 across backend and frontend server), typechecks, production build and a browser smoke run passed before this was recorded; not deployed.
 - Email/password accounts, Argon2id, HttpOnly session cookie (7 days). Organizations with data isolation (`workspace.ts`): sign-up creates an org (caller is admin) or joins by invite code (member); otherwise joins the shared demo workspace (`orgId: "default"`). Audit log, invite rotation.
 - Articles with draft/publish snapshots, owners, `reviewDueAt` (default 90 days, `REVIEW_INTERVAL_DAYS`), review confirmation. Runnable checklists, people and Transfer (handoff guide, onboarding run), Discover candidates.
-- Consented Google indexing of recent Docs and Gmail text; BM25 retrieval (`retrieval.ts`); Ask cites approved articles plus labelled excerpts. Google OAuth read-only with PKCE; tokens kept server-side in memory (restart requires reconnect).
+- Consented Google indexing of recent Docs and Gmail text; BM25 retrieval (`retrieval.ts`); Ask cites approved articles plus labelled excerpts. Google OAuth read-only with PKCE; tokens sealed (AES-256-GCM) in the database and keyed by the browser session cookie, so restarts keep connections (previously: memory only, restart requires reconnect).
 - Storage: PostgreSQL via `DATABASE_URL` (no live PostgreSQL integration check done), otherwise SQLite in `backend/data/`.
 - Billing: AWS Monetization sandbox; enforcement off (`MONETIZATION_ENFORCE=false` in the deploy workflow). Metered: Ask, draft, Google sync/indexing.
 - API contract for the new routes: Swagger at `/docs` and `/openapi.json`.
@@ -68,7 +69,7 @@ AI providers
 
 Deployment
 - Pushing to `main` deploys via `.github/workflows/deploy.yml` to the existing EC2 server (Region us-east-2 from local config) behind Cloudflare and Nginx (`deploy/`). Server `.env` is preserved across deploys. Production OAuth redirect: `https://orgflow.dev/auth/google/callback`; whether it is saved in the Google client was last reported as missing (`redirect_uri_mismatch`), current status not verified. Google app is in Testing, test users only. Google project `orgflow-20261011`.
-- Microsoft 365, calendar sync (events are synthetic), quote-level citation validation and extraction caching: not built.
+- Microsoft 365, calendar sync (events are synthetic), extraction caching and embeddings: not built.
 
 ## Superseded decisions
 

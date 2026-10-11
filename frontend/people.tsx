@@ -3,11 +3,13 @@ import {
   ArrowUpRight,
   BookOpen,
   ClipboardCheck,
+  FileText,
   LoaderCircle,
+  Mic,
   Plus,
   Sparkles,
 } from "lucide-react";
-import { api, fullDate, type Article, type Person } from "./api";
+import { api, fullDate, type Article, type InterviewPlan, type Person } from "./api";
 import { Collapse } from "./motion";
 
 const statusLabel: Record<Person["status"], string> = {
@@ -29,6 +31,7 @@ function PersonDetail({
   onRefresh,
   onOpenArticle,
   onOpenRun,
+  onStartInterview,
 }: {
   person: Person;
   people: Person[];
@@ -37,6 +40,7 @@ function PersonDetail({
   onRefresh: () => Promise<void> | void;
   onOpenArticle: (id: string) => void;
   onOpenRun: (id: string) => void;
+  onStartInterview: (plan: InterviewPlan) => void;
 }) {
   const [name, setName] = useState(person.name),
     [role, setRole] = useState(person.role),
@@ -93,6 +97,34 @@ function PersonDetail({
       setTransferError(err.message);
     } finally {
       setTask(null);
+    }
+  }
+  /** Facts-only guide from OrgFlow's records: no AI, no consent needed. */
+  async function outline() {
+    setTask("handoff");
+    setTransferError("");
+    setHandoffDone(null);
+    try {
+      const r = await api(`/people/${person.id}/handoff`, "POST", { mode: "outline" });
+      await onRefresh();
+      if (r.person?.status) setStatus(r.person.status);
+      setHandoffDone({
+        message: "Outline created from recorded facts.",
+        articleId: r.draft?.id,
+      });
+    } catch (err: any) {
+      setTransferError(err.message);
+    } finally {
+      setTask(null);
+    }
+  }
+  /** A gap-driven question plan for the live voice interview. */
+  async function interview() {
+    setTransferError("");
+    try {
+      onStartInterview(await api(`/people/${person.id}/interview`, "POST", {}));
+    } catch (err: any) {
+      setTransferError(err.message);
     }
   }
   async function onboarding() {
@@ -261,6 +293,12 @@ function PersonDetail({
                   ? "Revise handoff guide"
                   : "Generate handoff guide"}
             </button>
+            <button className="ghost" disabled={task !== null} onClick={outline}>
+              <FileText size={15} /> Outline without AI
+            </button>
+            <button className="ghost" disabled={task !== null} onClick={interview}>
+              <Mic size={15} /> Plan a voice interview
+            </button>
             {task === "handoff" && (
               <span className="progress-note shimmer-text" role="status">
                 Reading playbooks and indexed email. This can take a minute.
@@ -342,12 +380,14 @@ export function PeoplePage({
   onRefresh,
   onOpenArticle,
   onOpenRun,
+  onStartInterview,
 }: {
   people: Person[];
   articles: Article[];
   onRefresh: () => Promise<void> | void;
   onOpenArticle: (id: string) => void;
   onOpenRun: (id: string) => void;
+  onStartInterview: (plan: InterviewPlan) => void;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null),
     [adding, setAdding] = useState(false),
@@ -390,6 +430,7 @@ export function PeoplePage({
         onRefresh={onRefresh}
         onOpenArticle={onOpenArticle}
         onOpenRun={onOpenRun}
+        onStartInterview={onStartInterview}
       />
     );
   return (

@@ -52,6 +52,12 @@ Each entry lists the **current default** — what the code does until someone de
     drafts afterwards. Adopt ElevenLabs on iOS (adds their SDK and sends live audio to them)?
     Default: on-device transcription.
 
+20. **Token encryption key.** Google sessions are stored encrypted. Set `TOKEN_ENCRYPTION_KEY` in production
+    secrets and back it up with the database; otherwise a key file is generated in `backend/data/`.
+    Default: generated key file.
+21. **Evidence checks are advisory.** Unverified quotes are flagged, never blocked. Should publishing be
+    blocked (or need an admin) while a draft has unverified quotes? Default: advisory only.
+
 ## Business
 
 17. **Pricing tiers by organization size** (brief: nonprofit-friendly monthly tiers). Amounts and seat

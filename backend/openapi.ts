@@ -807,7 +807,10 @@ Object.assign(openapi.paths, {
         sources: { type: "array", items: { type: "object", additionalProperties: true } },
         person: ref("Person"),
       }),
-      object({ notes: string }),
+      object({
+        notes: string,
+        mode: { type: "string", enum: ["outline"], description: "outline: facts only, no AI call" },
+      }),
       true,
     ),
   },
@@ -833,3 +836,35 @@ for (const path of [
       "502": response(ref("Error"), "Google request failed"),
     });
 }
+
+Object.assign(openapi.paths, {
+  "/api/insights/health": {
+    get: {
+      summary: "Knowledge health: score, person risk, staleness, changed sources, recommended actions",
+      responses: {
+        "200": response({ type: "object", additionalProperties: true }),
+        "401": response(ref("Error"), "Sign in required"),
+      },
+    },
+  },
+  "/api/people/{id}/interview": {
+    post: {
+      summary: "Gap-driven interview plan and voice-agent brief for a person",
+      parameters: [{ name: "id", in: "path", required: true, schema: string }],
+      responses: {
+        "201": response(
+          object({
+            title: string,
+            gapCount: { type: "integer" },
+            agentBrief: string,
+            questions: {
+              type: "array",
+              items: object({ id: string, text: string, origin: { type: "string", enum: ["gap", "template"] } }),
+            },
+          }),
+        ),
+        "404": response(ref("Error"), "Person not found"),
+      },
+    },
+  },
+});

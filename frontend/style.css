@@ -3692,3 +3692,224 @@ td small {
     --faint: #5a676e;
   }
 }
+
+/* ---- Knowledge health, evidence checks and interview plans ------------------------------ */
+.health-summary {
+  display: grid;
+  grid-template-columns: 1.3fr repeat(6, 1fr);
+  gap: 12px;
+  margin: 18px 0;
+}
+.score-card,
+.stat-card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.score-card strong {
+  font-family: var(--font-display);
+  font-size: 40px;
+  line-height: 1;
+}
+.score-card span,
+.stat-card span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.score-card small {
+  font-size: 12px;
+  margin-top: 6px;
+}
+.score-card.good {
+  background: var(--pale-teal);
+}
+.score-card.fair {
+  background: var(--pale-apricot);
+}
+.score-card.poor {
+  background: var(--pale-danger);
+}
+.stat-card strong {
+  font-family: var(--font-display);
+  font-size: 26px;
+}
+.stat-card.warn strong {
+  color: var(--apricot-ink);
+}
+.stat-card.bad strong {
+  color: var(--danger);
+}
+.health-page .card {
+  margin-top: 18px;
+}
+.health-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+.health-columns .card {
+  margin-top: 0;
+}
+.health-page td small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+}
+.digest-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  border-radius: var(--r-md);
+  border-left: 3px solid var(--hairline);
+  background: var(--canvas-2);
+  font-size: 13px;
+}
+.digest-item.high {
+  border-left-color: var(--danger);
+  background: var(--pale-danger);
+}
+.digest-item.medium {
+  border-left-color: var(--apricot);
+  background: var(--pale-apricot);
+}
+.risk {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  background: var(--pale-teal);
+  color: var(--teal-ink);
+}
+.risk.medium {
+  background: var(--pale-apricot);
+  color: var(--apricot-ink);
+}
+.risk.high {
+  background: var(--pale-danger);
+  color: var(--danger);
+}
+.flag {
+  display: inline-flex;
+  padding: 3px 8px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--pale-lavender);
+  color: var(--iris-ink);
+}
+.list-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 0;
+  border-top: 1px solid var(--hairline-soft);
+}
+.list-item small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.notice.warn {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  margin: 14px 0;
+  border-radius: var(--r-md);
+  background: var(--pale-apricot);
+  color: var(--apricot-ink);
+  font-size: 13px;
+}
+.notice ul {
+  margin: 6px 0;
+  padding-left: 18px;
+}
+.grounding {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 4px 9px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 600;
+}
+.grounding.ok {
+  background: var(--pale-teal);
+  color: var(--teal-ink);
+}
+.grounding.warn {
+  background: var(--pale-apricot);
+  color: var(--apricot-ink);
+}
+.evidence-list {
+  margin-top: 8px;
+  font-size: 12px;
+}
+.evidence-list summary {
+  cursor: pointer;
+  color: var(--teal-ink);
+}
+blockquote.verified,
+blockquote.unverified {
+  margin: 8px 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--teal);
+  background: var(--pale-teal);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+blockquote.unverified {
+  border-left-color: var(--apricot);
+  background: var(--pale-apricot);
+}
+blockquote small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.evidence-panel h3 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.interview-plan {
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-1);
+  padding: 10px 14px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+.interview-plan ol {
+  margin: 8px 0 4px;
+  padding-left: 18px;
+  line-height: 1.55;
+}
+.interview-plan li.gap {
+  color: var(--iris-ink);
+}
+@media (max-width: 1150px) {
+  .health-summary {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 720px) {
+  .health-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
