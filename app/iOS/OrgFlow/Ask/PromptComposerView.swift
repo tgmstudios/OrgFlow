@@ -156,7 +156,7 @@ final class PromptComposerView: UIView, UITextViewDelegate {
         textView.translatesAutoresizingMaskIntoConstraints = false
         fieldGlass.contentView.addSubview(textView)
 
-        placeholderLabel.text = "Ask OrgFlow anything…"
+        placeholderLabel.text = "Ask OneFlow anything…"
         placeholderLabel.font = ContinuityTheme.Font.text(17)
         placeholderLabel.textColor = ContinuityTheme.Color.secondaryInk
         placeholderLabel.isUserInteractionEnabled = false

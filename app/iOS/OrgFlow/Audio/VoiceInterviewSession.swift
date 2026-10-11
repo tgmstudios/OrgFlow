@@ -75,7 +75,7 @@ final class VoiceInterviewSession {
 
     var isMuted: Bool { conversation?.isMuted ?? false }
 
-    /// Ends the call and returns the transcript as plain text ("OrgFlow: …" / "Me: …" lines).
+    /// Ends the call and returns the transcript as plain text ("OneFlow: …" / "Me: …" lines).
     func finish() async -> String {
         endedByUser = true
         detachMeters()

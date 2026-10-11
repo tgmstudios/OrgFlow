@@ -171,7 +171,7 @@ final class AskScreenCoordinator {
             case .server(_, let message):
                 state = .error(.captureFailed(message))
             default:
-                state = .error(.captureFailed("Couldn't start the conversation with OrgFlow. Try again, or switch to Dictate."))
+                state = .error(.captureFailed("Couldn't start the conversation with OneFlow. Try again, or switch to Dictate."))
             }
         }
     }
@@ -224,7 +224,7 @@ final class AskScreenCoordinator {
         let published = workspace.articles.filter { $0.hasPublishedVersion || !$0.isDraft }
         var brief = [
             "The person is asking questions about how their organization works. Answer from the organization's approved playbooks below, and say which playbook you used.",
-            "If the playbooks don't cover the question, say so plainly and suggest capturing it in OrgFlow. Never invent steps, names or dates. Keep spoken answers short.",
+            "If the playbooks don't cover the question, say so plainly and suggest capturing it in OneFlow. Never invent steps, names or dates. Keep spoken answers short.",
             "Approved playbooks:",
         ].joined(separator: "\n")
         for article in published {

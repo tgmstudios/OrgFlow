@@ -236,7 +236,7 @@ private final class ConversationEntryView: UIView {
         hairline.translatesAutoresizingMaskIntoConstraints = false
 
         let answerCaption = UILabel()
-        answerCaption.attributedText = ContinuityTheme.caption("OrgFlow", color: ContinuityTheme.Color.teal)
+        answerCaption.attributedText = ContinuityTheme.caption("OneFlow", color: ContinuityTheme.Color.teal)
 
         answerTextView.isEditable = false
         answerTextView.isScrollEnabled = false

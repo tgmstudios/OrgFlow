@@ -25,8 +25,8 @@ final class InterviewPlanViewController: UIViewController {
         stack.addArrangedSubview(title)
         let gaps = plan.gapCount
         let summary = gaps == 0
-            ? "No gaps found in their records, so OrgFlow uses its standard handoff questions."
-            : "OrgFlow found \(gaps) \(gaps == 1 ? "gap" : "gaps") in what they own and asks about \(gaps == 1 ? "it" : "those") first."
+            ? "No gaps found in their records, so OneFlow uses its standard handoff questions."
+            : "OneFlow found \(gaps) \(gaps == 1 ? "gap" : "gaps") in what they own and asks about \(gaps == 1 ? "it" : "those") first."
         stack.addArrangedSubview(MapUI.body(summary))
         stack.setCustomSpacing(22, after: stack.arrangedSubviews.last!)
 
@@ -44,7 +44,7 @@ final class InterviewPlanViewController: UIViewController {
         if let onRemove {
             stack.addArrangedSubview(MapUI.button("Remove plan", symbol: nil, prominent: false, action: UIAction { _ in onRemove() }))
         }
-        let note = MapUI.body("OrgFlow's voice agent asks one question at a time and follows up when an answer is vague. The transcript becomes a handoff draft; nothing is published until someone approves it.", size: 13)
+        let note = MapUI.body("OneFlow's voice agent asks one question at a time and follows up when an answer is vague. The transcript becomes a handoff draft; nothing is published until someone approves it.", size: 13)
         note.textAlignment = .center
         stack.addArrangedSubview(note)
     }
