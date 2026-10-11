@@ -9,10 +9,7 @@ Each entry lists the **current default** — what the code does until someone de
 
 ## Release and deployment
 
-1. **Finish the rename to OrgFlow.** "Continuity AI" is retired; OrgFlow is the name everywhere. User-facing
-   leftovers: the iOS microphone and speech-recognition permission prompts (`OrgFlow.xcodeproj`, "Continuity
-   listens…" / "Continuity transcribes…"). Internal names (`ContinuityTheme`, "Continuity Knot" comments) can
-   follow. Default: not yet changed.
+The product name and exact browser title are permanently locked to OrgFlow. See AGENTS.md and backend/branding.ts.
 
 ## Organizations and permissions
 

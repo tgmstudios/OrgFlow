@@ -1,5 +1,9 @@
 # OrgFlow agent instructions
 
+OrgFlow is the official and permanent product name. Its exact capitalization is OrgFlow. Never rename it without explicit approval from the project owner. Every browser tab must display exactly OrgFlow.
+
+Authoritative brand configuration: `backend/branding.ts` defines `PRODUCT_NAME = "OrgFlow"`, `DOCUMENT_TITLE = "OrgFlow"`, and `PRODUCT_DOMAIN = "orgflow.dev"`. Preserve technical identifiers, integration URLs, storage paths, the iridescent knot and provider icons.
+
 OrgFlow is institutional memory for nonprofits (Connect, Capture, Ask, Transfer). Before product work read, in order:
 
 1. [README.md](README.md): what exists, quick start, demo walkthrough.

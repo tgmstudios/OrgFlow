@@ -3,6 +3,9 @@ import { hydrateRoot } from "react-dom/client";
 import App from "./App";
 import "./style.css";
 import "./refinement.css";
+import { DOCUMENT_TITLE } from "../backend/branding";
+
+document.title = DOCUMENT_TITLE;
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },

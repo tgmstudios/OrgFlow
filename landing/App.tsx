@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowRight, ArrowUpRight, BookOpen, Check, FileText, FolderOpen, Layers, Menu, MessageSquare, Plus, ShieldCheck, X } from "lucide-react";
 import Demo from "./Demo";
+import { PRODUCT_DOMAIN, PRODUCT_NAME } from "../backend/branding";
 
-const APP_URL = "https://orgflow.dev/a/";
+const APP_URL = `https://${PRODUCT_DOMAIN}/a/`;
 const navigation = [
   ["How it works", "how-it-works"],
   ["Try the demo", "demo"],
@@ -17,7 +18,7 @@ function Brand({ light = false }: { light?: boolean }) {
       aria-label="OrgFlow home"
     >
       <img className="wordmark-mark" src="/brand-knot.webp" alt="" width="32" height="32" />
-      <span>OrgFlow</span>
+      <span>{PRODUCT_NAME}</span>
     </a>
   );
 }

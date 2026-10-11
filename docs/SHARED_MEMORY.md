@@ -13,7 +13,7 @@ Compact, current memory for humans and agents (Claude Code, Codex). Product brie
 ## Confirmed human decisions
 
 Product and demo
-- Product is OrgFlow (a "OneFlow" rename was reverted 2026-10-11). American spelling everywhere: the demo pantry is "Center Valley", never "Centre". The original brief is preserved in MVP.md. Hackathon priority: presentation-ready and sellable; work in interview style.
+- OrgFlow is the official and permanent product name. Its exact capitalization is OrgFlow. Never rename it without explicit approval from the project owner. Every browser tab must display exactly OrgFlow. User reconfirmed this final decision on 2026-10-11. Authoritative configuration: `backend/branding.ts`. American spelling everywhere: the demo pantry is "Center Valley", never "Centre". The original brief is preserved in MVP.md. Hackathon priority: presentation-ready and sellable; work in interview style.
 - Capture (source content to employee-approved playbooks) is the demo centerpiece; donor stewardship is the first demo process.
 - Demo a live connection (Gmail and Google Drive, personal Google login); file upload is the fallback.
 - Visual direction: modern, expressive, off-white background, purple accent, professional tone for chat and voice. Primary color #7753CE; keep the teal/lavender/apricot thread palette; no dark mode or theme toggle. Fonts: Newsreader headlines, Geist UI, Geist Mono metadata.

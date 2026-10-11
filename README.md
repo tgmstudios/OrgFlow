@@ -1,5 +1,9 @@
 # OrgFlow
 
+OrgFlow is the official and permanent product name. Its exact capitalization is OrgFlow. Never rename it without explicit approval from the project owner. Every browser tab must display exactly OrgFlow.
+
+Authoritative brand configuration: `backend/branding.ts` defines `PRODUCT_NAME = "OrgFlow"`, `DOCUMENT_TITLE = "OrgFlow"`, and `PRODUCT_DOMAIN = "orgflow.dev"`. Preserve technical identifiers, integration URLs, storage paths, the iridescent knot and provider icons.
+
 Your nonprofit's knowledge shouldn't leave when your employees do. OrgFlow is an AI-powered institutional memory platform for nonprofits: it turns scattered emails, documents and employee knowledge into living, human-approved playbooks that survive staff turnover. Think Process Street plus AI knowledge management, built for organizations with 10-200 staff.
 
 Status: PostgreSQL/Prisma production cutover is deployed and verified; AI paths partly verified live; nothing verified on a physical iPhone. Details: [docs/SHARED_MEMORY.md](docs/SHARED_MEMORY.md).

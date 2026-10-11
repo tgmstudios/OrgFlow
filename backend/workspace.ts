@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { Store } from "./store";
+import { brandRecord } from "./branding";
 
 /**
  * Organization isolation. Each request runs inside its organization's context; the scoped store
@@ -28,8 +29,11 @@ export function scopedStore(base: Store): Store {
     get mode() {
       return base.mode;
     },
-    list: (kind) => base.list(kindFor(kind)),
-    get: (kind, id) => base.get(kindFor(kind), id),
+    list: async (kind) => (await base.list(kindFor(kind))).map(value => brandRecord(kind, value)),
+    get: async (kind, id) => {
+      const value = await base.get(kindFor(kind), id);
+      return value ? brandRecord(kind, value) : null;
+    },
     put: (kind, value) => base.put(kindFor(kind), value),
     delete: (kind, id) => base.delete(kindFor(kind), id),
     close: () => base.close(),

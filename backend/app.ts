@@ -1,4 +1,5 @@
 import type { Store, Entity } from "./store";
+import { DOCUMENT_TITLE } from "./branding";
 import { openapi } from "./openapi";
 import { createAgentHandler } from "./agent";
 import { uploads } from "./uploads";
@@ -257,7 +258,7 @@ export function createApp(
         return json(openapi);
       if (req.method === "GET" && ["/docs", "/swagger"].includes(path))
         return new Response(
-          `<!doctype html><html><head><title>OrgFlow API</title><link rel="stylesheet" href="/docs/assets/swagger-ui.css"></head><body><div id="swagger-ui"></div><script src="/docs/assets/swagger-ui-bundle.js"></script><script>SwaggerUIBundle({url:'/openapi.json',dom_id:'#swagger-ui'});</script></body></html>`,
+          `<!doctype html><html><head><title>${DOCUMENT_TITLE}</title><link rel="stylesheet" href="/docs/assets/swagger-ui.css"></head><body><div id="swagger-ui"></div><script src="/docs/assets/swagger-ui-bundle.js"></script><script>SwaggerUIBundle({url:'/openapi.json',dom_id:'#swagger-ui'});</script></body></html>`,
           { headers: { "content-type": "text/html" } },
         );
       if (req.method === "GET" && path.startsWith("/docs/assets/")) {

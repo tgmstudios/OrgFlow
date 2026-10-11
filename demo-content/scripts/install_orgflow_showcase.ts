@@ -19,6 +19,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { openStore, type Store } from "../../backend/store";
 import { runInOrg, scopedStore, DEFAULT_ORG } from "../../backend/workspace";
 import { createOperations } from "../../backend/operations";
+import { brandLabel } from "../../backend/branding";
 
 const ROOT = new URL("../", import.meta.url).pathname;
 const DRIVE = join(ROOT, "01_Google_Drive");
@@ -103,7 +104,7 @@ export async function installShowcase(store: Store, orgId: string, options: { ap
   if (!orgId || orgId === DEFAULT_ORG || !/^[a-f\d-]{36}$/i.test(orgId))
     throw new Error("Refusing to import into default or invalid organization.");
   const org = await store.get("orgs", orgId);
-  if (!org || !SHOWCASE_ORGANIZATIONS.has(String(org.name)))
+  if (!org || !SHOWCASE_ORGANIZATIONS.has(brandLabel(String(org.name))))
     throw new Error("Organization must have exact name Center Valley Community Pantry (OrgFlow Showcase); refusing to modify another workspace.");
   const allFiles = await recursiveFiles(DRIVE);
   const listed = allFiles.filter((p) => ["pdf","docx","md","csv","png"].includes(extname(p).slice(1)));

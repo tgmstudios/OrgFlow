@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { createRoot } from "react-dom/client";
+import { DOCUMENT_TITLE, PRODUCT_NAME } from "../backend/branding";
+
+document.title = DOCUMENT_TITLE;
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -242,7 +245,7 @@ function AuthScreen({ onUser }: { onUser: (user: User) => void }) {
       <section className="auth-hero">
         <div className="brand-static">
           <ProductMark size={34} />
-          <span className="orgflow-wordmark">OrgFlow</span>
+          <span className="orgflow-wordmark">{PRODUCT_NAME}</span>
         </div>
         <div className="auth-hero-body">
           <Orb size={132} />
@@ -1481,7 +1484,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
       <aside className="sidebar">
         <button className="brand" onClick={() => setPage("Home")} aria-label="OrgFlow home">
           <ProductMark size={30} />
-          <span className="orgflow-wordmark">OrgFlow</span>
+          <span className="orgflow-wordmark">{PRODUCT_NAME}</span>
         </button>
         <button className="agent-launch" onClick={() => openAgent()}>
           <span className="agent-launch-glow" aria-hidden="true" />
