@@ -94,6 +94,12 @@ Deployment
 - "Only Capture in scope" for the hackathon -> Connect, Capture, Ask and Transfer all have implementations.
 - Luminal Flash as a documentation-only plan -> implemented adapter (agent.ts, luminal.ts).
 
+## Showcase import work in progress (feature branch, NOT deployed)
+
+- The separate `feat/orgflow-demo-showcase` branch adds an isolated admin-confirmed showcase installer, synthetic sources with links to original PDFs/Docs/CSV, a five-person owner/successor/supervisor map, and a People "Reports to" field with same-org/cycle validation. It never connects or uploads to the user's personal Google account. New procedures start as drafts.
+- The loader works only for an organization named `Centre Valley Community Pantry (OrgFlow Showcase)` and refuses the shared default workspace. Source documents are original fictional training content. See `demo-content/00_START_HERE/WEBSITE_IMPORT_AND_ACCESS.md` for exact verification and permissions.
+- Verified locally with memory-backed HTTP calls, dataset content checks, source owner reassignment, isolation across organizations, preserved edits on reimport, typechecks and tests. **Not yet production deployed or OAuth connected.** New Google account selection requires user confirmation.
+
 ## Handoff notes
 
 1. Read [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) and ask the human before changing unresolved product decisions, including the embedding provider.

@@ -66,7 +66,9 @@ export function OrganizationPage({
     [auditLoading, setAuditLoading] = useState(false),
     [copied, setCopied] = useState(false),
     [rotating, setRotating] = useState(false),
-    [codeError, setCodeError] = useState("");
+    [codeError, setCodeError] = useState(""),
+    [importingShowcase, setImportingShowcase] = useState(false),
+    [showcaseError, setShowcaseError] = useState("");
   async function loadAudit() {
     setAuditLoading(true);
     try {
@@ -110,6 +112,21 @@ export function OrganizationPage({
       setCodeError(e.message);
     } finally {
       setRotating(false);
+    }
+  }
+  async function importShowcase() {
+    if (!org || org.role !== "admin" || org.name !== "Centre Valley Community Pantry (OrgFlow Showcase)")
+      return;
+    if (!confirm("Load fictional pantry documents, editable draft procedures, 5 staff roles, 9 example emails and 11 events into this organization? This does not connect your personal Google or Gmail account, and it will not automatically publish drafts."))
+      return;
+    setImportingShowcase(true);
+    setShowcaseError("");
+    try {
+      await api("/showcase/install", "POST", { confirmation:"INSTALL_FICTIONAL_SHOWCASE" });
+      window.location.reload();
+    } catch(e:any) {
+      setShowcaseError(e.message || "Could not load the example.");
+      setImportingShowcase(false);
     }
   }
   return (
@@ -202,6 +219,22 @@ export function OrganizationPage({
               </p>
             )}
           </div>
+          {org.role === "admin" && org.name === "Centre Valley Community Pantry (OrgFlow Showcase)" && (
+            <div className="card panel-wide">
+              <div className="section-heading"><h2>Showcase library</h2></div>
+              <p className="section-sub">
+                Import the fictional Centre Valley Pantry documents into this private organization.
+                The documents appear as OrgFlow Showcase files with working original links, cited
+                source text, reporting relationships, and draft procedures for human review.
+                Google and Gmail remain disconnected until separately authorized.
+              </p>
+              <button className="primary" onClick={importShowcase} disabled={importingShowcase}>
+                {importingShowcase ? <LoaderCircle className="spin" size={15} /> : <RefreshCw size={15} />}
+                {importingShowcase ? "Importing fictional data…" : "Load showcase files and staff"}
+              </button>
+              {showcaseError && <p className="inline-error" role="alert">{showcaseError}</p>}
+            </div>
+          )}
           <div className="card panel-wide">
             <div className="section-heading">
               <h2>Activity</h2>

@@ -1,0 +1,25 @@
+volunteer_id,first_name,last_initial,available_day,preferred_station,shift_lead_trained,orientation_complete,latest_shift,status
+VOL-001,Avery,D,Friday,Produce,no,yes,2026-10-07,active
+VOL-002,Morgan,G,Tuesday packing,Dry goods,no,yes,2026-10-09,active
+VOL-003,Taylor,J,Wednesday and Friday,Packing,yes,yes,2026-10-14,active
+VOL-004,Drew,M,Wednesday,Carrying help,no,yes,2026-10-02,active
+VOL-005,Reese,P,Friday,Chilled storage,no,yes,2026-10-07,active
+VOL-006,Quinn,S,Tuesday packing,Welcome table,no,yes,2026-10-09,active
+VOL-007,Blair,V,Wednesday and Friday,Produce,yes,yes,2026-10-14,active
+VOL-008,Casey,Y,Wednesday,Dry goods,no,yes,2026-10-02,active
+VOL-009,Elliot,B,Friday,Packing,no,yes,2026-10-07,active
+VOL-010,Devon,E,Tuesday packing,Carrying help,no,yes,2026-10-09,active
+VOL-011,Harper,H,Wednesday and Friday,Chilled storage,no,yes,2026-10-14,active
+VOL-012,Cameron,K,Wednesday,Welcome table,yes,yes,2026-10-02,active
+VOL-013,Riley,N,Friday,Produce,no,yes,2026-10-07,active
+VOL-014,Parker,Q,Tuesday packing,Dry goods,no,yes,2026-10-09,active
+VOL-015,Skyler,T,Wednesday and Friday,Packing,no,yes,2026-10-14,active
+VOL-016,Jamie,W,Wednesday,Carrying help,no,yes,2026-10-02,active
+VOL-017,Alex,Z,Friday,Chilled storage,no,yes,2026-10-07,active
+VOL-018,Logan,C,Tuesday packing,Welcome table,no,yes,2026-10-09,active
+VOL-019,Rowan,F,Wednesday and Friday,Produce,yes,yes,2026-10-14,active
+VOL-020,Emery,I,Wednesday,Dry goods,no,yes,2026-10-02,waitlist
+VOL-021,Finley,L,Friday,Packing,no,no,2026-10-07,active
+VOL-022,Charlie,O,Tuesday packing,Carrying help,no,no,2026-10-09,active
+VOL-023,Sage,R,Wednesday and Friday,Chilled storage,no,no,2026-10-14,waitlist
+VOL-024,Hayden,U,Wednesday,Welcome table,no,no,2026-10-02,active

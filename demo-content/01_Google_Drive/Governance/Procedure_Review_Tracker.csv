@@ -1,0 +1,10 @@
+id,title,owner,review_due,status,approval_required,synthetic
+SOP-001,Volunteer Welcome and First Shift,Jordan Lee,2027-01-06,published,yes,yes
+SOP-002,Monthly Volunteer Scheduling,Jordan Lee,2027-01-04,published,yes,yes
+SOP-003,Donor Thank You and Receipts,Maya Chen,2026-12-01,published,yes,yes
+SOP-004,Quarterly Grant Reporting,Maya Chen,2026-12-07,published,yes,yes
+SOP-005,Harvest Dinner Event Runbook,Maya Chen,2026-10-25,draft,yes,yes
+SOP-006,Building Safety and Cold Chain,Sam Rivera,2026-12-28,published,yes,yes
+SOP-007,Board Meeting Preparation,Sam Rivera,2027-01-02,published,yes,yes
+SOP-008,Maya Chen Transfer Guide,Priya Patel,2026-11-15,draft,yes,yes
+SOP-009,Quarterly Impact Snapshot,Sam Rivera,2026-11-01,draft,yes,yes

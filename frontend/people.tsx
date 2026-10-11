@@ -48,6 +48,7 @@ function PersonDetail({
     [status, setStatus] = useState<Person["status"]>(person.status),
     [leaveDate, setLeaveDate] = useState(person.leaveDate || ""),
     [successorId, setSuccessorId] = useState(person.successorId || ""),
+    [managerId, setManagerId] = useState(person.managerId || ""),
     [saving, setSaving] = useState(false),
     [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null),
     [notes, setNotes] = useState(""),
@@ -73,6 +74,7 @@ function PersonDetail({
         status,
         leaveDate,
         successorId,
+        managerId,
       });
       await onRefresh();
       setSaveMsg({ ok: true, text: "Saved." });
@@ -207,6 +209,20 @@ function PersonDetail({
                 value={leaveDate}
                 onChange={(e) => setLeaveDate(e.target.value)}
               />
+            </label>
+            <label className="field">
+              Reports to
+              <select
+                value={managerId}
+                onChange={(e) => setManagerId(e.target.value)}
+              >
+                <option value="">No supervisor assigned</option>
+                {others.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} · {p.role}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="field">
               Successor
@@ -396,6 +412,7 @@ export function PeoplePage({
     [name, setName] = useState(""),
     [role, setRole] = useState(""),
     [email, setEmail] = useState(""),
+    [managerId, setManagerId] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const selected = people.find((p) => p.id === selectedId);
@@ -408,11 +425,13 @@ export function PeoplePage({
         name,
         role,
         ...(email.trim() ? { email: email.trim() } : {}),
+        ...(managerId ? { managerId } : {}),
       });
       await onRefresh();
       setName("");
       setRole("");
       setEmail("");
+      setManagerId("");
       setAdding(false);
       setSelectedId(p.id);
     } catch (err: any) {
@@ -475,6 +494,17 @@ export function PeoplePage({
               />
             </label>
             <label className="field">
+              Reports to (optional)
+              <select value={managerId} onChange={(e) => setManagerId(e.target.value)}>
+                <option value="">No supervisor assigned</option>
+                {people.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} · {p.role}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
               Email (optional)
               <input
                 type="email"
@@ -501,7 +531,8 @@ export function PeoplePage({
       <div className="card people-card">
         {people.map((p) => {
           const owned = articles.filter((a) => a.ownerId === p.id).length,
-            succ = people.find((x) => x.id === p.successorId);
+            succ = people.find((x) => x.id === p.successorId),
+            manager = people.find((x) => x.id === p.managerId);
           return (
             <button className="person-row" key={p.id} onClick={() => setSelectedId(p.id)}>
               <span className="mini-avatar">{p.name[0]?.toUpperCase()}</span>
@@ -510,6 +541,7 @@ export function PeoplePage({
                 <small>
                   {p.role}
                   {p.email && " · " + p.email}
+                  {manager && " · Reports to " + manager.name}
                 </small>
               </div>
               <small className="row-meta">

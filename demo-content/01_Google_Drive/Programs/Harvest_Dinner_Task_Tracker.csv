@@ -1,0 +1,13 @@
+task_id,task,due_date,owner,status
+EVENT-001,Finalize room layout,2026-10-12,Sam Rivera,done
+EVENT-002,Check volunteer coverage,2026-10-15,Jordan Lee,done
+EVENT-003,Confirm dietary requirements,2026-10-19,Sam Rivera,in progress
+EVENT-004,Approve event script,2026-10-21,Maya Chen,open
+EVENT-005,Prepare check-in materials,2026-10-23,Jordan Lee,open
+EVENT-006,Staff safety briefing,2026-10-24,Sam Rivera,open
+EVENT-007,Guest doors open,2026-10-24,Jordan Lee,open
+EVENT-008,Program welcome,2026-10-24,Maya Chen,open
+EVENT-009,Close and reconcile contributions,2026-10-24,Priya Patel,open
+EVENT-010,Send sponsor thank-yous,2026-10-26,Priya Patel,open
+EVENT-011,Reconcile event totals,2026-10-27,Maya Chen,open
+EVENT-012,Share approved event recap,2026-10-30,Priya Patel,open

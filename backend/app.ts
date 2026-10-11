@@ -7,6 +7,7 @@ import { storeVault } from "./vault";
 import { changedSources } from "./health";
 import { elevenLabsVoice } from "./elevenlabs";
 import { createOperations } from "./operations";
+import { installShowcase } from "../demo-content/scripts/install_orgflow_showcase";
 import { DEFAULT_ORG, runInOrg, scopedStore } from "./workspace";
 import { createAuth, AuthError } from "./auth";
 import {
@@ -183,6 +184,24 @@ export function createApp(
         path === "/auth/google/callback";
       if (requireAuth && !open && !(await auth.currentUser(req)))
         throw new ApiError(401, "Sign in required");
+      // Opt-in demonstration import, only for an explicitly named isolated
+      // organization, never the shared demo or real customer workspaces.
+      if (path === "/api/showcase/install" && req.method === "POST") {
+        const signedIn = requireAuth ? await auth.currentUser(req) : null;
+        if (!signedIn || signedIn.role !== "admin" || signedIn.orgId === DEFAULT_ORG)
+          throw new ApiError(403, "Only a private showcase organization's admin may import demo data.");
+        const input = (await req.json().catch(() => null)) as { confirmation?: string } | null;
+        if (input?.confirmation !== "INSTALL_FICTIONAL_SHOWCASE")
+          throw new ApiError(400, "Explicit confirmation is required.");
+        try {
+          const result = await installShowcase(baseStore, signedIn.orgId, { apply:true });
+          return json(result);
+        } catch (error) {
+          if (error instanceof Error && error.message.startsWith("Organization must have exact name"))
+            throw new ApiError(403, "This is not a permitted showcase organization.");
+          throw error;
+        }
+      }
       const googleEvent =
         (req.method === "POST" &&
           ["/api/integrations/google/sync", "/api/integrations/google/index"].includes(path)) ||

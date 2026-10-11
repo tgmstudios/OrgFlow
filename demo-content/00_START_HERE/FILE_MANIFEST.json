@@ -1,0 +1,529 @@
+{
+  "pack_name": "OrgFlow Continuity Showcase | Centre Valley Community Pantry",
+  "fictional": true,
+  "source_commit_ref": "origin/main at 51a039b (2026-10-11)",
+  "opening_clip": "~/Downloads/orgflow_opening_v5.mp4 (19.93s, 1920x1080, 60fps)",
+  "counts": {
+    "source_documents": 11,
+    "pdfs": 13,
+    "word_documents": 4,
+    "csv_tables": 6,
+    "emails": 9,
+    "calendar_events": 11,
+    "graph_nodes": 10,
+    "verifiable_QA": 15,
+    "all_files": 102
+  },
+  "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 159,
+      "sha256": "eb433949ddc5177c"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 29,
+      "sha256": "53f0c100a33a56eb"
+    },
+    {
+      "path": "00_START_HERE/ALL_FILES.txt",
+      "bytes": 5381,
+      "sha256": "c937605ec38f745e"
+    },
+    {
+      "path": "00_START_HERE/START_HERE.md",
+      "bytes": 4356,
+      "sha256": "1097a499fba365c3"
+    },
+    {
+      "path": "00_START_HERE/WEBSITE_IMPORT_AND_ACCESS.md",
+      "bytes": 6824,
+      "sha256": "0ffc3558e33def9c"
+    },
+    {
+      "path": "01_Google_Drive/Development/Donation_Register_Example.csv",
+      "bytes": 3392,
+      "sha256": "007b10eed379b709"
+    },
+    {
+      "path": "01_Google_Drive/Development/Donor_Thank_You_and_Receipts.docx",
+      "bytes": 38885,
+      "sha256": "d77145339b86877e"
+    },
+    {
+      "path": "01_Google_Drive/Development/Donor_Thank_You_and_Receipts.md",
+      "bytes": 3262,
+      "sha256": "66fde5cd355a9e88"
+    },
+    {
+      "path": "01_Google_Drive/Development/Donor_Thank_You_and_Receipts.pdf",
+      "bytes": 5209,
+      "sha256": "0656526ff56c1f5b"
+    },
+    {
+      "path": "01_Google_Drive/Development/Donor_Thank_You_and_Receipts.txt",
+      "bytes": 3262,
+      "sha256": "66fde5cd355a9e88"
+    },
+    {
+      "path": "01_Google_Drive/Development/Q3_Budget_to_Actual.csv",
+      "bytes": 542,
+      "sha256": "343d4128fa64a196"
+    },
+    {
+      "path": "01_Google_Drive/Development/Quarterly_Grant_Reporting.docx",
+      "bytes": 38744,
+      "sha256": "04ed2efc4701887e"
+    },
+    {
+      "path": "01_Google_Drive/Development/Quarterly_Grant_Reporting.md",
+      "bytes": 2930,
+      "sha256": "dc65014582ac56ef"
+    },
+    {
+      "path": "01_Google_Drive/Development/Quarterly_Grant_Reporting.pdf",
+      "bytes": 4991,
+      "sha256": "f27ba96862ad7418"
+    },
+    {
+      "path": "01_Google_Drive/Development/Quarterly_Grant_Reporting.txt",
+      "bytes": 2930,
+      "sha256": "dc65014582ac56ef"
+    },
+    {
+      "path": "01_Google_Drive/Governance/Board_Meeting_Preparation.md",
+      "bytes": 2159,
+      "sha256": "f808bc431619fe0a"
+    },
+    {
+      "path": "01_Google_Drive/Governance/Board_Meeting_Preparation.pdf",
+      "bytes": 4331,
+      "sha256": "2b83c97005aa7604"
+    },
+    {
+      "path": "01_Google_Drive/Governance/Board_Meeting_Preparation.txt",
+      "bytes": 2159,
+      "sha256": "f808bc431619fe0a"
+    },
+    {
+      "path": "01_Google_Drive/Governance/Procedure_Review_Tracker.csv",
+      "bytes": 744,
+      "sha256": "07f0967bd821b280"
+    },
+    {
+      "path": "01_Google_Drive/Operations/Building_Safety_and_Cold_Chain.md",
+      "bytes": 2573,
+      "sha256": "f1d064df2d811730"
+    },
+    {
+      "path": "01_Google_Drive/Operations/Building_Safety_and_Cold_Chain.pdf",
+      "bytes": 4802,
+      "sha256": "4c58b75b699df82f"
+    },
+    {
+      "path": "01_Google_Drive/Operations/Building_Safety_and_Cold_Chain.txt",
+      "bytes": 2573,
+      "sha256": "f1d064df2d811730"
+    },
+    {
+      "path": "01_Google_Drive/Operations/Monthly_Volunteer_Scheduling.md",
+      "bytes": 2960,
+      "sha256": "98c27829d04cc0b5"
+    },
+    {
+      "path": "01_Google_Drive/Operations/Monthly_Volunteer_Scheduling.pdf",
+      "bytes": 4948,
+      "sha256": "6f43c52ed08e18a6"
+    },
+    {
+      "path": "01_Google_Drive/Operations/Monthly_Volunteer_Scheduling.txt",
+      "bytes": 2960,
+      "sha256": "98c27829d04cc0b5"
+    },
+    {
+      "path": "01_Google_Drive/Operations/Volunteer_Availability_October.csv",
+      "bytes": 1755,
+      "sha256": "e5f8ab5c76c443b3"
+    },
+    {
+      "path": "01_Google_Drive/Operations/Volunteer_Welcome_and_First_Shift.docx",
+      "bytes": 39022,
+      "sha256": "f32a6dd4305fdabb"
+    },
+    {
+      "path": "01_Google_Drive/Operations/Volunteer_Welcome_and_First_Shift.md",
+      "bytes": 3504,
+      "sha256": "71ea82286604d919"
+    },
+    {
+      "path": "01_Google_Drive/Operations/Volunteer_Welcome_and_First_Shift.pdf",
+      "bytes": 5384,
+      "sha256": "a11d886a1a7caa7c"
+    },
+    {
+      "path": "01_Google_Drive/Operations/Volunteer_Welcome_and_First_Shift.txt",
+      "bytes": 3504,
+      "sha256": "71ea82286604d919"
+    },
+    {
+      "path": "01_Google_Drive/People_And_Transfer/Maria_Reyes_Volunteer_Coordinator_Handoff.md",
+      "bytes": 3855,
+      "sha256": "d2de19297e8ef41f"
+    },
+    {
+      "path": "01_Google_Drive/People_And_Transfer/Maria_Reyes_Volunteer_Coordinator_Handoff.pdf",
+      "bytes": 5721,
+      "sha256": "408cfcaef0cec6c4"
+    },
+    {
+      "path": "01_Google_Drive/People_And_Transfer/Maria_Reyes_Volunteer_Coordinator_Handoff.txt",
+      "bytes": 3855,
+      "sha256": "d2de19297e8ef41f"
+    },
+    {
+      "path": "01_Google_Drive/People_And_Transfer/Maya_Chen_Transfer_Guide.docx",
+      "bytes": 39285,
+      "sha256": "5c5abc9e4e9d0802"
+    },
+    {
+      "path": "01_Google_Drive/People_And_Transfer/Maya_Chen_Transfer_Guide.md",
+      "bytes": 4028,
+      "sha256": "f78fcb965fdc5ea1"
+    },
+    {
+      "path": "01_Google_Drive/People_And_Transfer/Maya_Chen_Transfer_Guide.pdf",
+      "bytes": 5912,
+      "sha256": "df648c2a90df164d"
+    },
+    {
+      "path": "01_Google_Drive/People_And_Transfer/Maya_Chen_Transfer_Guide.txt",
+      "bytes": 4028,
+      "sha256": "f78fcb965fdc5ea1"
+    },
+    {
+      "path": "01_Google_Drive/People_And_Transfer/Staff_Ownership_And_Contacts.md",
+      "bytes": 1795,
+      "sha256": "f4c69efc3079ea5e"
+    },
+    {
+      "path": "01_Google_Drive/People_And_Transfer/Staff_Ownership_And_Contacts.pdf",
+      "bytes": 3266,
+      "sha256": "e7c2c2fab1d6aca2"
+    },
+    {
+      "path": "01_Google_Drive/People_And_Transfer/Staff_Ownership_And_Contacts.txt",
+      "bytes": 1795,
+      "sha256": "f4c69efc3079ea5e"
+    },
+    {
+      "path": "01_Google_Drive/Programs/Harvest_Dinner_Event_Runbook.md",
+      "bytes": 3182,
+      "sha256": "4aedb5d47273f150"
+    },
+    {
+      "path": "01_Google_Drive/Programs/Harvest_Dinner_Event_Runbook.pdf",
+      "bytes": 5224,
+      "sha256": "9b0b00e37f45d136"
+    },
+    {
+      "path": "01_Google_Drive/Programs/Harvest_Dinner_Event_Runbook.txt",
+      "bytes": 3182,
+      "sha256": "4aedb5d47273f150"
+    },
+    {
+      "path": "01_Google_Drive/Programs/Harvest_Dinner_Invitation.pdf",
+      "bytes": 2360,
+      "sha256": "c2d5d3ab8ef489a9"
+    },
+    {
+      "path": "01_Google_Drive/Programs/Harvest_Dinner_Invitation.png",
+      "bytes": 23189,
+      "sha256": "d0d48e94f620446a"
+    },
+    {
+      "path": "01_Google_Drive/Programs/Harvest_Dinner_Task_Tracker.csv",
+      "bytes": 785,
+      "sha256": "6904746c03a1812b"
+    },
+    {
+      "path": "01_Google_Drive/Programs/Outcomes_Jul_Sep.csv",
+      "bytes": 1406,
+      "sha256": "4a6ea966c79892a4"
+    },
+    {
+      "path": "01_Google_Drive/Programs/Quarterly_Impact_Snapshot.md",
+      "bytes": 2892,
+      "sha256": "3afd82fc0e9f20b2"
+    },
+    {
+      "path": "01_Google_Drive/Programs/Quarterly_Impact_Snapshot.pdf",
+      "bytes": 4918,
+      "sha256": "621e0fbcb683f55d"
+    },
+    {
+      "path": "01_Google_Drive/Programs/Quarterly_Impact_Snapshot.txt",
+      "bytes": 2892,
+      "sha256": "3afd82fc0e9f20b2"
+    },
+    {
+      "path": "01_Google_Drive/Programs/Quarterly_Impact_Visual.pdf",
+      "bytes": 2585,
+      "sha256": "25275da88c45b5a8"
+    },
+    {
+      "path": "01_Google_Drive/Programs/Quarterly_Impact_Visual.png",
+      "bytes": 20519,
+      "sha256": "2ce9ea6d9d3967b0"
+    },
+    {
+      "path": "02_Gmail_Examples/01_Welcome_to_Your_First_Shift.eml",
+      "bytes": 753,
+      "sha256": "3a17d99a316babac"
+    },
+    {
+      "path": "02_Gmail_Examples/01_Welcome_to_Your_First_Shift.txt",
+      "bytes": 542,
+      "sha256": "d03b0e987620159b"
+    },
+    {
+      "path": "02_Gmail_Examples/02_October_Schedule_Reminder.eml",
+      "bytes": 726,
+      "sha256": "e1d9b8b0e0c3bcd0"
+    },
+    {
+      "path": "02_Gmail_Examples/02_October_Schedule_Reminder.txt",
+      "bytes": 516,
+      "sha256": "29a8a9c1ccbbb0b2"
+    },
+    {
+      "path": "02_Gmail_Examples/03_Donor_Acknowledgement_Queue.eml",
+      "bytes": 794,
+      "sha256": "c56a6b7fdb924c0d"
+    },
+    {
+      "path": "02_Gmail_Examples/03_Donor_Acknowledgement_Queue.txt",
+      "bytes": 584,
+      "sha256": "a19b08b991f96907"
+    },
+    {
+      "path": "02_Gmail_Examples/04_Quarterly_Grant_Due.eml",
+      "bytes": 742,
+      "sha256": "e690568e8dba0d56"
+    },
+    {
+      "path": "02_Gmail_Examples/04_Quarterly_Grant_Due.txt",
+      "bytes": 533,
+      "sha256": "9d93907a379e18b4"
+    },
+    {
+      "path": "02_Gmail_Examples/05_Harvest_Dinner_Staff_Brief.eml",
+      "bytes": 717,
+      "sha256": "7e8987c1956ffaf8"
+    },
+    {
+      "path": "02_Gmail_Examples/05_Harvest_Dinner_Staff_Brief.txt",
+      "bytes": 507,
+      "sha256": "1ef5dac44971f01d"
+    },
+    {
+      "path": "02_Gmail_Examples/06_Maya_Handoff_Request.eml",
+      "bytes": 784,
+      "sha256": "7ccfd1a0b639783d"
+    },
+    {
+      "path": "02_Gmail_Examples/06_Maya_Handoff_Request.txt",
+      "bytes": 573,
+      "sha256": "2643e29299546a1c"
+    },
+    {
+      "path": "02_Gmail_Examples/07_Priya_Transfer_Confirmation.eml",
+      "bytes": 682,
+      "sha256": "1275c50f44042057"
+    },
+    {
+      "path": "02_Gmail_Examples/07_Priya_Transfer_Confirmation.txt",
+      "bytes": 473,
+      "sha256": "0f04264094fcdbbf"
+    },
+    {
+      "path": "02_Gmail_Examples/08_Superseded_Arrival_Time.eml",
+      "bytes": 613,
+      "sha256": "b99f7e5ba7406782"
+    },
+    {
+      "path": "02_Gmail_Examples/08_Superseded_Arrival_Time.txt",
+      "bytes": 404,
+      "sha256": "4a6d4ce72ae71f02"
+    },
+    {
+      "path": "02_Gmail_Examples/09_Maria_to_Jordan_Handoff.eml",
+      "bytes": 1085,
+      "sha256": "424bac9d94c32847"
+    },
+    {
+      "path": "02_Gmail_Examples/09_Maria_to_Jordan_Handoff.txt",
+      "bytes": 824,
+      "sha256": "807c182bb8abf7ef"
+    },
+    {
+      "path": "03_Event_Calendar/OrgFlow_Example_Calendar.ics",
+      "bytes": 3726,
+      "sha256": "2fab68c4f7567db3"
+    },
+    {
+      "path": "04_Voice_And_iOS/Maria_Reyes_Handoff_Interview.md",
+      "bytes": 2401,
+      "sha256": "a986e497e7262175"
+    },
+    {
+      "path": "04_Voice_And_iOS/Maya_Handoff_Interview_Transcript.md",
+      "bytes": 2462,
+      "sha256": "360827d36a893de5"
+    },
+    {
+      "path": "04_Voice_And_iOS/Voice_And_iPhone_Demo_Guide.md",
+      "bytes": 1826,
+      "sha256": "b065107df8cc47c8"
+    },
+    {
+      "path": "05_Mindmap_Sneak_Peek/Knowledge_Cluster_Concept.html",
+      "bytes": 759,
+      "sha256": "1177df560ea3f337"
+    },
+    {
+      "path": "05_Mindmap_Sneak_Peek/Knowledge_Cluster_Concept.json",
+      "bytes": 3332,
+      "sha256": "3f5b9ee6452726d6"
+    },
+    {
+      "path": "05_Mindmap_Sneak_Peek/Knowledge_Cluster_Sneak_Peek.png",
+      "bytes": 181858,
+      "sha256": "04d105b7789ac9c4"
+    },
+    {
+      "path": "05_Mindmap_Sneak_Peek/Knowledge_Cluster_Sneak_Peek.svg",
+      "bytes": 6775,
+      "sha256": "50b2bfabb2f958b4"
+    },
+    {
+      "path": "06_Sam_Video_Package/EDIT_AND_DELIVERY_CHECKLIST.md",
+      "bytes": 2228,
+      "sha256": "23d20cae8469c37d"
+    },
+    {
+      "path": "06_Sam_Video_Package/PASTE_THIS_TO_SAM_SECOND_HALF.md",
+      "bytes": 11356,
+      "sha256": "b5902b6e28da51c0"
+    },
+    {
+      "path": "06_Sam_Video_Package/REFERENCE_STYLE_FROM_OPENING.md",
+      "bytes": 1297,
+      "sha256": "0bd4abd6288df54d"
+    },
+    {
+      "path": "06_Sam_Video_Package/VOICEOVER_CONTINUATION_20_TO_90.md",
+      "bytes": 1538,
+      "sha256": "d49e8dc6c20785a6"
+    },
+    {
+      "path": "06_Sam_Video_Package/reference/Sam_Opening_00_to_20s.mp4",
+      "bytes": 3397665,
+      "sha256": "4535e9c467022830"
+    },
+    {
+      "path": "06_Sam_Video_Package/reference/contact-sheet.jpg",
+      "bytes": 99690,
+      "sha256": "1302fb51f55cd529"
+    },
+    {
+      "path": "06_Sam_Video_Package/reference/contact-sheet.png",
+      "bytes": 160064,
+      "sha256": "46c0f27cf35b9bde"
+    },
+    {
+      "path": "06_Sam_Video_Package/reference/frame-0.jpg",
+      "bytes": 12462,
+      "sha256": "11f67e93be0c0510"
+    },
+    {
+      "path": "06_Sam_Video_Package/reference/frame-12.jpg",
+      "bytes": 51221,
+      "sha256": "1a75f06065362126"
+    },
+    {
+      "path": "06_Sam_Video_Package/reference/frame-15.jpg",
+      "bytes": 31414,
+      "sha256": "c7ab16b15f3130eb"
+    },
+    {
+      "path": "06_Sam_Video_Package/reference/frame-18.jpg",
+      "bytes": 61370,
+      "sha256": "ec62dbffaee8bb0a"
+    },
+    {
+      "path": "06_Sam_Video_Package/reference/frame-3.jpg",
+      "bytes": 27047,
+      "sha256": "7af81ad262388caf"
+    },
+    {
+      "path": "06_Sam_Video_Package/reference/frame-6.jpg",
+      "bytes": 35671,
+      "sha256": "ed0518315147eb4d"
+    },
+    {
+      "path": "06_Sam_Video_Package/reference/frame-9.jpg",
+      "bytes": 32244,
+      "sha256": "ff7addc4920dccb4"
+    },
+    {
+      "path": "07_Import_And_QA/Google_Drive_And_Gmail_Import_Guide.md",
+      "bytes": 3620,
+      "sha256": "7f7117eb3a5f6656"
+    },
+    {
+      "path": "07_Import_And_QA/PDF_First_Page_Review.png",
+      "bytes": 38468,
+      "sha256": "763c2a3faf37a694"
+    },
+    {
+      "path": "07_Import_And_QA/Verified_Questions_And_Sources.csv",
+      "bytes": 2413,
+      "sha256": "b7e267e34c0a14fe"
+    },
+    {
+      "path": "scripts/build_documents.py",
+      "bytes": 9884,
+      "sha256": "5c12d08f2720d092"
+    },
+    {
+      "path": "scripts/build_extras.py",
+      "bytes": 6105,
+      "sha256": "3235e7cd4e1823e6"
+    },
+    {
+      "path": "scripts/build_records.py",
+      "bytes": 13020,
+      "sha256": "c666952aac12d688"
+    },
+    {
+      "path": "scripts/install_orgflow_showcase.test.ts",
+      "bytes": 6396,
+      "sha256": "eeb7acbfb15a1954"
+    },
+    {
+      "path": "scripts/install_orgflow_showcase.ts",
+      "bytes": 12278,
+      "sha256": "842ed8fcd35b1334"
+    },
+    {
+      "path": "scripts/showcase_http.test.ts",
+      "bytes": 4048,
+      "sha256": "4c773080a7cbc890"
+    },
+    {
+      "path": "scripts/validate_and_manifest.py",
+      "bytes": 6372,
+      "sha256": "427b5dcc8de38a1c"
+    }
+  ]
+}

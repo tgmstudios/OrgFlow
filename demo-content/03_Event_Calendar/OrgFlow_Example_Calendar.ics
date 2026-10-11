@@ -1,0 +1,106 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//OrgFlow//Fictional Demo//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Centre Valley Pantry Example
+BEGIN:VEVENT
+UID:orgflow-example-001@example.org
+DTSTAMP:20261011T210000Z
+DTSTART;TZID=America/New_York:20261024T153000
+DTEND;TZID=America/New_York:20261024T160000
+SUMMARY:Staff safety and room check
+DESCRIPTION:Fictional demonstration. Owner: Sam Rivera. Harvest Dinner example
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+UID:orgflow-example-002@example.org
+DTSTAMP:20261011T210000Z
+DTSTART;TZID=America/New_York:20261024T170000
+DTEND;TZID=America/New_York:20261024T171500
+SUMMARY:Volunteer briefing
+DESCRIPTION:Fictional demonstration. Owner: Jordan Lee. Harvest Dinner example
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+UID:orgflow-example-003@example.org
+DTSTAMP:20261011T210000Z
+DTSTART;TZID=America/New_York:20261024T173000
+DTEND;TZID=America/New_York:20261024T200000
+SUMMARY:Harvest Dinner doors open
+DESCRIPTION:Fictional demonstration. Owner: Maya Chen. Fictional event, no real tickets
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+UID:orgflow-example-004@example.org
+DTSTAMP:20261011T210000Z
+DTSTART;TZID=America/New_York:20261015T170000
+DTEND;TZID=America/New_York:20261015T173000
+SUMMARY:Volunteer availability deadline
+DESCRIPTION:Fictional demonstration. Owner: Jordan Lee. Each month, collect by the 15th
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+UID:orgflow-example-005@example.org
+DTSTAMP:20261011T210000Z
+DTSTART;TZID=America/New_York:20261022T140000
+DTEND;TZID=America/New_York:20261022T143000
+SUMMARY:Monthly shift schedule review
+DESCRIPTION:Fictional demonstration. Owner: Jordan Lee. Each month, finalize by the 22nd
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+UID:orgflow-example-006@example.org
+DTSTAMP:20261011T210000Z
+DTSTART;TZID=America/New_York:20261016T090000
+DTEND;TZID=America/New_York:20261016T093000
+SUMMARY:Quarterly grant report starts
+DESCRIPTION:Fictional demonstration. Owner: Maya Chen. Three weeks before report deadline
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+UID:orgflow-example-007@example.org
+DTSTAMP:20261011T210000Z
+DTSTART;TZID=America/New_York:20261030T110000
+DTEND;TZID=America/New_York:20261030T120000
+SUMMARY:Executive grant review
+DESCRIPTION:Fictional demonstration. Owner: Maya Chen. One week before report due
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+UID:orgflow-example-008@example.org
+DTSTAMP:20261011T210000Z
+DTSTART;TZID=America/New_York:20261106T160000
+DTEND;TZID=America/New_York:20261106T163000
+SUMMARY:Quarterly grant report due
+DESCRIPTION:Fictional demonstration. Owner: Priya Patel. Community Table Fund fictional report
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+UID:orgflow-example-009@example.org
+DTSTAMP:20261011T210000Z
+DTSTART;TZID=America/New_York:20261109T100000
+DTEND;TZID=America/New_York:20261109T110000
+SUMMARY:Maya and Priya role interview
+DESCRIPTION:Fictional demonstration. Owner: Sam Rivera. Consent required before voice recording
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+UID:orgflow-example-010@example.org
+DTSTAMP:20261011T210000Z
+DTSTART;TZID=America/New_York:20261112T110000
+DTEND;TZID=America/New_York:20261112T120000
+SUMMARY:Independent handoff rehearsal
+DESCRIPTION:Fictional demonstration. Owner: Priya Patel. No credentials shared in notes
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+UID:orgflow-example-011@example.org
+DTSTAMP:20261011T210000Z
+DTSTART;TZID=America/New_York:20261115T160000
+DTEND;TZID=America/New_York:20261115T163000
+SUMMARY:Maya final transition
+DESCRIPTION:Fictional demonstration. Owner: Sam Rivera. Check owners and successor checklist
+STATUS:CONFIRMED
+END:VEVENT
+END:VCALENDAR

@@ -300,7 +300,7 @@ export function createOperations(dependencies: {
           await audit(user, "index.clear", { sources: all.length });
           return json({ removed: all.length });
         }
-        let match = m(/^\/api\/sources\/((?:drive|gmail)-[^/]+)$/);
+        let match = m(/^\/api\/sources\/((?:drive|gmail|showcase-source|showcase-mail)-[^/]+)$/);
         if (match && req.method === "PATCH") {
           const source = await store.get("sources", decodeURIComponent(match[1]!));
           if (!source) throw new OperationError(404, "Indexed source not found.");
@@ -316,7 +316,7 @@ export function createOperations(dependencies: {
           await audit(user, "source.owner", { sourceId: source.id, ownerId: ownerId ?? null });
           return json(updated);
         }
-        match = m(/^\/api\/sources\/((?:drive|gmail)-[^/]+)$/);
+        match = m(/^\/api\/sources\/((?:drive|gmail|showcase-source|showcase-mail)-[^/]+)$/);
         if (match && req.method === "DELETE") {
           await removeSource(decodeURIComponent(match[1]!));
           await audit(user, "index.remove", { sourceId: match[1] });
@@ -389,6 +389,21 @@ export function createOperations(dependencies: {
         }
 
         // People and Transfer
+        // Managers are People records inside this organization, not sign-in permissions.
+        async function validatedManager(personId: string | null, incoming: unknown): Promise<string> {
+          const managerId = text(incoming, "managerId", 200);
+          if (managerId === personId) throw new OperationError(400, "A person cannot supervise themselves.");
+          let current: string | undefined = managerId;
+          const visited = new Set<string>();
+          while (current) {
+            if (current === personId || visited.has(current)) throw new OperationError(400, "Reporting relationships must not form a cycle.");
+            visited.add(current);
+            const person = await store.get("people", current);
+            if (!person) throw new OperationError(400, "Supervisor must be an existing person in this organization.");
+            current = typeof person.managerId === "string" ? person.managerId : undefined;
+          }
+          return managerId;
+        }
         if (path === "/api/people" && req.method === "GET") return json({ people: await store.list("people") });
         if (path === "/api/people" && req.method === "POST") {
           const input = await body();
@@ -398,6 +413,7 @@ export function createOperations(dependencies: {
             role: text(input.role, "role", 120),
             email: optionalText(input.email, 254),
             status: "active",
+            ...(input.managerId ? { managerId: await validatedManager(null, input.managerId) } : {}),
             createdAt: now(),
           };
           await store.put("people", person);
@@ -412,6 +428,8 @@ export function createOperations(dependencies: {
           if (input.name !== undefined) v.name = text(input.name, "name", 120);
           if (input.role !== undefined) v.role = text(input.role, "role", 120);
           if (input.email !== undefined) v.email = optionalText(input.email, 254);
+          if (input.managerId !== undefined)
+            v.managerId = input.managerId ? await validatedManager(person.id as string, input.managerId) : undefined;
           if (input.status !== undefined) {
             if (!["active", "leaving", "left"].includes(input.status)) throw new OperationError(400, "status must be active, leaving or left");
             v.status = input.status;

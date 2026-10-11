@@ -27,7 +27,7 @@ jobs:
 
       - name: Sync code to instance
         run: |
-          for app in landing frontend backend app deploy; do
+          for app in landing frontend backend app deploy demo-content; do
             [ -d "$app" ] || continue
             rsync -az --delete \
               --exclude 'node_modules' \
