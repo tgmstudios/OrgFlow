@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /a/
+Disallow: /api/
+Disallow: /auth/
+
+Sitemap: https://orgflow.dev/sitemap.xml
