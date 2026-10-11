@@ -1,6 +1,6 @@
 # Shared product and collaboration memory
 
-Before product work, read [docs/SHARED_MEMORY.md](docs/SHARED_MEMORY.md) for human decisions, current state, open questions, and handoff details, and [docs/MVP.md](docs/MVP.md) for the original Continuity AI brief.
+Before product work, read [docs/SHARED_MEMORY.md](docs/SHARED_MEMORY.md) for human decisions, current state, open questions, and handoff details, and [docs/MVP.md](docs/MVP.md) for the original OrgFlow brief.
 
 Keep the shared memory current when consequential decisions change or work is handed off. Clearly distinguish confirmed human decisions, agent proposals, unverified claims, and implemented behavior. Never store secrets or private source content in memory. Latest explicit user instructions take precedence over saved memory.
 

@@ -12,5 +12,8 @@
   },
   "peerDependencies": {
     "typescript": "^7"
+  },
+  "dependencies": {
+    "swagger-ui-dist": "^5.33.1"
   }
 }

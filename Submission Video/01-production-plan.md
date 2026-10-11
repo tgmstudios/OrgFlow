@@ -20,7 +20,7 @@ Official references:
 
 ## Direction
 
-Make a focused product launch film with one human problem and one concrete demonstration. A nonprofit's outgoing operations coordinator knows how the weekly volunteer shift is organized. Continuity AI helps preserve that process so the next coordinator can act.
+Make a focused product launch film with one human problem and one concrete demonstration. A nonprofit's outgoing operations coordinator knows how the weekly volunteer shift is organized. OrgFlow helps preserve that process so the next coordinator can act.
 
 Design the opening around disappearing knowledge: a few document/email cards drift apart; a single question remains, “Who knows how this works?” On the brand reveal, the cards align into one clean playbook. These are conceptual graphics, not fabricated product UI.
 

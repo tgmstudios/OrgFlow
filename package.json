@@ -3,5 +3,12 @@
   "private": true,
   "dependencies": {
     "@aws-app-monetization/monetize-skill": "^0.1.1790609029"
+  },
+  "scripts": {
+    "dev": "bun run dev.ts",
+    "install:app": "bun install --cwd backend && bun install --cwd frontend",
+    "typecheck": "bun run --cwd backend typecheck && bun run --cwd frontend typecheck",
+    "test": "bun test ./backend",
+    "build": "bun build ./frontend/index.html --outdir ./frontend/dist --target browser"
   }
 }
