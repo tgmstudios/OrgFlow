@@ -20,8 +20,8 @@ import { AnimatePresence, ease, m, prefersReducedMotion } from "./motion";
  * onto a cluster reassigns it, dropping a cluster on another hands everything
  * over. Every change goes through the API.
  */
-const W = 900,
-  H = 580,
+const W = 980,
+  H = 640,
   CX = W / 2,
   CY = H / 2;
 const NONE = "unassigned";
@@ -57,26 +57,72 @@ const curve = (a: Pt, b: Pt, bend: number) => {
 };
 const TONES: Tone[] = ["teal", "iris", "apricot"];
 
+// Approximate on-stage boxes (half sizes), so items can be kept clear of cards and of each other.
+const CARD = { w: 88, h: 60 },
+  ROOT = { w: 88, h: 56 };
+const chip = (d: Doc) => {
+  const w = Math.min(176, 44 + d.title.length * 6.4);
+  return { w: w / 2 + 6, h: (w >= 176 && d.title.length > 24 ? 22 : 15) + 6 };
+};
+
 function layout(clusters: Cluster[], members: Map<string, Doc[]>, pinned: Record<string, Pt>) {
   const pos: Record<string, Pt> = { root: { x: CX, y: CY } };
   const n = clusters.length;
+  const free: { key: string; half: Pt; owner: Pt }[] = [];
   clusters.forEach((c, i) => {
     const a = -Math.PI / 2 + Math.PI / Math.max(n, 1) + (i / Math.max(n, 1)) * Math.PI * 2;
-    const p = pinned[c.id] ?? { x: CX + 290 * Math.cos(a), y: CY + 172 * Math.sin(a) };
-    const at = (pos[c.id] = { x: clamp(p.x, 120, W - 120), y: clamp(p.y, 90, H - 90) });
+    const p = pinned[c.id] ?? { x: CX + 320 * Math.cos(a), y: CY + 196 * Math.sin(a) };
+    const at = (pos[c.id] = { x: clamp(p.x, 110, W - 110), y: clamp(p.y, 80, H - 80) });
     const docs = members.get(c.id) || [];
     const k = docs.length;
     const out = Math.atan2(at.y - CY, at.x - CX) || 0;
-    const spread = Math.min(Math.PI * 1.6, k * 0.8);
-    const r = 122 + Math.max(0, k - 4) * 10;
+    const spread = Math.min(Math.PI * 1.5, k * 0.7);
     docs.forEach((d, j) => {
       const da = k === 1 ? out : out - spread / 2 + (spread * (j + 0.5)) / k;
-      pos[d.key] = pinned[d.key] ?? {
-        x: clamp(at.x + r * Math.cos(da), 70, W - 70),
-        y: clamp(at.y + r * 0.78 * Math.sin(da), 22, H - 22),
-      };
+      const half = chip(d);
+      // Ellipse wide enough that a chip pointing sideways clears the card.
+      const rx = CARD.w + half.w + 14,
+        ry = CARD.h + half.h + 16;
+      pos[d.key] = pinned[d.key] ?? { x: at.x + rx * Math.cos(da), y: at.y + ry * Math.sin(da) };
+      if (!pinned[d.key]) free.push({ key: d.key, half, owner: at });
     });
   });
+  // Relax: push unpinned items out of cards, the root, other items and the frame edges.
+  const solid = [{ at: pos.root!, half: { x: ROOT.w, y: ROOT.h } }].concat(
+    clusters.map((c) => ({ at: pos[c.id]!, half: { x: CARD.w, y: CARD.h } })),
+  );
+  for (let step = 0; step < 240; step++) {
+    let moved = false;
+    for (const f of free) {
+      const p = pos[f.key]!;
+      const push = (o: Pt, hx: number, hy: number, share: number, stack = false) => {
+        const dx = p.x - o.x,
+          dy = p.y - o.y;
+        const ox = hx - Math.abs(dx),
+          oy = hy - Math.abs(dy);
+        if (ox <= 0 || oy <= 0) return false;
+        // Resolve along the shallower axis, unless that would leave the frame; then go the other way.
+        const sx = dx >= 0 ? 1 : -1,
+          sy = dy >= 0 ? 1 : -1;
+        const fitsX = (x: number) => x >= f.half.w + 8 && x <= W - f.half.w - 8;
+        const fitsY = (y: number) => y >= f.half.h + 8 && y <= H - f.half.h - 8;
+        const tx = p.x + sx * ox * share,
+          ty = p.y + sy * oy * share;
+        // Chips are wide: stack them vertically against each other unless they barely touch sideways.
+        const horizontal = fitsX(tx) && (!fitsY(ty) || (stack ? ox < 10 : ox / hx < oy / hy));
+        if (horizontal) p.x = tx;
+        else if (fitsY(ty)) p.y = ty;
+        else p.y += -sy * (2 * hy - oy) * share; // pinned against an edge: hop over to the other side
+        return true;
+      };
+      for (const s of solid) moved = push(s.at, s.half.x + f.half.w, s.half.y + f.half.h, 1) || moved;
+      for (const g of free)
+        if (g !== f) moved = push(pos[g.key]!, g.half.w + f.half.w, g.half.h + f.half.h, 0.5, true) || moved;
+      p.x = clamp(p.x, f.half.w + 8, W - f.half.w - 8);
+      p.y = clamp(p.y, f.half.h + 8, H - f.half.h - 8);
+    }
+    if (!moved) break;
+  }
   return pos;
 }
 
@@ -443,11 +489,11 @@ export function ClusterView({
                           {initials(c.name)}
                         </span>
                       ) : (
-                        <span className="cl-avatar empty">?</span>
+                        <span className="cl-avatar none">?</span>
                       )}
                       <strong>{c.name}</strong>
+                      {c.person?.role && <span className="cl-role">{c.person.role}</span>}
                       <small>
-                        {c.person?.role ? c.person.role + " · " : ""}
                         {count} {count === 1 ? "item" : "items"}
                       </small>
                     </div>
