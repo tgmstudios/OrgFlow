@@ -1,0 +1,23 @@
+# Large production media stays local/shared; record links in 05-asset-register.md.
+*.mp4
+*.mov
+*.mkv
+*.webm
+*.avi
+*.wav
+*.aif
+*.aiff
+*.mp3
+*.m4a
+*.aac
+*.screenstudio/
+*.prproj
+*.aep
+*.aepx
+*.veg
+*.drp
+*.capcut
+**/Cache/
+**/cache/
+**/renders/
+.DS_Store
