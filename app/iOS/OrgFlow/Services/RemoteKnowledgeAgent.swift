@@ -71,7 +71,7 @@ nonisolated struct RemoteKnowledgeAgent: KnowledgeAgentProviding {
                 } catch let error as OrgFlowAPIError {
                     continuation.finish(throwing: error)
                 } catch {
-                    continuation.finish(throwing: OrgFlowAPIError.server(status: 0, message: "OrgFlow sent an answer the app couldn't read."))
+                    continuation.finish(throwing: OrgFlowAPIError.server(status: 0, message: "OneFlow sent an answer the app couldn't read."))
                 }
             }
             continuation.onTermination = { _ in task.cancel() }

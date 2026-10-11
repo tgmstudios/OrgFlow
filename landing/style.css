@@ -3011,3 +3011,20 @@ h2 {
     transform: none;
   }
 }
+
+
+/* Authoritative OneFlow mark reused from the application and the brand system. */
+.wordmark-mark {
+  display: block;
+  object-fit: contain;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+}
+.wordmark {
+  letter-spacing: -1.25px;
+  gap: 9px;
+}
+@media (max-width: 650px) {
+  .wordmark-mark { width: 28px; height: 28px; }
+}

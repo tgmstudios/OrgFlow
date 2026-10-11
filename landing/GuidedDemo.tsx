@@ -125,7 +125,7 @@ export default function GuidedDemo() {
   return (
     <div className="of-guided-shell">
       <div className="of-guided-topbar">
-        <span><img src="/brand-knot.webp" width="26" height="26" alt="" />OrgFlow assistant</span>
+        <span><img src="/brand-knot.webp" width="26" height="26" alt="" />OneFlow assistant</span>
         <button className="of-guided-reset" onClick={reset} aria-label="Reset the simple example">
           <RotateCcw size={14} aria-hidden="true" />Reset
         </button>
@@ -172,7 +172,7 @@ export default function GuidedDemo() {
               <div className="of-guided-review-stages" aria-label="Draft created. Human review required before publishing.">
                 <span><Check size={12} aria-hidden="true" />Draft</span><ChevronRight size={13} aria-hidden="true" /><span className={reviewed ? "is-reviewed" : ""}>Review</span><ChevronRight size={13} aria-hidden="true" /><span>Publish</span>
               </div>
-              <p>OrgFlow helps write it. Your team decides what becomes official.</p>
+              <p>OneFlow helps write it. Your team decides what becomes official.</p>
               {!editing && <label className="of-guided-approval"><input type="checkbox" checked={reviewed} onChange={(event) => setReviewed(event.target.checked)} /><span>I’ve reviewed the steps and their source.</span></label>}
               {editing && !valid && <p className="of-guided-validation" role="alert">Give the procedure a title and keep every step filled in.</p>}
               <div className="of-guided-actions">
@@ -210,7 +210,7 @@ export default function GuidedDemo() {
             </div>
             <div className="of-guided-completion" role="progressbar" aria-label="Procedure completion" aria-valuemin={0} aria-valuemax={4} aria-valuenow={completed} aria-valuetext={`${completed} of 4 steps complete`}><span style={{ transform: `scaleX(${completed / 4})` }} /></div>
             <div className="of-guided-progress"><span>{completed === 4 ? <><CheckCircle2 size={16} aria-hidden="true" />Ready for the next first shift.</> : `${completed} of 4 steps complete`}</span><button className="of-guided-text-action" onClick={() => {setChecked([false, false, false, false]);setStatus("The sample checklist has been cleared.");}}>Clear checklist</button></div>
-            <div className="of-guided-actions"><a className="of-guided-primary" href="https://orgflow.dev/a/">Try OrgFlow<ArrowRight size={17} aria-hidden="true" /></a><button className="of-guided-text-action" onClick={edit}><Pencil size={14} aria-hidden="true" />Edit draft</button></div>
+            <div className="of-guided-actions"><a className="of-guided-primary" href="https://orgflow.dev/a/">Try OneFlow<ArrowRight size={17} aria-hidden="true" /></a><button className="of-guided-text-action" onClick={edit}><Pencil size={14} aria-hidden="true" />Edit draft</button></div>
           </div>
         )}
       </div>

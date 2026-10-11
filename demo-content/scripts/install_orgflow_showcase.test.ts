@@ -7,7 +7,7 @@ import { rank } from "../../backend/retrieval";
 
 const ORG = "a11ce111-aaaa-4444-8888-000000000001";
 const WRONG = "b11ce222-bbbb-4444-8888-000000000002";
-const NAME = "Centre Valley Community Pantry (OrgFlow Showcase)";
+const NAME = "Centre Valley Community Pantry (OneFlow Showcase)";
 async function fixture() {
   const store = createMemoryStore();
   await seed(store);

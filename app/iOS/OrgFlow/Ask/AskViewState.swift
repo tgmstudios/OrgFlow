@@ -38,7 +38,7 @@ enum VoiceStyle: Int, CaseIterable {
 
     var title: String {
         switch self {
-        case .conversation: "Talk with OrgFlow"
+        case .conversation: "Talk with OneFlow"
         case .dictation: "Dictate"
         }
     }
@@ -64,7 +64,7 @@ enum AskError: Equatable {
         case .interrupted: "Listening was interrupted"
         case .captureFailed: "Couldn't start the microphone"
         case .agentUnavailable: "Couldn't reach your knowledge"
-        case .signInRequired: "Sign in to OrgFlow"
+        case .signInRequired: "Sign in to OneFlow"
         case .planRequired: "Your plan doesn't include this"
         }
     }

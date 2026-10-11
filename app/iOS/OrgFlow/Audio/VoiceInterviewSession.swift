@@ -85,7 +85,7 @@ final class VoiceInterviewSession {
     }
 
     static func transcript(_ lines: [Line]) -> String {
-        lines.map { "\($0.fromAgent ? "OrgFlow" : "Me"): \($0.text)" }.joined(separator: "\n")
+        lines.map { "\($0.fromAgent ? "OneFlow" : "Me"): \($0.text)" }.joined(separator: "\n")
     }
 
     /// Knot input: whichever voice is louder, colored by who is speaking.

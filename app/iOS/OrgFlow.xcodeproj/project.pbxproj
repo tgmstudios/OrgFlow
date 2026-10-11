@@ -148,8 +148,8 @@
 				DEVELOPMENT_TEAM = S5BAL69932;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OrgFlow/Info.plist;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Continuity listens only while you hold a voice conversation, so it can visualize and transcribe your question.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Continuity transcribes your spoken question on device so you can review it before asking.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OneFlow listens only while you hold a voice conversation, so it can visualize and transcribe your question.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "OneFlow transcribes your spoken question on device so you can review it before asking.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
@@ -183,8 +183,8 @@
 				DEVELOPMENT_TEAM = S5BAL69932;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OrgFlow/Info.plist;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Continuity listens only while you hold a voice conversation, so it can visualize and transcribe your question.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Continuity transcribes your spoken question on device so you can review it before asking.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OneFlow listens only while you hold a voice conversation, so it can visualize and transcribe your question.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "OneFlow transcribes your spoken question on device so you can review it before asking.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;

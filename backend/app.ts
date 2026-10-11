@@ -101,6 +101,10 @@ export function createApp(
   });
   const google = createGoogleHandler({
     vault: storeVault(baseStore),
+    getAccount: async (request) => {
+      const signedIn = await auth.currentUser(request);
+      return signedIn ? { userId: signedIn.id, orgId: signedIn.orgId ?? DEFAULT_ORG } : null;
+    },
     saveSource: (source) => operations.saveSource(source),
     upsertFile: async (file) => {
       const current = await store.get("files", file.id);

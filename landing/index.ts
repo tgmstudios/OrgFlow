@@ -11,4 +11,4 @@ Bun.serve({
   fetch: createLandingHandler(),
   development: false,
 });
-console.log(`OrgFlow landing ready at http://localhost:${port}`);
+console.log(`OneFlow landing ready at http://localhost:${port}`);

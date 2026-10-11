@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..500&display=swap");
 
 /* ==========================================================================
-   OrgFlow web — design tokens
+   OneFlow web — design tokens
    Mirrors the iOS "Continuity" theme: warm off-white canvas, ink type, an
    editorial serif for headlines paired with Geist for UI and Geist Mono for
    metadata. Saturated color is reserved for the teal → iris → apricot
@@ -6006,3 +6006,65 @@ blockquote small {
     display: none;
   }
 }
+
+/* Branded, self-hosted provider artwork and OneFlow's single shared knot. */
+.oneflow-wordmark {
+  font-family: var(--font-display);
+  font-weight: 550;
+  letter-spacing: -.045em;
+  white-space: nowrap;
+}
+.oneflow-brand-mark {
+  display: inline-block;
+  object-fit: contain;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+}
+.auth-card .oneflow-brand-mark { width: 34px; height: 34px; }
+.provider-icon {
+  display: inline-block;
+  object-fit: contain;
+  flex: 0 0 auto;
+  border-radius: 3px;
+}
+.provider.active .provider-icon {
+  background: rgba(255, 255, 255, .93);
+  padding: 2px;
+  border-radius: 5px;
+}
+.provider-badge-branded {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px;
+}
+.connection-brands {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: 0 0 auto;
+}
+.connection-help {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 11.5px;
+  margin: 6px 0 0;
+  line-height: 1.5;
+}
+.connection-help a { color: var(--primary); text-decoration: underline; text-underline-offset: 2px; }
+.file-type-icon { display: inline-flex; align-items: center; justify-content: center; }
+.document-format {
+  display: grid;
+  place-items: center;
+  font: 750 10px/1 var(--font-text);
+  width: 26px;
+  height: 30px;
+  border-radius: 5px;
+  letter-spacing: -.015em;
+  background: var(--canvas-2);
+  color: var(--ink);
+}
+.document-pdf { color: #b32634; background: #fff1f1; font-size: 9px; }
+.document-word { color: white; background: #2869bc; font-size: 15px; }
+.document-sheet { color: white; background: #198754; }

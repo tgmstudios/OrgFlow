@@ -73,6 +73,7 @@ import { ChecklistsPage } from "./checklists";
 import { PeoplePage } from "./people";
 import { HealthPage } from "./health";
 import { OrganizationPage } from "./organization";
+import { ProviderIcon, DocumentIcon, ProductMark } from "./provider-icons";
 import { KnowledgeMap } from "./knowledge-map";
 import { Aurora, Orb, VoiceWave, useTypewriter } from "./ambient";
 import {
@@ -128,7 +129,7 @@ const PILLARS = [
   {
     icon: Mic,
     title: "Capture",
-    text: "Talk through a process. OrgFlow drafts the playbook for your team to approve.",
+    text: "Talk through a process. OneFlow drafts the playbook for your team to approve.",
   },
   {
     icon: MessageSquare,
@@ -153,7 +154,7 @@ function AuthShowcase() {
   const Icon = pillar.icon;
   return (
     <div className="auth-showcase">
-      <div className="auth-pillar-tabs" role="tablist" aria-label="What OrgFlow does">
+      <div className="auth-pillar-tabs" role="tablist" aria-label="What OneFlow does">
         {PILLARS.map((p, n) => (
           <button
             key={p.title}
@@ -239,8 +240,8 @@ function AuthScreen({ onUser }: { onUser: (user: User) => void }) {
     <div className="auth-page">
       <section className="auth-hero">
         <div className="brand-static">
-          <span className="brand-mark" aria-hidden="true" />
-          orgflow<span className="brand-dot">.</span>
+          <ProductMark size={34} />
+          <span className="oneflow-wordmark">OneFlow</span>
         </div>
         <div className="auth-hero-body">
           <Orb size={132} />
@@ -248,7 +249,7 @@ function AuthScreen({ onUser }: { onUser: (user: User) => void }) {
             Your organization’s <em>living memory</em>.
           </h1>
           <p>
-            Nonprofits lose what they know every time someone moves on. OrgFlow keeps the how,
+            Nonprofits lose what they know every time someone moves on. OneFlow keeps the how,
             the who and the why in one place your whole team can trust.
           </p>
           <AuthShowcase />
@@ -444,7 +445,7 @@ function AuthScreen({ onUser }: { onUser: (user: User) => void }) {
             )}
           </button>
           <p className="auth-switch-line">
-            {mode === "login" ? "New to OrgFlow?" : "Already have an account?"}{" "}
+            {mode === "login" ? "New to OneFlow?" : "Already have an account?"}{" "}
             <button
               type="button"
               className="auth-switch"
@@ -534,7 +535,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
       const speaker = role === "user" ? "user" : "assistant";
       setVoiceTranscript((transcript) =>
         (transcript ? transcript + "\n\n" : "") +
-        `${speaker === "user" ? "Staff" : "OrgFlow"}: ${message}`,
+        `${speaker === "user" ? "Staff" : "OneFlow"}: ${message}`,
       );
     },
   });
@@ -775,7 +776,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
       setVoiceNote("Voice session ended.");
       return;
     }
-    setVoiceNote("Connecting securely to OrgFlow Voice…");
+    setVoiceNote("Connecting securely to OneFlow Voice…");
     try {
       if (!navigator.mediaDevices?.getUserMedia)
         throw new Error("This browser does not support microphone access.");
@@ -828,6 +829,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
         .toLowerCase()
         .includes(query.toLowerCase()),
   );
+  const brandLabel = (value: string) => value.replaceAll("OrgFlow Showcase", "OneFlow Showcase");
   const folderPaths = (f: any) =>
     String(f.orgflowPath || f.originalPath || "").replace(/^\/+|\/+$/g, "");
   const folderItems = [
@@ -895,12 +897,12 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
         data-instant={(!inline && instant) || undefined}
         role={inline ? "region" : "dialog"}
         aria-modal={inline ? undefined : !docked}
-        aria-label="OrgFlow assistant"
+        aria-label="OneFlow assistant"
       >
         <div className="agent-header">
           <span className="agent-symbol" aria-hidden="true" />
           <div>
-            <strong>OrgFlow assistant</strong>
+            <strong>OneFlow assistant</strong>
             <small>Clarity, one conversation at a time.</small>
           </div>
           {!inline && (
@@ -1325,7 +1327,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                 ? "Connecting…"
                 : realtimeVoice.status === "connected"
                   ? realtimeVoice.isSpeaking
-                    ? "OrgFlow is speaking… tap to end"
+                    ? "OneFlow is speaking… tap to end"
                     : realtimeVoice.isMuted
                       ? "Microphone muted"
                       : "Listening… tap to end"
@@ -1354,7 +1356,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                     disabled={realtimeVoice.status !== "disconnected"}
                   />
                   Share this transcript with the drafting AI to create an
-                  OrgFlow draft.
+                  OneFlow draft.
                 </label>
                 <button
                   className="text-button"
@@ -1416,9 +1418,9 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     <div className="app">
       <Aurora />
       <aside className="sidebar">
-        <button className="brand" onClick={() => setPage("Home")}>
-          <span className="brand-mark" aria-hidden="true" />
-          orgflow<span className="brand-dot">.</span>
+        <button className="brand" onClick={() => setPage("Home")} aria-label="OneFlow home">
+          <ProductMark size={30} />
+          <span className="oneflow-wordmark">OneFlow</span>
         </button>
         <button className="agent-launch" onClick={() => openAgent()}>
           <span className="agent-launch-glow" aria-hidden="true" />
@@ -1475,7 +1477,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
               {(org?.name || "O")[0]?.toUpperCase()}
             </span>
             <div>
-              <strong>{org?.name || "Our organization"}</strong>
+              <strong>{brandLabel(org?.name || "Our organization")}</strong>
               <small>
                 {org?.id === "default"
                   ? "Shared demo workspace"
@@ -1525,15 +1527,6 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
             <strong>{page}</strong>
           </span>
           <div className="top-right">
-            {data && (
-              <span className="live-pill" title="Playbooks in this workspace">
-                <span className="glow-dot" />
-                {data.articles.filter((a) => a.status === "published").length} live
-                <span className="live-sep" />
-                {data.articles.filter((a) => a.status !== "published").length} in
-                draft
-              </span>
-            )}
             <span className="avatar" title={user.email}>
               {initials(user.name)}
             </span>
@@ -1591,8 +1584,8 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                         setFolder("");
                       }}
                     >
-                      <FolderOpen size={16} />
-                      {p}
+                      {p === "All providers" ? <FolderOpen size={16} /> : <ProviderIcon provider={p} size={18} />}
+                      {p === "OrgFlow Showcase" ? "OneFlow Showcase" : p}
                     </button>
                   ))}
                 </div>
@@ -1600,7 +1593,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                   <div className="files-toolbar">
                     <span>
                       <FolderOpen size={17} />{" "}
-                      <button onClick={() => setFolder("")}>{provider}</button>
+                      <button onClick={() => setFolder("")}>{brandLabel(provider)}</button>
                       {folder
                         .split("/")
                         .filter(Boolean)
@@ -1617,7 +1610,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                                 )
                               }
                             >
-                              {part}
+                              {brandLabel(part)}
                             </button>
                           </React.Fragment>
                         ))}
@@ -1636,7 +1629,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                       <thead>
                         <tr>
                           <th>Name</th>
-                          <th>OrgFlow folder</th>
+                          <th>OneFlow folder</th>
                           <th>Provider</th>
                           <th>Updated</th>
                           <th>
@@ -1658,7 +1651,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                                   }
                                 >
                                   <FolderOpen size={22} />
-                                  <strong>{name}</strong>
+                                  <strong>{brandLabel(name)}</strong>
                                   <ChevronRight size={14} />
                                 </button>
                               </td>
@@ -1668,8 +1661,8 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                           <tr key={f.id}>
                             <td>
                               <a href={f.url} target="_blank" rel="noreferrer">
-                                <span className="file-icon">
-                                  <FileText size={19} />
+                                <span className="file-icon file-type-icon">
+                                  <DocumentIcon filename={f.name} size={22} />
                                 </span>
                                 <div>
                                   <strong>
@@ -1678,15 +1671,16 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                                       <span className="demo-tag">Demo</span>
                                     )}
                                   </strong>
-                                  <small>{f.originalPath}</small>
+                                  <small>{brandLabel(f.originalPath)}</small>
                                 </div>
                                 <ArrowUpRight size={14} />
                               </a>
                             </td>
-                            <td>{f.orgflowPath || f.originalPath}</td>
+                            <td>{brandLabel(f.orgflowPath || f.originalPath)}</td>
                             <td>
-                              <span className="provider-badge">
-                                {f.provider}
+                              <span className="provider-badge provider-badge-branded">
+                                <ProviderIcon provider={f.provider} size={18} />
+                                {f.provider === "OrgFlow Showcase" ? "OneFlow Showcase" : f.provider}
                               </span>
                             </td>
                             <td>{date(f.updatedAt)}</td>
@@ -1696,7 +1690,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                                 aria-label={"Reorganize " + f.name}
                                 onClick={async () => {
                                   const path = prompt(
-                                    "OrgFlow folder path (original file will stay in place)",
+                                    "OneFlow folder path (original file will stay in place)",
                                     f.orgflowPath || f.originalPath,
                                   );
                                   if (path !== null) {
@@ -2042,13 +2036,18 @@ function Connections({
   return (
     <div className="connections">
       <h3>Connected tools</h3>
-      <p>Sample files are demo data. Provider access requires a connection.</p>
+      <p>Sample files are demo data. Only an account you authorize can connect.</p>
       <div className="connections-list">
         <div className={google?.connected ? "is-connected" : "is-ready"}>
-          <FolderOpen size={18} />
-          <strong>Google Drive & Gmail</strong>
+          <span className="connection-brands" aria-hidden="true">
+            <ProviderIcon provider="Google Drive" size={25} />
+            <ProviderIcon provider="Gmail" size={25} />
+          </span>
+          <strong>Google Drive &amp; Gmail</strong>
           <span>
-            {google?.connected ? "Connected · read-only" : "Ready to connect · read-only"}
+            {google?.connected
+              ? `Connected · ${google.connectedEmail || "Google account"} · read-only`
+              : "Ready to connect · read-only"}
           </span>
           {google?.connected ? (
             <>
@@ -2087,6 +2086,7 @@ function Connections({
               </button>
             </>
           ) : (
+            <>
             <a
               className="text-button"
               href={
@@ -2096,10 +2096,16 @@ function Connections({
             >
               Connect <ArrowUpRight size={14} />
             </a>
+            <p className="connection-help">
+              Google sign-in is currently available to approved test accounts.
+              If Google says access is blocked, your admin must
+              <a href="https://console.cloud.google.com/auth/audience?project=orgflow-20261011" target="_blank" rel="noreferrer"> add you as a test user</a>.
+            </p>
+            </>
           )}
         </div>
         <div className="connection-soon">
-          <Plug size={18} />
+          <ProviderIcon provider="Microsoft 365" size={25} />
           <strong>Microsoft 365</strong>
           <em className="soon-badge">Coming soon</em>
           <p>

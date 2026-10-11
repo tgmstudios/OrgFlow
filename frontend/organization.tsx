@@ -8,6 +8,9 @@ import {
   type OrgInfo,
 } from "./api";
 
+const isShowcaseOrganization = (name: string) =>
+  ["Centre Valley Community Pantry (OneFlow Showcase)", "Centre Valley Community Pantry (OrgFlow Showcase)"].includes(name);
+
 type Lookups = {
   articles: { id: string; title: string }[];
   people: { id: string; name: string }[];
@@ -115,7 +118,7 @@ export function OrganizationPage({
     }
   }
   async function importShowcase() {
-    if (!org || org.role !== "admin" || org.name !== "Centre Valley Community Pantry (OrgFlow Showcase)")
+    if (!org || org.role !== "admin" || !isShowcaseOrganization(org.name))
       return;
     if (!confirm("Load fictional pantry documents, editable draft procedures, 5 staff roles, 9 example emails and 11 events into this organization? This does not connect your personal Google or Gmail account, and it will not automatically publish drafts."))
       return;
@@ -189,7 +192,7 @@ export function OrganizationPage({
             {org.role === "admin" && org.inviteCode ? (
               <>
                 <p className="section-sub">
-                  Share this code so teammates can join {org.name} when they
+                  Share this code so teammates can join {org.name.replaceAll("OrgFlow Showcase", "OneFlow Showcase")} when they
                   create their account.
                 </p>
                 <div className="invite-code">
@@ -219,12 +222,12 @@ export function OrganizationPage({
               </p>
             )}
           </div>
-          {org.role === "admin" && org.name === "Centre Valley Community Pantry (OrgFlow Showcase)" && (
+          {org.role === "admin" && isShowcaseOrganization(org.name) && (
             <div className="card panel-wide">
               <div className="section-heading"><h2>Showcase library</h2></div>
               <p className="section-sub">
                 Import the fictional Centre Valley Pantry documents into this private organization.
-                The documents appear as OrgFlow Showcase files with working original links, cited
+                The documents appear as OneFlow Showcase files with working original links, cited
                 source text, reporting relationships, and draft procedures for human review.
                 Google and Gmail remain disconnected until separately authorized.
               </p>

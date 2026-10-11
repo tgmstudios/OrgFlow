@@ -7,6 +7,7 @@ import {
   type IndexedSource,
 } from "./api";
 import { AnimatePresence, m, rowExit } from "./motion";
+import { ProviderIcon } from "./provider-icons";
 
 export function IndexSources({
   connected,
@@ -73,7 +74,7 @@ export function IndexSources({
   async function removeAll() {
     if (
       !confirm(
-        "Remove all indexed email and document text from OrgFlow? Original files and emails stay in Google.",
+        "Remove all indexed email and document text from OneFlow? Original files and emails stay in Google.",
       )
     )
       return;
@@ -99,7 +100,7 @@ export function IndexSources({
         <h2>Index email &amp; document text</h2>
       </div>
       <p className="section-sub">
-        Lets OrgFlow answer questions from your real documents and email, and
+        Lets OneFlow answer questions from your real documents and email, and
         suggest playbooks for work your team repeats.
       </p>
       {!connected && (
@@ -113,7 +114,7 @@ export function IndexSources({
             disabled={indexing}
             onChange={(e) => setDrive(e.target.checked)}
           />
-          Google Docs from Drive
+          Google Docs, PDFs and Word files from Drive
         </label>
         <label className="check">
           <input
@@ -211,16 +212,12 @@ export function IndexSources({
           {sources.map((s) => (
             <m.div className="row" key={s.id} {...rowExit}>
               <span className="file-icon">
-                {s.provider === "Gmail" ? (
-                  <Mail size={17} />
-                ) : (
-                  <FileText size={17} />
-                )}
+                <ProviderIcon provider={s.provider} size={20} />
               </span>
               <div className="row-main">
                 <strong>{s.title}</strong>
                 <small>
-                  {s.provider}
+                  {s.provider === "OrgFlow Showcase" ? "OneFlow Showcase" : s.provider}
                   {s.from && " · " + s.from}
                   {" · "}
                   {fullDate(s.updatedAt)}

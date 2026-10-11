@@ -17,9 +17,9 @@ class ErrorBoundary extends React.Component<
       return (
         <main className="error-page">
           <h1>Your knowledge has a home.</h1>
-          <p>The preview could not load. You can still open OrgFlow.</p>
+          <p>The preview could not load. You can still open OneFlow.</p>
           <a className="button button-primary" href="https://orgflow.dev/a/">
-            Open OrgFlow
+            Open OneFlow
           </a>
         </main>
       );

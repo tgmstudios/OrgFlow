@@ -121,10 +121,10 @@ final class SignInViewController: UIViewController, UITextFieldDelegate {
     }
 
     private func refresh() {
-        titleLabel.text = isCreatingAccount ? "Create your account" : "Sign in to OrgFlow"
+        titleLabel.text = isCreatingAccount ? "Create your account" : "Sign in to OneFlow"
         subtitleLabel.text = isCreatingAccount
             ? "Your answers come from your organization's approved knowledge."
-            : "Use the account you use for OrgFlow on the web."
+            : "Use the account you use for OneFlow on the web."
         nameRow.isHidden = !isCreatingAccount
         nameRow.alpha = isCreatingAccount ? 1 : 0
         let choice = workspaceChoice.selectedSegmentIndex

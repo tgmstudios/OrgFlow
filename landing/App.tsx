@@ -14,12 +14,10 @@ function Brand({ light = false }: { light?: boolean }) {
     <a
       className={`wordmark${light ? " wordmark-light" : ""}`}
       href="#top"
-      aria-label="OrgFlow home"
+      aria-label="OneFlow home"
     >
-      <Layers aria-hidden="true" strokeWidth={1.7} />
-      <span>
-        orgflow<span className="brand-period">.</span>
-      </span>
+      <img className="wordmark-mark" src="/brand-knot.webp" alt="" width="32" height="32" />
+      <span>OneFlow</span>
     </a>
   );
 }
@@ -72,7 +70,7 @@ function Navigation() {
           <a className="sign-in" href={APP_URL}>
             Sign in
           </a>
-          <AppLink className="button button-small">Try OrgFlow</AppLink>
+          <AppLink className="button button-small">Try OneFlow</AppLink>
         </div>
         <button
           ref={toggle}
@@ -101,7 +99,7 @@ function Navigation() {
             Sign in
             <ArrowUpRight size={18} />
           </a>
-          <AppLink>Try OrgFlow</AppLink>
+          <AppLink>Try OneFlow</AppLink>
         </nav>
       )}
     </header>
@@ -177,7 +175,7 @@ function KnowledgePortrait() {
               </p>
             </div>
             <div className="book-footer">
-              <span>OrgFlow Knowledge Base</span>
+              <span>OneFlow Knowledge Base</span>
               <ArrowUpRight size={17} />
             </div>
           </div>
@@ -223,7 +221,7 @@ function Hero() {
           and give the next person a place to start.
         </p>
         <div className="hero-actions">
-          <AppLink>Try OrgFlow</AppLink>
+          <AppLink>Try OneFlow</AppLink>
           <a className="button button-text" href="#demo">
             See it in action
             <ArrowDown size={17} aria-hidden="true" />
@@ -289,8 +287,8 @@ function ProductOverview() {
         <div className="overview-capability"><MessageSquare size={19} aria-hidden="true" /><div><h3>Answers connected to their sources.</h3><p>Ask a question and follow the references.</p></div></div>
         <div className="overview-capability"><BookOpen size={19} aria-hidden="true" /><div><h3>Processes your team can improve.</h3><p>Write, review, and publish as the work changes.</p></div></div>
       </div>
-      <div className="overview-visual reveal" role="group" aria-label="Illustrative OrgFlow Knowledge Base article using fictional content">
-        <div className="overview-appbar"><span><img src="/brand-knot.webp" width="24" height="24" alt="" /> orgflow.</span><span>Knowledge Base</span></div>
+      <div className="overview-visual reveal" role="group" aria-label="Illustrative OneFlow Knowledge Base article using fictional content">
+        <div className="overview-appbar"><span><img src="/brand-knot.webp" width="24" height="24" alt="" /> OneFlow</span><span>Knowledge Base</span></div>
         <div className="overview-document">
           <div className="overview-document-meta"><span>Volunteer operations</span><span className="overview-published"><Check size={11} /> Published</span></div>
           <h3>A volunteer’s first day</h3>
@@ -307,7 +305,7 @@ function ProductOverview() {
 }
 
 const faqs = [
-  ["Can I try OrgFlow today?", "Yes. Open the app and choose the shared demo workspace. Use fictional content there. Opening the app does not start a subscription."],
+  ["Can I try OneFlow today?", "Yes. Open the app and choose the shared demo workspace. Use fictional content there. Opening the app does not start a subscription."],
   ["Can I use my existing documents?", "Upload a text file or select Google Drive documents and Gmail messages after connecting Google. Connected originals stay where they are. Microsoft connections are not available yet."],
   ["Does AI publish changes automatically?", "No. Generated content starts as an editable draft. Your team reviews it and publishes it separately. Later edits stay in draft until you publish again."],
   ["Is my organization’s information private?", "The demo workspace is shared. Do not add private information there. In the app, selected source text is sent to the AI provider only after you consent."],
@@ -317,13 +315,13 @@ function Pricing() {
   return (
     <section id="pricing" className="simple-pricing container" aria-labelledby="pricing-title">
       <div className="pricing-layout reveal">
-        <div className="pricing-intro"><h2 id="pricing-title">Explore OrgFlow<br />today.</h2><p>A place to start.<br />And something to build on.</p></div>
+        <div className="pricing-intro"><h2 id="pricing-title">Explore OneFlow<br />today.</h2><p>A place to start.<br />And something to build on.</p></div>
         <div className="founding-panel">
           <span className="founding-label">Founding nonprofit offer</span>
           <div className="founding-price"><span>$19</span><span>per month</span></div>
           <p className="founding-status">Proposed founding price. Explore the demo today.</p>
           <div className="workspace-disclosure"><ShieldCheck size={20} aria-hidden="true" /><p>Choose the shared demo workspace and use fictional content.</p></div>
-          <AppLink className="button button-light">Try OrgFlow</AppLink>
+          <AppLink className="button button-light">Try OneFlow</AppLink>
           <p className="subscription-note">Opening the app does not start a subscription.</p>
         </div>
       </div>
@@ -346,7 +344,7 @@ function FinalCTA() {
       <div className="container final-inner reveal">
         <Layers size={39} strokeWidth={1.4} aria-hidden="true" />
         <h2>Give the next person<br /><span>a place to start.</span></h2>
-        <AppLink className="button button-light">Try OrgFlow</AppLink>
+        <AppLink className="button button-light">Try OneFlow</AppLink>
       </div>
     </section>
   );
@@ -358,7 +356,7 @@ function Footer() {
         {navigation.map(([label, id]) => <a href={`#${id}`} key={id}>{label}</a>)}
         <a href={APP_URL}>Sign in <ArrowUpRight size={14} aria-hidden="true" /></a>
       </nav></div>
-      <div className="footer-bottom"><span>© {new Date().getFullYear()} OrgFlow</span><a href="#top">Back to top<ArrowUpRight size={14} aria-hidden="true" /></a></div>
+      <div className="footer-bottom"><span>© {new Date().getFullYear()} OneFlow</span><a href="#top">Back to top<ArrowUpRight size={14} aria-hidden="true" /></a></div>
     </footer>
   );
 }

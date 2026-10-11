@@ -286,7 +286,7 @@ function FullDemo({ active }: { active: boolean }) {
             aria-label="Sample application navigation"
           >
             <span className="of-demo-logo">
-              orgflow<span>.</span>
+              <img src="/brand-knot.webp" width="26" height="26" alt="" />OneFlow
             </span>
             <button
               className="of-demo-agent-launch"
@@ -418,7 +418,7 @@ function FullDemo({ active }: { active: boolean }) {
                       >
                         <div className="of-demo-response-heading">
                           <span>
-                            <Sparkles size={15} aria-hidden="true" /> OrgFlow
+                            <Sparkles size={15} aria-hidden="true" /> OneFlow
                             assistant
                           </span>
                           <small>Sample answer</small>

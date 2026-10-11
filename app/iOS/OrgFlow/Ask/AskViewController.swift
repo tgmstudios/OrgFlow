@@ -220,9 +220,9 @@ final class AskViewController: UIViewController {
     private func applyMode(_ mode: AskMode, animated: Bool) {
         modeControl.selectedSegmentIndex = mode.rawValue
         let copy: (headline: String, subtitle: String, placeholder: String) = switch mode {
-        case .ask: ("Knowledge\nmoves forward.", "Ask what your organization already knows.", "Ask OrgFlow anything…")
-        case .capture: ("Show how the\nwork gets done.", "Talk through a process. OrgFlow drafts the playbook, and your team approves it.", "Describe a process…")
-        case .handoff: ("Leave it in\ngood hands.", "Walk through your role. OrgFlow drafts a handoff and onboarding guide for whoever's next.", "Describe your role…")
+        case .ask: ("Knowledge\nmoves forward.", "Ask what your organization already knows.", "Ask OneFlow anything…")
+        case .capture: ("Show how the\nwork gets done.", "Talk through a process. OneFlow drafts the playbook, and your team approves it.", "Describe a process…")
+        case .handoff: ("Leave it in\ngood hands.", "Walk through your role. OneFlow drafts a handoff and onboarding guide for whoever's next.", "Describe your role…")
         }
         let update = {
             let attributes = self.headlineLabel.attributedText?.attributes(at: 0, effectiveRange: nil) ?? [:]
@@ -281,7 +281,7 @@ final class AskViewController: UIViewController {
     }
 
     private func buildHeader() {
-        wordmark.attributedText = NSAttributedString(string: "OrgFlow", attributes: [
+        wordmark.attributedText = NSAttributedString(string: "OneFlow", attributes: [
             .font: ContinuityTheme.Font.display(19, weight: .semibold),
             .foregroundColor: ContinuityTheme.Color.ink,
             .kern: -0.2,

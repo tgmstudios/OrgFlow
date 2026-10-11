@@ -1,5 +1,6 @@
 import { randomBytes, createHash } from "node:crypto";
 import type { SessionVault } from "./vault";
+import { PDF_MIME, WORD_MIME, MAX_DOCUMENT_BYTES, extractDocumentText } from "./document-text";
 
 type Item = Record<string, any>;
 export type GoogleDependencies = {
@@ -7,6 +8,8 @@ export type GoogleDependencies = {
   vault?: SessionVault;
   upsertFile: (file: Item) => Promise<void>;
   /** Stores one indexed source's text (replacing any earlier index of it). */
+  /** The OneFlow account and organization that initiated this OAuth flow. */
+  getAccount?: (request: Request) => Promise<{ userId: string; orgId: string } | null>;
   saveSource?: (source: {
     id: string;
     title: string;
@@ -20,6 +23,7 @@ export type GoogleDependencies = {
 
 const textTypes = ["text/plain", "text/markdown", "text/csv"];
 const googleDocType = "application/vnd.google-apps.document";
+const indexableMimeTypes = new Set([...textTypes, googleDocType, PDF_MIME, WORD_MIME]);
 /** Runs `work` over `items` with at most `limit` in flight; failed items are skipped. */
 async function pool<T, R>(items: T[], limit: number, work: (item: T) => Promise<R>): Promise<R[]> {
   const results: R[] = [];
@@ -40,11 +44,14 @@ type Session = {
   accessToken: string;
   refreshToken?: string;
   expiresAt: number;
+  account?: { userId: string; orgId: string };
+  googleEmail?: string;
 };
 type PendingConnection = {
   verifier: string;
   expiresAt: number;
   returnTo?: string;
+  account?: { userId: string; orgId: string };
 };
 const scopes = [
   "https://www.googleapis.com/auth/drive.readonly",
@@ -89,10 +96,18 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
     const id = sessionId(request);
     if (!id) return undefined;
     const cached = sessions.get(id);
-    if (cached) return cached;
-    const stored = await dependencies.vault?.get<Session>(id);
-    if (stored) sessions.set(id, stored);
-    return stored ?? undefined;
+    const stored = cached ?? await dependencies.vault?.get<Session>(id);
+    if (!stored) return undefined;
+    if (dependencies.getAccount) {
+      const signedIn = await dependencies.getAccount(request);
+      // A browser may retain orgflow_google after a OneFlow sign-out or account switch.
+      // Never return a Google token to a different user or organization.
+      if (!signedIn || !stored.account ||
+          stored.account.userId !== signedIn.userId ||
+          stored.account.orgId !== signedIn.orgId) return undefined;
+    }
+    if (!cached) sessions.set(id, stored);
+    return stored;
   }
   async function access(request: Request) {
     const session = await getSession(request);
@@ -163,18 +178,31 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
         : `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`,
     );
     const reader = source.body?.getReader();
+    const binary = file.mimeType === PDF_MIME || file.mimeType === WORD_MIME;
     let text = "";
+    let totalBytes = 0;
+    const chunks: Uint8Array[] = [];
     if (reader) {
       const decoder = new TextDecoder();
       try {
-        while (text.length < limit) {
+        while (binary || text.length < limit) {
           const part = await reader.read();
           if (part.done) break;
-          text += decoder.decode(part.value, { stream: true });
+          totalBytes += part.value.length;
+          if (totalBytes > MAX_DOCUMENT_BYTES)
+            throw new Error("Document exceeds 4 MB extraction limit");
+          if (binary) chunks.push(part.value);
+          else text += decoder.decode(part.value, { stream: true });
         }
       } finally {
-        await reader.cancel();
+        await reader.cancel().catch(() => {});
       }
+    }
+    if (binary) {
+      const bytes = new Uint8Array(totalBytes);
+      let offset = 0;
+      for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
+      return (await extractDocumentText(file.mimeType, bytes)).slice(0, limit);
     }
     return text.slice(0, limit);
   }
@@ -219,6 +247,7 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
         return json({
           configured: configured(),
           connected: Boolean(await getSession(request)),
+          connectedEmail: (await getSession(request))?.googleEmail ?? null,
           providers: ["Google Drive", "Gmail"],
           sessionStorage: dependencies.vault ? "encrypted-database" : "memory",
           calendarConnected: false,
@@ -241,9 +270,13 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
           );
         const state = randomBytes(32).toString("hex");
         const verifier = randomBytes(48).toString("base64url");
+        const account = await dependencies.getAccount?.(request);
+        if (dependencies.getAccount && !account)
+          return json({ error: "Sign in to OneFlow before connecting Google." }, 401);
         pending.set(state, {
           verifier,
           expiresAt: Date.now() + 600000,
+          ...(account ? { account } : {}),
           returnTo: returnTo(request, url.searchParams.get("returnTo")),
         });
         const query = new URLSearchParams({
@@ -285,6 +318,13 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
             400,
           );
         pending.delete(state);
+        if (dependencies.getAccount) {
+          const signedIn = await dependencies.getAccount(request);
+          if (!signedIn || !entry.account ||
+              signedIn.userId !== entry.account.userId ||
+              signedIn.orgId !== entry.account.orgId)
+            return json({ error: "Your OneFlow sign-in changed during Google connection. Sign in and retry." }, 403);
+        }
         if (url.searchParams.has("error"))
           return json(
             {
@@ -323,10 +363,27 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
         const sessionId = randomBytes(32).toString("hex");
         if (sessions.size >= 100)
           sessions.delete(sessions.keys().next().value!);
+        // Gmail's profile endpoint is available through the existing gmail.readonly
+        // scope. This verifies which Google identity was selected without collecting
+        // any mailbox content. If Google does not return it, the connection still works.
+        let googleEmail: string | undefined;
+        try {
+          const profile = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/profile", {
+            headers: { Authorization: `Bearer ${data.access_token}` },
+            signal: AbortSignal.timeout(8000),
+          });
+          if (profile.ok) {
+            const metadata = (await profile.json()) as { emailAddress?: unknown };
+            if (typeof metadata.emailAddress === "string")
+              googleEmail = metadata.emailAddress.slice(0, 254);
+          }
+        } catch {}
         const created: Session = {
           accessToken: data.access_token,
           refreshToken: data.refresh_token,
           expiresAt: Date.now() + Number(data.expires_in || 3600) * 1000,
+          ...(entry.account ? { account: entry.account } : {}),
+          ...(googleEmail ? { googleEmail } : {}),
         };
         sessions.set(sessionId, created);
         await dependencies.vault?.put(sessionId, created, Date.now() + SESSION_MS);
@@ -353,8 +410,10 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
       ) {
         const id = sessionId(request);
         const existing = await getSession(request);
-        sessions.delete(id);
-        if (id) await dependencies.vault?.delete(id);
+        if (existing) {
+          sessions.delete(id);
+          if (id) await dependencies.vault?.delete(id);
+        }
         const revoke = existing?.refreshToken || existing?.accessToken;
         if (revoke)
           await fetch("https://oauth2.googleapis.com/revoke", {
@@ -433,7 +492,7 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
         if (includeDrive) {
           const { files } = await driveFiles(request);
           const readable = files
-            .filter((f) => f.mimeType === googleDocType || textTypes.includes(f.mimeType))
+            .filter((f) => indexableMimeTypes.has(f.mimeType))
             .sort((a, b) => String(b.modifiedTime).localeCompare(String(a.modifiedTime)))
             .slice(0, Math.min(Number(body.maxDocuments) || 40, 80));
           drive = (
@@ -492,7 +551,7 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
         return json({
           indexed: { drive, gmail },
           notice:
-            "Indexed text stays in OrgFlow and is used to answer questions and suggest playbooks. Remove it any time.",
+            "Indexed text stays in OneFlow and is used to answer questions and suggest playbooks. Remove it any time.",
         });
       }
       if (path === "/api/sources/google" && request.method === "GET") {
@@ -576,9 +635,9 @@ export function createGoogleHandler(dependencies: GoogleDependencies) {
             `https://www.googleapis.com/drive/v3/files/${id}?fields=id,name,mimeType,webViewLink`,
           )
         ).json()) as Item;
-        if (data.mimeType !== googleDocType && !textTypes.includes(data.mimeType))
+        if (!indexableMimeTypes.has(data.mimeType))
           return json(
-            { error: "Only Google Docs and plain-text files can be read." },
+            { error: "Only Google Docs, searchable PDFs, Word documents and plain-text files can be read." },
             422,
           );
         return json({
