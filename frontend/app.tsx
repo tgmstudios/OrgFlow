@@ -1478,20 +1478,14 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
             </span>
             <div>
               <strong>{brandLabel(org?.name || "Our organization")}</strong>
-              <small>
-                {org?.id === "default"
-                  ? "Shared demo workspace"
-                  : org?.role === "admin"
-                    ? "Admin"
-                    : "Shared workspace"}
-              </small>
+              {org?.id !== "default" && org?.role === "admin" && <small>Admin</small>}
             </div>
           </div>
           <div className="demo-indicator">
             <span />{" "}
             {data?.meta?.demo === false
               ? "Organization workspace"
-              : "Demo workspace"}{" "}
+              : "Centre Valley Pantry"}{" "}
             <span className="info">i</span>
           </div>
           <div className="account-row billing-row">
