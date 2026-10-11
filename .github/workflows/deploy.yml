@@ -114,6 +114,15 @@ jobs:
               sudo systemctl restart $svc
             done
             sudo systemctl reload nginx
-            curl --fail --silent http://127.0.0.1:3002/a/ > /dev/null
-            curl --fail --silent http://127.0.0.1:3003/health > /dev/null
+            for url in http://127.0.0.1:3002/a/ http://127.0.0.1:3003/health; do
+              ready=0
+              for attempt in $(seq 1 15); do
+                if curl --fail --silent "$url" > /dev/null; then
+                  ready=1
+                  break
+                fi
+                sleep 2
+              done
+              [ "$ready" -eq 1 ]
+            done
           '
