@@ -18,5 +18,8 @@
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "@aws-app-monetization/monetize-skill": "^0.1.1790609029"
   }
 }

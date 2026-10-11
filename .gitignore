@@ -3,3 +3,10 @@ dist/
 *.log
 .env
 .env.local
+.dump
+.npmrc
+.claude/skills
+.codex/skills
+.kiro/skills
+.pi/agent/skills
+*.pem
