@@ -1,10 +1,12 @@
+import { readFile } from "node:fs/promises";
 import type { Store } from "./store";
+import { createOperations } from "./operations";
 
 /**
  * Sample content for the shared demo workspace (organization "default") so Ask, checklists, ownership,
  * review and Transfer can be shown end to end. Every item is `synthetic: true` and labelled as a sample
- * in the UI. Added once (meta "samples-v1"); staff edits are never overwritten. New organizations
- * created at sign-up start empty and never receive these.
+ * in the UI. Added once per version (meta "samples-v1", "samples-v2"); staff edits are never overwritten.
+ * New organizations created at sign-up start empty and never receive these.
  */
 const text = (t: string) => ({ type: "text", text: t });
 const p = (t: string) => ({ type: "paragraph", content: [text(t)] });
@@ -15,9 +17,37 @@ const steps = (items: string[]) => ({
 });
 const doc = (...content: unknown[]) => ({ type: "doc", content });
 
+// Showcase documents (fictional Centre Valley Community Pantry) indexed into the demo workspace: the ones in
+// Maria Reyes's handoff story. Originals open from the team repository, the same links the importer uses.
+const SHOWCASE_ROOT = new URL("../demo-content/", import.meta.url).pathname;
+const SHOWCASE_URL = "https://raw.githubusercontent.com/tgmstudios/c0mpiled/aae1b41/demo-content/";
+const showcaseUrl = (path: string) => SHOWCASE_URL + path.split("/").map(encodeURIComponent).join("/");
+const showcaseId = (kind: "source" | "mail", rel: string) =>
+  `showcase-${kind}-${Buffer.from(rel).toString("base64url").slice(0, 190)}`;
+function showcaseRef(rel: string, title: string) {
+  return { id: showcaseId("source", rel), title, url: showcaseUrl("01_Google_Drive/" + rel), synthetic: true };
+}
+const SHOWCASE_DOCS: { rel: string; title: string; ownerId: string; pdf?: boolean }[] = [
+  { rel: "Operations/Volunteer_Welcome_and_First_Shift.md", title: "Volunteer Welcome and First Shift", ownerId: "person-maria", pdf: true },
+  { rel: "Operations/Monthly_Volunteer_Scheduling.md", title: "Monthly Volunteer Scheduling", ownerId: "person-maria", pdf: true },
+  { rel: "Operations/Volunteer_Availability_October.csv", title: "Volunteer Availability October", ownerId: "person-maria" },
+  { rel: "People_And_Transfer/Maria_Reyes_Volunteer_Coordinator_Handoff.md", title: "Maria Reyes Volunteer Coordinator Handoff", ownerId: "person-maria", pdf: true },
+  { rel: "Operations/Building_Safety_and_Cold_Chain.md", title: "Building Safety and Cold Chain", ownerId: "person-sam", pdf: true },
+  { rel: "Programs/Quarterly_Impact_Snapshot.md", title: "Quarterly Impact Snapshot", ownerId: "person-sam", pdf: true },
+  { rel: "Programs/Outcomes_Jul_Sep.csv", title: "Outcomes Jul Sep", ownerId: "person-sam" },
+];
+const SHOWCASE_MAIL: { rel: string; title: string; ownerId: string }[] = [
+  { rel: "01_Welcome_to_Your_First_Shift.txt", title: "Welcome to Your First Shift", ownerId: "person-jordan" },
+  { rel: "02_October_Schedule_Reminder.txt", title: "October Schedule Reminder", ownerId: "person-jordan" },
+  { rel: "08_Superseded_Arrival_Time.txt", title: "Superseded Arrival Time", ownerId: "person-jordan" },
+  { rel: "09_Maria_to_Jordan_Handoff.txt", title: "Maria to Jordan Handoff", ownerId: "person-maria" },
+];
+
+// The demo story follows the showcase corpus (demo-content/): Maria Reyes, Volunteer Coordinator for six
+// years, is leaving; Jordan Lee takes over; Sam Rivera supervises both.
 const people = [
-  { id: "person-maya", name: "Maya Chen", role: "Development Director", email: "maya@example.org", status: "leaving", leaveDate: "2026-11-15" },
-  { id: "person-jordan", name: "Jordan Lee", role: "Volunteer Coordinator", email: "jordan@example.org", status: "active" },
+  { id: "person-maria", name: "Maria Reyes", role: "Volunteer Coordinator", email: "maria@example.org", status: "leaving", leaveDate: "2026-10-31", successorId: "person-jordan", managerId: "person-sam" },
+  { id: "person-jordan", name: "Jordan Lee", role: "Incoming Volunteer Coordinator", email: "jordan@example.org", status: "active", managerId: "person-sam" },
   { id: "person-sam", name: "Sam Rivera", role: "Operations Manager", email: "sam@example.org", status: "active" },
   { id: "person-priya", name: "Priya Patel", role: "Development Associate", email: "priya@example.org", status: "active" },
 ];
@@ -27,7 +57,7 @@ const articles = [
     id: "article-welcome",
     title: "Donor thank-you process",
     categoryId: "cat-stewardship",
-    ownerId: "person-maya",
+    ownerId: "person-priya",
     content: doc(
       p("Sample: every gift gets a personal thank-you within two working days. Replace with your organization's approved process."),
       h("Steps"),
@@ -46,7 +76,7 @@ const articles = [
     id: "article-grant-report",
     title: "Quarterly grant report submission",
     categoryId: "cat-stewardship",
-    ownerId: "person-maya",
+    ownerId: "person-priya",
     content: doc(
       p("Sample: how quarterly reports reach funders on time."),
       h("Steps"),
@@ -63,17 +93,43 @@ const articles = [
     id: "article-volunteer-schedule",
     title: "Monthly volunteer scheduling",
     categoryId: "cat-operations",
-    ownerId: "person-jordan",
+    ownerId: "person-maria",
     content: doc(
-      p("Sample: building next month's volunteer schedule."),
+      p("Sample: building next month's volunteer schedule. Distribution runs Wednesday and Friday, 9:00 a.m. to noon."),
       h("Steps"),
       steps([
-        "By the 15th, send the availability form to active volunteers.",
-        "On the 22nd, build the schedule from responses; fill gaps from the waitlist.",
-        "Send confirmations with shift details and parking information.",
-        "Two days before each shift, send a reminder text.",
+        "On the 12th, prepare next month's availability request and check the active roster.",
+        "By the 15th, send the availability form to active volunteers and record responses.",
+        "On the 18th, follow up with shift leads and review missing coverage.",
+        "By the 22nd, publish the draft schedule: trained shift leads first, then returning volunteers, then newcomers with a buddy.",
+        "Send confirmations with arrival times (shift lead 8:15, new volunteers 8:30, returning 8:45) and parking details.",
+        "Two days before each shift, send a reminder; fill cancellations from the waitlist and tell Sam Rivera about any remaining gap.",
       ]),
+      h("Review questions"),
+      p("With fewer than five confirmed volunteers, who decides whether to consolidate stations?"),
     ),
+    sources: [showcaseRef("Operations/Monthly_Volunteer_Scheduling.md", "Monthly Volunteer Scheduling")],
+  },
+  {
+    id: "article-volunteer-welcome",
+    title: "Volunteer welcome and first shift",
+    categoryId: "cat-operations",
+    ownerId: "person-maria",
+    content: doc(
+      p("Sample: one consistent first shift for every new volunteer. New volunteers arrive by 8:30 a.m. at the blue welcome table; returning volunteers at 8:45 a.m."),
+      h("Steps"),
+      steps([
+        "Two days before, send the welcome email: date, side entrance, parking beside the blue loading door, closed-toe shoes.",
+        "Greet the new volunteer at the blue welcome table at 8:30 a.m. and introduce an experienced buddy.",
+        "Point out handwashing, washrooms, first aid and emergency exits; explain privacy and the no-photo rule.",
+        "Demonstrate one assigned station and let them practice with support; check in halfway and offer a break.",
+        "At the end, ask what was unclear, record one improvement idea and offer the next-shift sign-up link.",
+        "Record orientation date, station, buddy and completion in the volunteer register.",
+      ]),
+      h("Review questions"),
+      p("Who greets new volunteers when the coordinator is not on shift?"),
+    ),
+    sources: [showcaseRef("Operations/Volunteer_Welcome_and_First_Shift.md", "Volunteer Welcome and First Shift")],
   },
   {
     id: "article-onboarding",
@@ -94,10 +150,35 @@ const articles = [
   },
 ];
 
+/** A sample article nobody has edited since it was seeded. */
+const pristine = (a: any) => a?.synthetic === true && a.publishedBy?.id === "sample" && a.status === "published";
+
 export async function seedSamples(store: Store) {
-  if (await store.get("meta", "samples-v1")) return;
+  if (!(await store.get("meta", "samples-v1"))) await seedBase(store);
+  if (!(await store.get("meta", "samples-v2"))) await upgradeToShowcaseStory(store);
+}
+
+async function publishSample(store: Store, article: (typeof articles)[number], now: string) {
+  await store.put("articles", {
+    ...article,
+    synthetic: true,
+    status: "published",
+    publishedTitle: article.title,
+    publishedContent: article.content,
+    publishedCategoryId: article.categoryId,
+    publishedSources: article.sources,
+    publishedBy: { id: "sample", name: "Sample data" },
+    publishedAt: now,
+    reviewDueAt:
+      article.id === "article-grant-report"
+        ? new Date(Date.now() - 3 * 86400000).toISOString()
+        : new Date(Date.now() + 60 * 86400000).toISOString(),
+    updatedAt: now,
+  });
+}
+
+async function seedBase(store: Store) {
   const now = new Date().toISOString();
-  const reviewDue = new Date(Date.now() + 60 * 86400000).toISOString();
   for (const person of people)
     if (!(await store.get("people", person.id)))
       await store.put("people", { ...person, synthetic: true, createdAt: now });
@@ -107,18 +188,71 @@ export async function seedSamples(store: Store) {
     const untouched =
       current?.synthetic === true && JSON.stringify(current.content).length < 400;
     if (current && !untouched) continue;
-    await store.put("articles", {
-      ...article,
-      synthetic: true,
-      status: "published",
-      publishedTitle: article.title,
-      publishedContent: article.content,
-      publishedCategoryId: article.categoryId,
-      publishedBy: { id: "sample", name: "Sample data" },
-      publishedAt: now,
-      reviewDueAt: article.id === "article-grant-report" ? new Date(Date.now() - 3 * 86400000).toISOString() : reviewDue,
-      updatedAt: now,
-    });
+    await publishSample(store, article, now);
   }
   await store.put("meta", { id: "samples-v1", version: 1 });
+}
+
+/**
+ * v2: the demo story moves from Maya Chen to Maria Reyes (matching the showcase corpus) and Maria's
+ * documents are indexed so Ask can cite them and the Knowledge map shows what she holds. Only records that
+ * are still untouched samples change.
+ */
+async function upgradeToShowcaseStory(store: Store) {
+  const now = new Date().toISOString();
+  const maya = await store.get("people", "person-maya");
+  if (maya?.synthetic === true && maya.name === "Maya Chen") {
+    await store.delete("people", "person-maya");
+    for (const article of await store.list("articles"))
+      if (article.synthetic === true && article.ownerId === "person-maya")
+        await store.put("articles", { ...article, ownerId: "person-priya" });
+  }
+  for (const person of people) {
+    const current = await store.get("people", person.id);
+    if (!current) await store.put("people", { ...person, synthetic: true, createdAt: now });
+    else if (current.synthetic === true && person.id === "person-jordan" && current.role === "Volunteer Coordinator")
+      await store.put("people", { ...current, role: person.role, managerId: person.managerId });
+  }
+  for (const article of articles) {
+    const current = await store.get("articles", article.id);
+    if (!current || (pristine(current) && ["article-volunteer-schedule", "article-volunteer-welcome"].includes(article.id)))
+      await publishSample(store, article, now);
+  }
+  const operations = createOperations({
+    store,
+    agent: async () => Response.json({ error: "Samples never call AI" }, { status: 503 }),
+    currentUser: async () => null,
+  });
+  const index = async (id: string, title: string, provider: string, path: string, ownerId: string, from?: string) => {
+    if (await store.get("sources", id)) return;
+    const text = await readFile(SHOWCASE_ROOT + path, "utf8").catch(() => "");
+    if (!text) return;
+    await operations.saveSource({ id, title, provider, text: text.slice(0, 45000), url: showcaseUrl(path), from, updatedAt: now });
+    await store.put("sources", { ...(await store.get("sources", id))!, ownerId, synthetic: true });
+  };
+  for (const d of SHOWCASE_DOCS) {
+    await index(showcaseId("source", d.rel), d.title, "OrgFlow Showcase", "01_Google_Drive/" + d.rel, d.ownerId);
+    if (!d.pdf) continue;
+    const pdf = d.rel.replace(/\.md$/, ".pdf");
+    const fileId = "showcase-file-" + Buffer.from(pdf).toString("base64url").slice(0, 190);
+    if (!(await store.get("files", fileId)))
+      await store.put("files", {
+        id: fileId,
+        synthetic: true,
+        name: pdf.split("/").pop(),
+        provider: "OrgFlow Showcase",
+        originalPath: "/" + pdf,
+        orgflowPath: "/OrgFlow Showcase/" + pdf,
+        url: showcaseUrl("01_Google_Drive/" + pdf),
+        type: "pdf",
+        updatedAt: now,
+        ownerId: d.ownerId,
+      });
+  }
+  for (const m of SHOWCASE_MAIL) {
+    const path = "02_Gmail_Examples/" + m.rel;
+    const from = ((await readFile(SHOWCASE_ROOT + path, "utf8").catch(() => "")).match(/From: (.+)/) || [])[1];
+    await index(showcaseId("mail", m.rel), m.title, "Demo Mail", path, m.ownerId, from);
+  }
+  await store.put("meta", { id: "samples-v2", version: 2 });
 }
