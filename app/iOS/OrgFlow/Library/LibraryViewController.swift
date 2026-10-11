@@ -59,9 +59,11 @@ final class LibraryViewController: UIViewController {
             collectionView.setContentOffset(CGPoint(x: 0, y: -collectionView.adjustedContentInset.top), animated: false)
         }, for: .valueChanged)
         navigationItem.titleView = segmentedControl
-        navigationItem.leftBarButtonItem = UIBarButtonItem(systemItem: .close, primaryAction: UIAction { [weak self] _ in
-            self?.dismiss(animated: true)
-        })
+        if let nav = navigationController, nav.viewControllers.first === self, nav.presentingViewController != nil {
+            navigationItem.leftBarButtonItem = UIBarButtonItem(systemItem: .close, primaryAction: UIAction { [weak self] _ in
+                self?.dismiss(animated: true)
+            })
+        }
 
         configureCollectionView()
         rebuild()
@@ -69,7 +71,8 @@ final class LibraryViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        if workspace == nil, !isFetching { reload() }
+        // A tab: refresh whenever it comes back, since other tabs change the same workspace.
+        if !isFetching { reload() }
     }
 
     // MARK: Collection view

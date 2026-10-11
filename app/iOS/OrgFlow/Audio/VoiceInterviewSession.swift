@@ -27,6 +27,8 @@ final class VoiceInterviewSession {
     var onTranscript: (([Line]) -> Void)?
     /// The call ended on its own (agent hung up or the connection dropped).
     var onEnded: ((String?) -> Void)?
+    /// Sent to the agent as a contextual update once the call connects (an interview plan's brief).
+    var initialContext: String?
 
     private(set) var phase: Phase = .connecting
     private(set) var lines: [Line] = []
@@ -117,6 +119,10 @@ final class VoiceInterviewSession {
         switch state {
         case .active:
             attachMeters()
+            if let context = initialContext, let conversation {
+                initialContext = nil
+                Task { try? await conversation.updateContext(context) }
+            }
             if phase == .connecting { setPhase(.listening(muted: conversation?.isMuted ?? false)) }
         case .ended, .error:
             guard !endedByUser, phase != .ended else { return }

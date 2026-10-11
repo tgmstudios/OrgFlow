@@ -147,6 +147,28 @@ nonisolated struct Person: Decodable, Sendable, Hashable, Identifiable {
     let leaveDate: String?
     let successorId: String?
     let handoffArticleId: String?
+
+    /// Leaving or already left (a missing status reads as active).
+    var isDeparting: Bool { status == "leaving" || status == "left" }
+    var hasLeft: Bool { status == "left" }
+    var firstName: String { name.split(separator: " ").first.map(String.init) ?? name }
+    var initials: String {
+        String(name.split(whereSeparator: \.isWhitespace).compactMap(\.first).prefix(2)).uppercased()
+    }
+    var leaveDateValue: Date? { OrgFlowDates.parseDay(leaveDate) }
+}
+
+extension OrgFlowDates {
+    /// A calendar day ("2026-10-30", as the web's date fields store it) in the local time zone, so
+    /// it isn't shifted a day by UTC; full ISO 8601 timestamps parse as usual.
+    nonisolated static func parseDay(_ string: String?) -> Date? {
+        guard let string else { return nil }
+        let parts = string.split(separator: "-").compactMap { Int($0) }
+        if string.count == 10, parts.count == 3 {
+            return Calendar.current.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
+        }
+        return parse(string)
+    }
 }
 
 nonisolated struct ChecklistStep: Decodable, Sendable, Hashable, Identifiable {
@@ -213,6 +235,121 @@ nonisolated struct IndexedSource: Decodable, Sendable, Hashable, Identifiable {
     let indexedAt: String?
     let chunkCount: Int?
     let preview: String?
+    /// The person recorded as owning this source. Never inferred: only set by a person.
+    let ownerId: String?
+}
+
+/// `POST /api/people/:id/interview`: a gap-driven question plan for the live voice interview.
+/// `agentBrief` is sent to OrgFlow's voice agent as a contextual update once the call connects.
+nonisolated struct InterviewPlan: Decodable, Sendable, Hashable {
+    nonisolated struct Question: Decodable, Sendable, Hashable, Identifiable {
+        let id: String
+        let text: String
+        /// "gap" (found in this person's records) or "template".
+        let origin: String
+        let articleId: String?
+
+        var isGap: Bool { origin == "gap" }
+    }
+
+    let title: String
+    let gapCount: Int
+    let questions: [Question]
+    let agentBrief: String
+}
+
+/// `GET /api/insights/health` (`backend/health.ts`): where the organization's memory is thin, stale,
+/// or concentrated in someone who is leaving.
+nonisolated struct KnowledgeHealth: Decodable, Sendable, Hashable {
+    nonisolated struct Totals: Decodable, Sendable, Hashable {
+        let published: Int
+        let drafts: Int
+        let unowned: Int
+        let stale: Int
+        let dueSoon: Int
+        let sourceChanged: Int
+        let ungrounded: Int
+        let people: Int
+        let peopleAtRisk: Int
+    }
+
+    nonisolated struct PersonRisk: Decodable, Sendable, Hashable, Identifiable {
+        let personId: String
+        let name: String
+        let role: String?
+        let status: String?
+        let leaveDate: String?
+        let published: Int
+        let drafts: Int
+        let stale: Int
+        let hasHandoff: Bool
+        let leaving: Bool
+        /// "high", "medium" or "low".
+        let risk: String
+        let reasons: [String]
+
+        var id: String { personId }
+    }
+
+    nonisolated struct ReviewEntry: Decodable, Sendable, Hashable {
+        let articleId: String
+        let title: String
+        let dueAt: String
+        let daysOverdue: Int?
+    }
+
+    nonisolated struct UnownedEntry: Decodable, Sendable, Hashable {
+        let articleId: String
+        let title: String
+        let published: Bool
+    }
+
+    nonisolated struct StuckDraft: Decodable, Sendable, Hashable {
+        let articleId: String
+        let title: String
+        let ageDays: Int
+    }
+
+    nonisolated struct ChangedSource: Decodable, Sendable, Hashable {
+        let sourceId: String
+        let title: String?
+    }
+
+    nonisolated struct SourceChange: Decodable, Sendable, Hashable {
+        let articleId: String
+        let title: String
+        let sources: [ChangedSource]
+    }
+
+    nonisolated struct Ungrounded: Decodable, Sendable, Hashable {
+        let articleId: String
+        let title: String
+        let verified: Int
+        let total: Int
+    }
+
+    nonisolated struct Action: Decodable, Sendable, Hashable {
+        /// "interview", "handoff", "review", "assign-owner", "source-changed" or "publish".
+        let type: String
+        /// "high", "medium" or "low".
+        let severity: String
+        let text: String
+        let personId: String?
+        let articleId: String?
+    }
+
+    let score: Int
+    let totals: Totals
+    let people: [PersonRisk]
+    let stale: [ReviewEntry]
+    let dueSoon: [ReviewEntry]
+    let unowned: [UnownedEntry]
+    let stuckDrafts: [StuckDraft]
+    let sourceChanged: [SourceChange]
+    let ungrounded: [Ungrounded]
+    let actions: [Action]
+
+    func risk(for personID: String) -> PersonRisk? { people.first { $0.personId == personID } }
 }
 
 nonisolated struct OrganizationMember: Decodable, Sendable, Hashable, Identifiable {

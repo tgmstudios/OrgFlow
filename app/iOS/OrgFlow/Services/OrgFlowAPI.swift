@@ -203,6 +203,48 @@ nonisolated struct OrgFlowAPI: Sendable {
         _ = try await send("api/runs/\(id)", method: "DELETE", body: Optional<String>.none)
     }
 
+    // MARK: Ownership and Transfer
+
+    /// `{"ownerId": …}` with an explicit `null` for Unassigned.
+    private struct OwnerBody: Encodable {
+        let ownerId: String?
+        private enum CodingKeys: String, CodingKey { case ownerId }
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(ownerId, forKey: .ownerId)
+        }
+    }
+
+    /// Records who owns a playbook (`nil` for Unassigned). The backend returns any published
+    /// playbook to draft on every PATCH, owner changes included, so it needs re-approval.
+    func setArticleOwner(id: String, ownerID: String?) async throws -> Article {
+        try JSONDecoder().decode(Article.self, from: await send("api/articles/\(id)", method: "PATCH", body: OwnerBody(ownerId: ownerID)))
+    }
+
+    /// Records who owns an indexed source (`nil` for Unassigned).
+    func setSourceOwner(id: String, ownerID: String?) async throws -> IndexedSource {
+        try JSONDecoder().decode(IndexedSource.self, from: await send("api/sources/\(id)", method: "PATCH", body: OwnerBody(ownerId: ownerID)))
+    }
+
+    func knowledgeHealth() async throws -> KnowledgeHealth {
+        try JSONDecoder().decode(KnowledgeHealth.self, from: await get("api/insights/health"))
+    }
+
+    /// A gap-driven question plan for a live voice interview with this person.
+    func interviewPlan(personID: String) async throws -> InterviewPlan {
+        struct Empty: Encodable {}
+        return try JSONDecoder().decode(InterviewPlan.self, from: await send("api/people/\(personID)/interview", body: Empty()))
+    }
+
+    /// Facts-only handoff guide built from OrgFlow's records (no AI). Saved as a draft for review;
+    /// regenerating replaces the previous one. An active person is marked as leaving.
+    func handoffOutline(personID: String) async throws -> (draft: Article, person: Person) {
+        struct Body: Encodable { let mode = "outline" }
+        struct Response: Decodable { let draft: Article; let person: Person }
+        let response = try JSONDecoder().decode(Response.self, from: await send("api/people/\(personID)/handoff", body: Body()))
+        return (response.draft, response.person)
+    }
+
     // MARK: Voice
 
     /// Short-lived WebRTC token for OrgFlow's private ElevenLabs interview agent.
