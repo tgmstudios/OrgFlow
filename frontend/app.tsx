@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -35,17 +35,40 @@ import {
   LoaderCircle,
   Settings,
   Layers,
+  Users,
+  Building2,
+  ClipboardCheck,
+  Mail,
+  AlertCircle,
 } from "lucide-react";
 import "./style.css";
-type Article = {
-  id: string;
-  title: string;
-  categoryId: string;
-  content: any;
-  status: string;
-  updatedAt: string;
-  sources?: any[];
-};
+import {
+  api,
+  fullDate,
+  isOverdue,
+  type Article,
+  type Candidate,
+  type IndexedSource,
+  type OrgInfo,
+  type Person,
+  type Run,
+} from "./api";
+import { IndexSources } from "./indexing";
+import { SuggestedPlaybooks } from "./discover";
+import { ArticleMeta } from "./article-meta";
+import { ChecklistsPage } from "./checklists";
+import { PeoplePage } from "./people";
+import { OrganizationPage } from "./organization";
+import {
+  AnimatePresence,
+  Collapse,
+  MotionRoot,
+  SegmentPill,
+  m,
+  prefersReducedMotion,
+  rowExit,
+  usePresence,
+} from "./motion";
 type Data = {
   categories: { id: string; name: string }[];
   articles: Article[];
@@ -53,22 +76,20 @@ type Data = {
   events: any[];
   integrations: any[];
   meta?: any;
+  people?: Person[];
+  runs?: Run[];
+  candidates?: Candidate[];
+  sources?: IndexedSource[];
 };
 type Message = { role: "user" | "assistant"; content: string; sources?: any[] };
-async function api(path: string, method = "GET", body?: any) {
-  const r = await fetch("/api" + path, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const d = await r.json();
-  if (r.status === 401 && !path.startsWith("/auth/")) {
-    window.dispatchEvent(new Event("orgflow:signed-out"));
-  }
-  if (!r.ok) throw new Error(d.error || "Request failed");
-  return d;
-}
-type User = { id: string; email: string; name: string };
+type User = {
+  id: string;
+  email: string;
+  name: string;
+  orgId?: string;
+  role?: "admin" | "member";
+};
+const NONE: never[] = [];
 const initials = (name: string) =>
   name
     .split(/\s+/)
@@ -81,6 +102,9 @@ function AuthScreen({ onUser }: { onUser: (user: User) => void }) {
     [name, setName] = useState(""),
     [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
+    [workspace, setWorkspace] = useState<"demo" | "create" | "invite">("demo"),
+    [organization, setOrganization] = useState(""),
+    [inviteCode, setInviteCode] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   async function submit(e: React.FormEvent) {
@@ -88,7 +112,17 @@ function AuthScreen({ onUser }: { onUser: (user: User) => void }) {
     setBusy(true);
     setError("");
     try {
-      const r = await api("/auth/" + mode, "POST", { name, email, password });
+      const r = await api("/auth/" + mode, "POST", {
+        name,
+        email,
+        password,
+        ...(mode === "signup" && workspace === "create"
+          ? { organization: organization.trim() }
+          : {}),
+        ...(mode === "signup" && workspace === "invite"
+          ? { inviteCode: inviteCode.trim() }
+          : {}),
+      });
       onUser(r.user);
     } catch (err: any) {
       setError(err.message);
@@ -100,10 +134,11 @@ function AuthScreen({ onUser }: { onUser: (user: User) => void }) {
     <div className="auth-page">
       <form className="auth-card" onSubmit={submit}>
         <div className="brand-static">
+          <span className="brand-mark" aria-hidden="true" />
           orgflow<span className="brand-dot">.</span>
         </div>
-        <h1>{mode === "login" ? "Sign in" : "Create your account"}</h1>
-        {mode === "signup" && (
+        <h1 key={mode}>{mode === "login" ? "Sign in" : "Create your account"}</h1>
+        <Collapse open={mode === "signup"}>
           <label>
             Name
             <input
@@ -112,7 +147,7 @@ function AuthScreen({ onUser }: { onUser: (user: User) => void }) {
               autoComplete="name"
             />
           </label>
-        )}
+        </Collapse>
         <label>
           Email
           <input
@@ -136,6 +171,58 @@ function AuthScreen({ onUser }: { onUser: (user: User) => void }) {
             }
           />
         </label>
+        <Collapse open={mode === "signup"}>
+          <div className="workspace-choice">
+            <span>Workspace</span>
+            <div className="segmented">
+              {(
+                [
+                  ["demo", "Join demo workspace"],
+                  ["create", "Create organization"],
+                  ["invite", "Join with invite code"],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  type="button"
+                  key={value}
+                  className={workspace === value ? "on" : ""}
+                  onClick={() => setWorkspace(value)}
+                >
+                  {workspace === value && <SegmentPill id="auth-workspace" />}
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="workspace-detail" key={workspace}>
+              {workspace === "demo" && (
+                <small>
+                  Explore OrgFlow in the shared demo workspace with sample data.
+                </small>
+              )}
+              {workspace === "create" && (
+                <input
+                  required
+                  aria-label="Organization name"
+                  placeholder="Organization name"
+                  maxLength={120}
+                  value={organization}
+                  onChange={(e) => setOrganization(e.target.value)}
+                />
+              )}
+              {workspace === "invite" && (
+                <input
+                  required
+                  aria-label="Invite code"
+                  placeholder="Invite code"
+                  autoCapitalize="off"
+                  autoComplete="off"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value)}
+                />
+              )}
+            </div>
+          </div>
+        </Collapse>
         {error && (
           <div className="error" role="alert">
             {error}
@@ -188,13 +275,18 @@ const pagePaths: Record<string, string> = {
   Home: "/",
   Files: "/files",
   "Knowledge Base": "/knowledge-base",
+  Checklists: "/checklists",
+  People: "/people",
+  Organization: "/organization",
 };
-const currentPage = () =>
-  location.pathname.replace(/^\/a(?=\/|$)/, "").startsWith("/knowledge-base")
-    ? "Knowledge Base"
-    : location.pathname.replace(/^\/a(?=\/|$)/, "").startsWith("/files")
-      ? "Files"
-      : "Home";
+const currentPage = () => {
+  const path = location.pathname.replace(/^\/a(?=\/|$)/, "");
+  return (
+    Object.keys(pagePaths).find(
+      (page) => page !== "Home" && path.startsWith(pagePaths[page]!),
+    ) ?? "Home"
+  );
+};
 /**
  * Open a hosted AWS Monetization page. Uses the URL cookie set at sign-in when present, and
  * otherwise asks the server for a fresh one (already-signed-in sessions, expired cookie).
@@ -258,7 +350,35 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     [sourceOptions, setSourceOptions] = useState<any[]>([]),
     [consent, setConsent] = useState(false),
     [captureProvider, setCaptureProvider] = useState("drive"),
-    [captureError, setCaptureError] = useState("");
+    [captureError, setCaptureError] = useState(""),
+    [org, setOrg] = useState<OrgInfo | null>(null),
+    [orgError, setOrgError] = useState(""),
+    [activeRun, setActiveRun] = useState<string | null>(null);
+  // Keyboard-initiated opens/closes (⌘J, Escape) skip the dialog animation.
+  const [instant, setInstant] = useState(false);
+  const agentPresence = usePresence(agent, instant ? 0 : 170);
+  const agentRef = useRef<HTMLElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
+  const dockedOnce = useRef(false);
+  useLayoutEffect(() => {
+    // Re-materialize from the new anchor when the window docks or centers.
+    if (!dockedOnce.current) {
+      dockedOnce.current = true;
+      return;
+    }
+    const el = agentRef.current;
+    if (!el || el.classList.contains("inline")) return;
+    if (matchMedia("(max-width: 720px)").matches) return;
+    el.animate(
+      prefersReducedMotion()
+        ? [{ opacity: 0 }, { opacity: 1 }]
+        : [
+            { opacity: 0, transform: "scale(0.96)" },
+            { opacity: 1, transform: "scale(1)" },
+          ],
+      { duration: 240, easing: "cubic-bezier(0.23, 1, 0.32, 1)" },
+    );
+  }, [docked]);
   function focusChat() {
     requestAnimationFrame(() =>
       document
@@ -289,13 +409,41 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
       setError(e.message);
     }
   };
+  const loadOrg = async () => {
+    try {
+      setOrg(await api("/org"));
+      setOrgError("");
+    } catch (e: any) {
+      setOrgError(e.message);
+    }
+  };
   useEffect(() => {
     refresh();
+    loadOrg();
   }, []);
+  const openArticle = (id: string) => {
+    setActive(id);
+    setPage("Knowledge Base");
+  };
+  const openRun = (id: string) => {
+    setActiveRun(id);
+    setPage("Checklists");
+  };
+  const goIndex = () => {
+    setPage("Files");
+    setTimeout(
+      () =>
+        document
+          .getElementById("index-sources")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      80,
+    );
+  };
   useEffect(() => {
     if (!agent) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        setInstant(true);
         setAgent(false);
         void realtimeVoice.endSession();
         document.querySelector<HTMLButtonElement>(".agent-launch")?.focus();
@@ -330,12 +478,24 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") {
         e.preventDefault();
         if (pageRef.current === "Home") focusChat();
-        else setAgent((a) => !a);
+        else {
+          setInstant(true);
+          setAgent((a) => !a);
+        }
       }
     };
     window.addEventListener("keydown", shortcut);
     return () => window.removeEventListener("keydown", shortcut);
   }, []);
+  useEffect(() => {
+    // Keep the newest message in view as the conversation grows.
+    const el = messagesRef.current;
+    if (!el || (!messages.length && !busy)) return;
+    el.scrollTo({
+      top: el.scrollHeight,
+      behavior: prefersReducedMotion() ? "auto" : "smooth",
+    });
+  }, [messages.length, busy]);
   async function send(text = input, requestedMode = mode) {
     if (!text.trim() || busy) return;
     if (sources.length && !consent) {
@@ -441,38 +601,46 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     : files.filter((f) => folderPaths(f) === folder);
   const openAgent = (text?: string) => {
     if (page === "Home") focusChat();
-    else setAgent(true);
+    else {
+      setInstant(false);
+      setAgent(true);
+    }
     if (text) send(text);
   };
   const closeAgent = () => {
+    setInstant(false);
     setAgent(false);
     void realtimeVoice.endSession();
   };
   const inline = page === "Home";
+  const agentState = agentPresence.closing ? "closed" : "open";
   const assistant = (
     <>
       {!inline && (
         <div
           className={docked ? "" : "modal-backdrop"}
+          data-state={agentState}
+          data-instant={instant || undefined}
           onClick={() => !docked && closeAgent()}
         />
       )}
       <section
+        ref={agentRef}
         className={
-          inline
+          (inline
             ? "agent-window inline"
             : docked
               ? "agent-window docked"
-              : "agent-window"
+              : "agent-window") + (busy ? " is-working" : "")
         }
+        data-state={inline ? undefined : agentState}
+        data-instant={(!inline && instant) || undefined}
         role={inline ? "region" : "dialog"}
         aria-modal={inline ? undefined : !docked}
         aria-label="OrgFlow assistant"
       >
         <div className="agent-header">
-          <span className="agent-symbol">
-            <Sparkles size={20} />
-          </span>
+          <span className="agent-symbol" aria-hidden="true" />
           <div>
             <strong>OrgFlow assistant</strong>
             <small>Clarity, one conversation at a time.</small>
@@ -502,6 +670,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
               className={tab === "chat" ? "on" : ""}
               onClick={() => setTab("chat")}
             >
+              {tab === "chat" && <SegmentPill id="agent-tab" />}
               <MessageSquare size={15} />
               Chat
             </button>
@@ -509,6 +678,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
               className={tab === "voice" ? "on" : ""}
               onClick={() => setTab("voice")}
             >
+              {tab === "voice" && <SegmentPill id="agent-tab" />}
               <Mic size={15} />
               Voice
             </button>
@@ -523,12 +693,16 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
           </select>
         </div>
         <div className="capture-toolbar">
-          <button className="text-button" onClick={() => setCapture(!capture)}>
+          <button
+            className="text-button"
+            aria-expanded={capture}
+            onClick={() => setCapture(!capture)}
+          >
             <Plus size={14} /> Capture from sources{" "}
             {sources.length > 0 && `(${sources.length})`}
           </button>
         </div>
-        {capture && (
+        <Collapse open={capture}>
           <div className="capture-panel">
             <p>
               Explicitly select source text to share with the AI provider.
@@ -614,21 +788,23 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                 ))}
               </select>
             )}
-            {sources.map((s, i) => (
-              <div className="selected-source" key={s.id}>
-                <FileText size={13} />
-                {s.title}
-                <button
-                  aria-label={"Remove " + s.title}
-                  onClick={() => {
-                    setSources(sources.filter((_, j) => i !== j));
-                    setConsent(false);
-                  }}
-                >
-                  <X size={13} />
-                </button>
-              </div>
-            ))}
+            <AnimatePresence initial={false}>
+              {sources.map((s, i) => (
+                <m.div className="selected-source" key={s.id} {...rowExit}>
+                  <FileText size={13} />
+                  {s.title}
+                  <button
+                    aria-label={"Remove " + s.title}
+                    onClick={() => {
+                      setSources(sources.filter((_, j) => i !== j));
+                      setConsent(false);
+                    }}
+                  >
+                    <X size={13} />
+                  </button>
+                </m.div>
+              ))}
+            </AnimatePresence>
             {sources.length > 0 && (
               <label className="consent">
                 <input
@@ -646,13 +822,11 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
               </p>
             )}
           </div>
-        )}
-        <div className="messages">
+        </Collapse>
+        <div className="messages" ref={messagesRef}>
           {!messages.length && (
             <div className="agent-welcome">
-              <span className="welcome-orb">
-                <Sparkles size={30} />
-              </span>
+              <span className="welcome-orb" aria-hidden="true" />
               <h2>How can I help your team?</h2>
               <p>
                 Ask a question, work through a process, or turn what you know
@@ -690,7 +864,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
             <div key={i} className={"message " + m.role}>
               <span>
                 {m.role === "assistant" ? (
-                  <Sparkles size={16} />
+                  <span className="assistant-mark" aria-hidden="true" />
                 ) : (
                   <span className="mini-avatar">Y</span>
                 )}
@@ -704,6 +878,10 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                       const article = data?.articles.find(
                         (a) => a.id === source.id,
                       );
+                      const isEmail = source.sourceType === "email excerpt",
+                        excerpt =
+                          isEmail || source.sourceType === "document excerpt",
+                        ExcerptIcon = isEmail ? Mail : FileText;
                       return (
                         <div key={source.id || j}>
                           {article ? (
@@ -717,6 +895,29 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                               <BookOpen size={12} />
                               {source.title || article.title}
                             </button>
+                          ) : excerpt ? (
+                            <>
+                              {source.url ? (
+                                <a
+                                  href={source.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  <ExcerptIcon size={12} />
+                                  {source.title || source.id}
+                                  <ArrowUpRight size={12} />
+                                </a>
+                              ) : (
+                                <span>
+                                  <ExcerptIcon size={12} />
+                                  {source.title || source.id}
+                                </span>
+                              )}
+                              <small>
+                                {isEmail ? "Email" : "Document"}
+                                {source.from && " · " + source.from}
+                              </small>
+                            </>
                           ) : source.url ? (
                             <a
                               href={source.url}
@@ -743,20 +944,28 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
             </div>
           ))}
           {busy && (
-            <div className="message assistant">
-              <LoaderCircle className="spin" size={16} />
-              <div>Working on that…</div>
+            <div className="message assistant pending">
+              <span>
+                <span className="assistant-mark" aria-hidden="true" />
+              </span>
+              <div className="shimmer-text">Working on that…</div>
             </div>
           )}
         </div>
-        {tab === "voice" && (
+        <Collapse open={tab === "voice"}>
           <div className="voice-controls">
             <div className="voice-actions">
               <button
                 className={
                   realtimeVoice.status === "connected"
-                    ? "mic-button listening"
-                    : "mic-button"
+                    ? realtimeVoice.isSpeaking
+                      ? "mic-button listening speaking"
+                      : realtimeVoice.isMuted
+                        ? "mic-button listening muted"
+                        : "mic-button listening"
+                    : realtimeVoice.status === "connecting"
+                      ? "mic-button connecting"
+                      : "mic-button"
                 }
                 onClick={voice}
                 aria-label={
@@ -768,8 +977,14 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
               >
                 <Mic size={25} />
               </button>
+              <AnimatePresence initial={false}>
               {realtimeVoice.status === "connected" && (
-                <button
+                <m.button
+                  key="mute"
+                  initial={{ opacity: 0, scale: 0.94 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.94, transition: { duration: 0.12 } }}
+                  transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
                   className={
                     realtimeVoice.isMuted ? "voice-mute muted" : "voice-mute"
                   }
@@ -781,10 +996,11 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                 >
                   {realtimeVoice.isMuted ? <MicOff size={17} /> : <Mic size={17} />}
                   {realtimeVoice.isMuted ? "Unmute mic" : "Mute mic"}
-                </button>
+                </m.button>
               )}
+            </AnimatePresence>
             </div>
-            <strong>
+            <strong className="voice-status" key={realtimeVoice.status}>
               {realtimeVoice.status === "connecting"
                 ? "Connecting…"
                 : realtimeVoice.status === "connected"
@@ -834,7 +1050,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
               </div>
             )}
           </div>
-        )}
+        </Collapse>
         <form
           className="agent-input"
           onSubmit={(e) => {
@@ -876,13 +1092,11 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     <div className="app">
       <aside className="sidebar">
         <button className="brand" onClick={() => setPage("Home")}>
-          <span className="brand-mark">
-            <Layers size={23} />
-          </span>
+          <span className="brand-mark" aria-hidden="true" />
           orgflow<span className="brand-dot">.</span>
         </button>
         <button className="agent-launch" onClick={() => openAgent()}>
-          <Sparkles size={18} /> Your AI assistant <span>⌘ J</span>
+          <Sparkles size={18} /> Your AI assistant <kbd>⌘ J</kbd>
         </button>
         <p className="nav-label">WORKSPACE</p>
         <nav>
@@ -890,6 +1104,9 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
             [Home, "Home"],
             [FolderOpen, "Files"],
             [BookOpen, "Knowledge Base"],
+            [ClipboardCheck, "Checklists"],
+            [Users, "People"],
+            [Building2, "Organization"],
           ].map(([Icon, label]: any) => (
             <button
               className={page === label ? "nav-item selected" : "nav-item"}
@@ -897,6 +1114,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
               onClick={() => {
                 setPage(label);
                 setQuery("");
+                if (label === "Checklists") setActiveRun(null);
               }}
             >
               <Icon size={19} />
@@ -904,15 +1122,29 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
               {label === "Knowledge Base" && (
                 <small>{data?.articles.length || 0}</small>
               )}
+              {label === "Checklists" &&
+                (data?.runs || NONE).some((r) => r.status === "active") && (
+                  <small>
+                    {(data?.runs || NONE).filter((r) => r.status === "active").length}
+                  </small>
+                )}
             </button>
           ))}
         </nav>
         <div className="sidebar-bottom">
           <div className="workspace-card">
-            <span className="workspace-avatar">O</span>
+            <span className="workspace-avatar">
+              {(org?.name || "O")[0]?.toUpperCase()}
+            </span>
             <div>
-              <strong>Our organization</strong>
-              <small>Shared workspace</small>
+              <strong>{org?.name || "Our organization"}</strong>
+              <small>
+                {org?.id === "default"
+                  ? "Shared demo workspace"
+                  : org?.role === "admin"
+                    ? "Admin"
+                    : "Shared workspace"}
+              </small>
             </div>
           </div>
           <div className="demo-indicator">
@@ -951,7 +1183,8 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
       <main>
         <header className="topbar">
           <span>
-            Workspace <ChevronRight size={14} /> <strong>{page}</strong>
+            {org?.name || "Workspace"} <ChevronRight size={14} />{" "}
+            <strong>{page}</strong>
           </span>
           <div className="top-right">
             <span className="live-label">
@@ -1133,7 +1366,11 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                     <p className="empty">No files found.</p>
                   )}
                 </div>
-                <Connections data={data} onRefresh={refresh} />
+                <Connections
+                  data={data}
+                  onRefresh={refresh}
+                  onSourcesChanged={refresh}
+                />
               </div>
             )}
             {page === "Knowledge Base" && (
@@ -1211,6 +1448,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                       className="text-button"
                       onClick={() => {
                         setMode("draft");
+                        setInstant(false);
                         setAgent(true);
                       }}
                     >
@@ -1240,9 +1478,12 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                         )
                       }
                       onError={setError}
+                      people={data?.people || NONE}
+                      onOpenRun={openRun}
+                      onRunStarted={refresh}
                     />
                   ) : (
-                    <>
+                    <div className="kb-list">
                       <div className="page-title">
                         <div>
                           <p className="eyebrow">YOUR TEAM'S SHARED KNOW-HOW</p>
@@ -1277,6 +1518,14 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                           <Plus size={17} /> New article
                         </button>
                       </div>
+                      <SuggestedPlaybooks
+                        candidates={data?.candidates || NONE}
+                        indexedCount={data?.sources?.length || 0}
+                        articles={data?.articles || NONE}
+                        onRefresh={refresh}
+                        onOpenArticle={openArticle}
+                        onGoIndex={goIndex}
+                      />
                       <label className="search kb-search">
                         <Search size={17} />
                         <input
@@ -1305,10 +1554,24 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                                 <span className="article-icon">
                                   <BookOpen size={21} />
                                 </span>
-                                <span className={"status " + a.status}>
-                                  {a.status === "published"
-                                    ? "Published"
-                                    : "Draft"}
+                                <span className="status-stack">
+                                  {a.status === "published" &&
+                                    isOverdue(a.reviewDueAt) && (
+                                      <span
+                                        className="badge warn"
+                                        title={
+                                          "Review was due " +
+                                          fullDate(a.reviewDueAt!)
+                                        }
+                                      >
+                                        <AlertCircle size={11} /> Due for review
+                                      </span>
+                                    )}
+                                  <span className={"status " + a.status}>
+                                    {a.status === "published"
+                                      ? "Published"
+                                      : "Draft"}
+                                  </span>
                                 </span>
                               </div>
                               <h2>{a.title}</h2>
@@ -1330,10 +1593,45 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
                           ask the assistant.
                         </div>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
+            )}
+            {page === "Checklists" && (
+              <ChecklistsPage
+                runs={data?.runs || NONE}
+                people={data?.people || NONE}
+                articles={data?.articles || NONE}
+                activeRun={activeRun}
+                onSelect={setActiveRun}
+                onRefresh={refresh}
+                onOpenArticle={openArticle}
+              />
+            )}
+            {page === "People" && (
+              <PeoplePage
+                people={data?.people || NONE}
+                articles={data?.articles || NONE}
+                onRefresh={refresh}
+                onOpenArticle={openArticle}
+                onOpenRun={openRun}
+              />
+            )}
+            {page === "Organization" && (
+              <OrganizationPage
+                org={org}
+                orgError={orgError}
+                onOrgChange={setOrg}
+                onReloadOrg={loadOrg}
+                userId={user.id}
+                lookups={{
+                  articles: data?.articles || NONE,
+                  people: data?.people || NONE,
+                  runs: data?.runs || NONE,
+                  sources: data?.sources || NONE,
+                }}
+              />
             )}
           </>
         )}
@@ -1345,9 +1643,11 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
 function Connections({
   data,
   onRefresh,
+  onSourcesChanged,
 }: {
   data: Data | null;
   onRefresh: () => void;
+  onSourcesChanged: () => void;
 }) {
   const [google, setGoogle] = useState<any>(null),
     [notice, setNotice] = useState(""),
@@ -1423,6 +1723,10 @@ function Connections({
         ))}
       </div>
       {notice && <p role="status">{notice}</p>}
+      <IndexSources
+        connected={!!google?.connected}
+        onChanged={onSourcesChanged}
+      />
     </div>
   );
 }
@@ -1500,9 +1804,15 @@ function ArticleEditor({
   onError,
   onOpenArticle,
   articles,
+  people,
+  onOpenRun,
+  onRunStarted,
 }: {
   article: Article;
   articles: Article[];
+  people: Person[];
+  onOpenRun: (id: string) => void;
+  onRunStarted: () => Promise<void> | void;
   onOpenArticle: (id: string) => void;
   categories: any[];
   onBack: () => void;
@@ -1591,11 +1901,25 @@ function ArticleEditor({
           ‹ All articles
         </button>
         <div>
-          <span className="save-state">
+          <span
+            className={
+              "save-state" +
+              (save === "Published successfully"
+                ? " success"
+                : save === "Save failed"
+                  ? " failed"
+                  : save === "All changes saved"
+                    ? " saved"
+                    : " pending")
+            }
+            key={save}
+          >
             <Check size={14} />
             {save}
           </span>
-          <span className={"status " + status}>{status}</span>
+          <span className={"status " + status} key={status}>
+            {status}
+          </span>
           <button
             className="primary"
             onClick={async () => {
@@ -1646,6 +1970,14 @@ function ArticleEditor({
           latest.current.dirty = true;
           schedule();
         }}
+      />
+      <ArticleMeta
+        article={article}
+        people={people}
+        onSaved={onSaved}
+        onError={onError}
+        onOpenRun={onOpenRun}
+        onRunStarted={onRunStarted}
       />
       <p className="editor-hint">
         Capture the process. Make it easy for the next person.
@@ -1785,6 +2117,8 @@ function ArticleEditor({
 }
 createRoot(document.getElementById("root")!).render(
   <ConversationProvider>
-    <AuthGate />
+    <MotionRoot>
+      <AuthGate />
+    </MotionRoot>
   </ConversationProvider>,
 );

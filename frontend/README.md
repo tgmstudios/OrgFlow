@@ -1,22 +1,29 @@
 # OrgFlow frontend
 
-React with Bun HTML imports (no Vite), Tiptap rich text, and Lucide icons.
+React with Bun HTML imports (no Vite), Tiptap rich text, Lucide icons, ElevenLabs React SDK for voice.
 
 ```sh
 bun install
-bun --hot index.ts
+bun --hot index.ts    # http://127.0.0.1:3002; start the backend on :3003 first
+bun run typecheck
+bun run build         # production bundle (assets under /a/)
+NODE_ENV=production bun index.ts   # serves the bundle at /a/
+bun test server.test.ts
 ```
 
-Runs locally at `http://127.0.0.1:3002`. Start the backend at port 3003; `/api`, `/auth`, `/docs`, `/swagger`, and `/openapi.json` proxy there. Set `BACKEND_URL` or `PORT` to override. Default bind is loopback.
+`/api`, `/auth`, `/docs`, `/swagger` and `/openapi.json` proxy to the backend (`BACKEND_URL` overrides; `PORT` overrides the bind port; loopback by default). Production routing and service environment live in `../deploy/`.
 
-```sh
-bun check
-bun build index.html --outdir /tmp/orgflow-frontend-build
-```
+## Files
 
-Home presents chat, recent files and agenda/month calendar. Files preserve provider folder paths initially and allow rearranging link paths in OrgFlow only. Knowledge Base supports categories, manual authoring, Tiptap rich text/images/checklists, draft autosave and explicit publication. The assistant offers shared chat/voice conversation, centering/docking, explicit Google source reads and text-file capture with AI consent.
+- `app.tsx`: shell, sign-in/sign-up, Home, Files and connections, Knowledge Base and editor, global chat/voice agent.
+- `api.ts`: typed API client.
+- `indexing.tsx`: consented Gmail/Drive indexing and indexed-source list.
+- `discover.tsx`: suggested playbooks (Discover) in the Knowledge Base.
+- `checklists.tsx`: runnable checklists.
+- `people.tsx`: people, mark leaving, handoff guide, onboarding.
+- `organization.tsx`: organization info, members, invite code, audit log.
+- `article-meta.tsx`: article owner and review metadata.
+- `motion.tsx`: shared animation helpers (built on `motion`; respects reduced motion).
+- `server.ts`: static/proxy server.
 
-Voice uses the ElevenLabs React SDK with an authenticated WebRTC session token from `GET /api/voice/session-token`; microphone permission is required. The app captures the conversation transcript for staff review. After the session ends, staff can edit it, explicitly consent to sharing it with the drafting AI, and create an SOP draft for review and publication. The ElevenLabs API key stays server-side in `backend/.env`. Chat remains available. Images support public URLs or uploads (5 MB limit on backend). Google must be configured and explicitly connected; SharePoint and OneDrive are future integrations. Sample workspace content is demo data.
-
-
-Production: `bun run build`, then `NODE_ENV=production bun index.ts`. Serves the bundled app at `/a/`, with reloadable `/a/files` and `/a/knowledge-base` routes. Development/HMR is disabled in production. Production routing and service environment are managed in `../deploy/`.
+Voice needs microphone permission and an authenticated session token from `GET /api/voice/session-token`; after a session, staff edit the transcript, consent to AI drafting, and create a draft. Google and AI features need the backend configured (see [backend README](../backend/README.md)). Sample workspace content is labelled demo data.
