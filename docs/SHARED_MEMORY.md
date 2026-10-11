@@ -1,6 +1,6 @@
 # Shared human / agent memory
 
-Last updated: 2026-10-11. This file preserves collaboration state across sessions. It is shared by humans and agents; it is not evidence that a feature has been implemented.
+This file preserves collaboration state across sessions. It is shared by humans and agents; it is not evidence that a feature has been implemented.
 
 ## How to use and maintain this memory
 
@@ -9,7 +9,7 @@ Last updated: 2026-10-11. This file preserves collaboration state across session
 - Distinguish confirmed decisions from agent proposals and unverified claims. Never silently treat a proposal as human approval.
 - When a decision changes, preserve the previous decision and mark it superseded with a reason.
 - Keep credentials, OAuth tokens, keys, private email content, and donor data out of this file and version control.
-- Prefer concise entries with date, author/source, decision or observation, and status. Update this file when handing work off.
+- Prefer concise entries with author/source, decision or observation, and status. Update this file when handing work off.
 - This memory does not override explicit user instructions or AGENTS.md. Use the latest explicit user direction when they conflict.
 
 ## Confirmed human decisions and context
@@ -27,6 +27,21 @@ Last updated: 2026-10-11. This file preserves collaboration state across session
 | 2026-10-11 | User | Save state, preserve MVP and core decisions, create shared human/agent memory, and reference it from AGENTS.md. |
 | 2026-10-11 | User | Team has substantial free access to https://dash.luminal.com/flash and sees it as useful for quick indexing. Evaluate this resource when implementing ingestion/indexing; integration is not yet confirmed. |
 | 2026-10-11 | User | Asked to fit Luminal Flash into the MVP because the team has substantial free credits. Credits are user-reported; balance and expiry have not been verified. |
+| Source | Decision / context |
+| --- | --- |
+| User | Product is Continuity AI; original product brief is preserved in MVP.md. |
+| User | Hackathon priority: presentation-ready and sellable. Work collaboratively in interview style. |
+| User | Capture—turning scattered content into employee-approved playbooks—is the demo centerpiece. |
+| User, accepting suggested scenario | Use donor stewardship as the first demo process. |
+| User | Demo a live connection; file upload is the fallback. |
+| User | Build both Gmail and Google Drive connections. |
+| User | Six hours remained before judging when stated; do not assume a fresh six-hour window on resumption. Exact judging time was not recorded. |
+| User | Demo uses a personal Google login. Google Cloud project and OAuth configuration must start from scratch. |
+| User | Save state, preserve MVP and core decisions, create shared human/agent memory, and reference it from AGENTS.md. |
+| User | Team has substantial free access to https://dash.luminal.com/flash and sees it as useful for quick indexing. Evaluate this resource when implementing ingestion/indexing; integration is not yet confirmed. |
+| User | iOS app (app/iOS/OrgFlow) is programmatic UIKit (storyboards removed). Primary screen is an art-directed Ask screen with a Metal "Living Thread" audio-reactive visualizer, Liquid Glass controls, on-device SpeechAnalyzer/SpeechTranscriber transcription. Deployment target iOS 27. |
+| User | Ask answers will come from a backend endpoint the backend devs will build on Luminal; it does not exist yet. |
+| User | No accessibility work and no tests unless needed for personal verification. |
 
 ## Sponsor interview context
 
@@ -58,6 +73,8 @@ Agent proposed keeping Ask and Transfer on the roadmap for the six-hour build; u
 - 2026-10-11: Installed Google Cloud CLI 588.0.0 at `/home/node/google-cloud-sdk`, with PATH initialization in `/home/node/.bashrc`; verified `gcloud version`. User completed browser login; active CLI authentication verified. Default Google Cloud project is `orgflow-20261011`. Credentials remain outside the repository.
 - Model provider, indexing architecture, storage, deployment, auth, and exact pricing remain undecided.
 - 2026-10-11 agent proposal: [Luminal Flash integration plan](LUMINAL_FLASH.md) places Flash in Capture for source-backed fact extraction and playbook drafting, with embeddings conditional on verified support. MVP.md links this plan. Documentation only; no API adapter or live integration exists. The supplied Flash URL returned a 404 during inspection; API contract, models, credit eligibility, and data policies remain unverified. Luminal's public homepage describes managed inference but does not verify Flash's specific capabilities.
+- iOS app state (status: implemented, builds; not yet verified on a physical device):
+  - Swift app with folders `App/`, `Theme/`, `LivingThread/` (reusable MTKView visualizer + shader), `Audio/` (AVAudioEngine with a realtime-safe Obj-C AVAudioSinkNode ring buffer, vDSP feature extractor, SpeechAnalyzer transcriber), `Services/` (RemoteKnowledgeAgent), and `Ask/` (state machine coordinator, view controller, composer, suggestions, conversation view).
 
 ## Google setup handoff
 
@@ -73,6 +90,13 @@ Official references consulted:
 
 - https://developers.google.com/workspace/guides/configure-oauth-consent
 - https://developers.google.com/workspace/guides/create-credentials
+
+## iOS ↔ backend integration (2026-10-11)
+
+- Superseded: the proposed NDJSON `POST /api/ask` contract. The iOS app now uses the existing `POST /api/agent` (`mode: "ask"`, `messages`) and reveals the JSON answer progressively on device; inline `[source id]` markers become citation chips.
+- Base URL comes from the Info.plist key `OrgFlowBaseURL` (default `https://orgflow.dev`). Auth is the backend's email/password session cookie (`/api/auth/login|signup|me|logout`); a 401 opens an in-app sign-in sheet and then retries the pending question.
+- Landing suggestions are generated on device with Apple Foundation Models from `/api/bootstrap` article and category titles (titles only, never leave the device); without the model it falls back to article titles.
+- Status: builds; not yet verified against production with a real account.
 
 ## Next session
 
