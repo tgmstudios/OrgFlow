@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f8f7f4"/>
+  <g font-family="Manrope, Arial, sans-serif" fill="#302d3b">
+    <g fill="none" stroke="#7753ce" stroke-width="2" stroke-linejoin="round"><path d="m75 49 17 9-17 9-17-9zM58 65l17 9 17-9M58 72l17 9 17-9"/></g>
+    <text x="106" y="76" font-size="31" font-weight="800" letter-spacing="-1.8">orgflow<tspan fill="#7753ce">.</tspan></text>
+    <text x="58" y="167" font-size="10" font-weight="600" letter-spacing="2" fill="#7753ce">INSTITUTIONAL MEMORY, FOR NONPROFITS</text>
+    <text x="55" y="250" font-size="63" font-weight="550" letter-spacing="-3">Your mission</text>
+    <text x="55" y="323" font-size="63" font-weight="550" letter-spacing="-3">shouldn’t depend</text>
+    <text x="55" y="396" font-size="63" font-weight="550" letter-spacing="-3">on one person’s</text>
+    <text x="55" y="469" font-size="63" font-weight="550" letter-spacing="-3" fill="#7753ce">memory.</text>
+    <path d="M58 535H1142" stroke="#e3dfe7"/>
+    <text x="58" y="570" font-size="10" fill="#716b7d" letter-spacing="1.5">WHEN SOMEONE LEAVES, WHAT THEY KNOW STAYS.</text>
+    <text x="1045" y="570" font-size="13" fill="#7753ce">orgflow.dev</text>
+  </g>
+  <g transform="translate(725 180) rotate(-8 140 170)">
+    <rect x="9" y="9" width="245" height="294" rx="4" fill="#ded0ec"/>
+    <rect width="245" height="294" rx="4" fill="#fffefb" stroke="#e3dfe7"/>
+    <g font-family="Manrope, Arial, sans-serif"><text x="25" y="36" font-size="8" fill="#806596" letter-spacing="1.5">VOLUNTEER OPERATIONS</text><text x="25" y="85" font-size="25" fill="#302d3b" letter-spacing="-.9">Welcoming a</text><text x="25" y="118" font-size="25" fill="#302d3b" letter-spacing="-.9">new volunteer</text><path d="M25 143H217" stroke="#e3dfe7"/><text x="46" y="177" font-size="10" fill="#716b7d">Send the welcome note</text><text x="46" y="210" font-size="10" fill="#716b7d">Meet the shift lead</text><text x="46" y="243" font-size="10" fill="#716b7d">Pair up for the first shift</text></g><g fill="none" stroke="#7753ce" stroke-width="1.5"><path d="m26 170 4 4 7-8m-11 41 4 4 7-8"/><rect x="27" y="234" width="9" height="9" rx="1"/></g>
+  </g>
+  <g transform="translate(885 270) rotate(10 100 120)"><rect x="6" y="6" width="211" height="242" rx="3" fill="#d2c1e4"/><rect width="211" height="242" rx="3" fill="#7753ce"/><rect width="18" height="242" fill="#543992"/><g fill="none" stroke="#e5d7fa" stroke-width="1.4" stroke-linejoin="round"><path d="m47 24 15 8-15 8-15-8zM32 38l15 8 15-8M32 45l15 8 15-8"/></g><g font-family="Manrope, Arial, sans-serif" fill="#f8f7f4"><text x="33" y="87" font-size="7" letter-spacing="1.4" fill="#d6c6f4">KNOWLEDGE, CARRIED FORWARD</text><text x="32" y="128" font-size="25" letter-spacing="-.9">A good first day.</text><text x="32" y="161" font-size="25" letter-spacing="-.9">Every time.</text><text x="32" y="216" font-size="7" fill="#d6c6f4">OrgFlow Knowledge Base</text></g></g>
+</svg>

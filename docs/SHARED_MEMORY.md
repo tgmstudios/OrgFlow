@@ -1,5 +1,19 @@
 # Shared human / agent memory
 
+## Premium marketing homepage handoff — 2026-10-11
+
+**Confirmed human direction:** build a complete OrgFlow marketing homepage from Aiden's latest production implementation on `origin/main`, preserve the independent `feat/foundation` branch and its uncommitted work, use a dedicated landing branch/worktree, commit finished work, and do not merge or deploy. The $19 monthly founding offer may be described honestly without suggesting working checkout. Higgsfield credit use requires a quoted cost and explicit approval. No purchases, automatic top ups, credentials changes, or new infrastructure are authorized.
+
+**Implemented behavior:** `feat/orgflow-premium-landing` in `/Users/parth/Projects/c0mpiled-orgflow-landing`, based on `05e995ea8c39f2972a1697dfc8e487a1649c606d`. The homepage is confined to `landing/`. It uses an editorial paper/archive composition, an interactive knowledge arrangement, and a deterministic fictional Willow Creek Food Pantry walkthrough. The walkthrough includes cited answers, accessible source previews, selected sample sources and consent, editable drafts, separate publication, retained published snapshots, and a successor checklist. These are sample interactions, not live AI calls or claims that the app has a dedicated handoff generator. App calls to action open `https://orgflow.dev/a/`.
+
+**Runtime and compatibility:** Bun builds minified assets and prerendered HTML when the existing direct `landing/index.ts` entrypoint starts on port 3001. Self-hosted fonts, favicon, social artwork, and crawler files are included. Production frontend, backend, Nginx, deployment workflow, and root scripts are unchanged. The original checkout remains on `feat/foundation` at `20e974b`, with its five modified `web/` files and untracked `.idea/` preserved.
+
+**Verified:** landing typecheck and production build, seven server tests, fresh frozen-lock installation and direct startup from a standalone temporary landing-only copy, rendered review at 1440/1024/768/375 pixels, navigation and application links, all sample controls, draft editing/publication/snapshot preservation, source focus trap and restoration, mobile menu, FAQs, keyboard focus, reduced motion, fonts and assets. Browser checks found no runtime, hydration, console, asset, or page-overflow errors. Automated accessibility checks found zero violations at all four widths and across eighteen desktop/mobile demo states; overlapping illustration content still requires visual judgment. Existing production `/a/`, app deep links, `/docs`, `/openapi.json`, and `/health` returned 200 during read-only checks. This is compatibility evidence, not a new deployment.
+
+**Higgsfield:** read-only MCP balance and workspace inspection reported Plus with 110 available credits. Generation cost preflights succeeded, including an 8-credit Recraft still and a 60-credit five-second Seedance video. No generation, credit spending, purchase, or subscription change occurred. A successful generation remains unverified.
+
+**Honest limits and next action:** the landing demo resets on reload and uses fictional content. The production app remains a shared demonstration workspace without organization isolation. Browser voice depends on browser capabilities. Paid checkout, Microsoft connections, and calendar synchronization are not presented as available. Review the running preview at `http://localhost:3001` and the instructions in `landing/README.md`. An authorized maintainer may later review a PR into `main`; merging triggers the existing production deployment. No push, merge, or deployment has been performed for this homepage.
+
 Last updated: 2026-10-11. This file preserves collaboration state across sessions. It is shared by humans and agents; it is not evidence that a feature has been implemented.
 
 ## How to use and maintain this memory

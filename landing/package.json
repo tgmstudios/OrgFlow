@@ -1,14 +1,24 @@
 {
-  "name": "landing",
+  "name": "orgflow-landing",
   "module": "index.ts",
   "type": "module",
   "private": true,
   "scripts": {
     "start": "bun run index.ts",
-    "typecheck": "bun check"
+    "dev": "bun --watch index.ts",
+    "build": "bun run build.ts",
+    "typecheck": "bun check",
+    "test": "bun test server.test.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0"
+  },
+  "dependencies": {
+    "lucide-react": "^1.55.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "peerDependencies": {
     "typescript": "^7"
