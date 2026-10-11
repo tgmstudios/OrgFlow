@@ -129,7 +129,9 @@ function AuthScreen({ onUser }: { onUser: (user: User) => void }) {
             minLength={mode === "signup" ? 8 : undefined}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            autoComplete={mode === "login" ? "current-password" : "new-password"}
+            autoComplete={
+              mode === "login" ? "current-password" : "new-password"
+            }
           />
         </label>
         {error && (
@@ -216,8 +218,16 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     [consent, setConsent] = useState(false),
     [captureProvider, setCaptureProvider] = useState("drive"),
     [captureError, setCaptureError] = useState("");
+  function focusChat() {
+    requestAnimationFrame(() =>
+      document
+        .querySelector<HTMLTextAreaElement>(".agent-input textarea")
+        ?.focus(),
+    );
+  }
   function setPage(next: string) {
     setPageState(next);
+    setAgent(false);
     const prefix = /^\/a(?:\/|$)/.test(location.pathname) ? "/a" : "";
     const path = prefix + (pagePaths[next] ?? "/");
     if (location.pathname !== path) history.pushState({}, "", path);
@@ -228,6 +238,8 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
   const recognition = useRef<any>(null);
+  const pageRef = useRef(page);
+  pageRef.current = page;
   const [mode, setMode] = useState<"ask" | "draft">("ask");
   const refresh = async () => {
     try {
@@ -278,7 +290,8 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     const shortcut = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") {
         e.preventDefault();
-        setAgent((a) => !a);
+        if (pageRef.current === "Home") focusChat();
+        else setAgent((a) => !a);
       }
     };
     window.addEventListener("keydown", shortcut);
@@ -377,9 +390,370 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
     ? files
     : files.filter((f) => folderPaths(f) === folder);
   const openAgent = (text?: string) => {
-    setAgent(true);
+    if (page === "Home") focusChat();
+    else setAgent(true);
     if (text) send(text);
   };
+  const inline = page === "Home";
+  const assistant = (
+    <>
+      {!inline && (
+        <div
+          className={docked ? "" : "modal-backdrop"}
+          onClick={() => !docked && setAgent(false)}
+        />
+      )}
+      <section
+        className={
+          inline
+            ? "agent-window inline"
+            : docked
+              ? "agent-window docked"
+              : "agent-window"
+        }
+        role={inline ? "region" : "dialog"}
+        aria-modal={inline ? undefined : !docked}
+        aria-label="OrgFlow assistant"
+      >
+        <div className="agent-header">
+          <span className="agent-symbol">
+            <Sparkles size={20} />
+          </span>
+          <div>
+            <strong>OrgFlow assistant</strong>
+            <small>Clarity, one conversation at a time.</small>
+          </div>
+          {!inline && (
+            <>
+              <button
+                className="icon-button"
+                title={docked ? "Center window" : "Dock bottom right"}
+                onClick={() => setDocked(!docked)}
+              >
+                <PanelBottomClose size={18} />
+              </button>
+              <button
+                className="icon-button"
+                aria-label="Close assistant"
+                onClick={() => {
+                  setAgent(false);
+                  recognition.current?.stop();
+                  window.speechSynthesis?.cancel();
+                }}
+              >
+                <X size={19} />
+              </button>
+            </>
+          )}
+        </div>
+        <div className="agent-tabs">
+          <div className="segmented">
+            <button
+              className={tab === "chat" ? "on" : ""}
+              onClick={() => setTab("chat")}
+            >
+              <MessageSquare size={15} />
+              Chat
+            </button>
+            <button
+              className={tab === "voice" ? "on" : ""}
+              onClick={() => setTab("voice")}
+            >
+              <Mic size={15} />
+              Voice
+            </button>
+          </div>
+          <select
+            aria-label="Assistant task"
+            value={mode}
+            onChange={(e) => setMode(e.target.value as any)}
+          >
+            <option value="ask">Ask a question</option>
+            <option value="draft">Draft a playbook</option>
+          </select>
+        </div>
+        <div className="capture-toolbar">
+          <button className="text-button" onClick={() => setCapture(!capture)}>
+            <Plus size={14} /> Capture from sources{" "}
+            {sources.length > 0 && `(${sources.length})`}
+          </button>
+        </div>
+        {capture && (
+          <div className="capture-panel">
+            <p>
+              Explicitly select source text to share with the AI provider.
+              Private files are never read automatically.
+            </p>
+            <div className="capture-actions">
+              <select
+                aria-label="Source provider"
+                value={captureProvider}
+                onChange={(e) => setCaptureProvider(e.target.value)}
+              >
+                <option value="drive">Google Drive</option>
+                <option value="gmail">Gmail</option>
+              </select>
+              <button
+                onClick={async () => {
+                  try {
+                    const r = await api(
+                      "/sources/google?provider=" + captureProvider,
+                    );
+                    setSourceOptions(r.sources);
+                    setCaptureError("");
+                  } catch (e: any) {
+                    setCaptureError(e.message);
+                  }
+                }}
+              >
+                List sources
+              </button>
+              <label className="upload-button">
+                Upload text
+                <input
+                  type="file"
+                  accept=".txt,.md,text/plain,text/markdown"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 12000) {
+                      setCaptureError("Use a text file under 12 KB.");
+                      return;
+                    }
+                    setSources([
+                      ...sources,
+                      {
+                        id: "upload-" + Date.now(),
+                        title: file.name,
+                        text: await file.text(),
+                      },
+                    ]);
+                    setConsent(false);
+                    setMode("draft");
+                  }}
+                />
+              </label>
+            </div>
+            {sourceOptions.length > 0 && (
+              <select
+                aria-label="Select source to read"
+                value=""
+                onChange={async (e) => {
+                  if (!e.target.value) return;
+                  try {
+                    const r = await api(
+                      "/sources/google/" +
+                        captureProvider +
+                        "/" +
+                        encodeURIComponent(e.target.value),
+                    );
+                    setSources([...sources, r]);
+                    setConsent(false);
+                    setMode("draft");
+                    setCaptureError("");
+                  } catch (err: any) {
+                    setCaptureError(err.message);
+                  }
+                }}
+              >
+                <option value="">Select a source to read…</option>
+                {sourceOptions.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.title}
+                  </option>
+                ))}
+              </select>
+            )}
+            {sources.map((s, i) => (
+              <div className="selected-source" key={s.id}>
+                <FileText size={13} />
+                {s.title}
+                <button
+                  aria-label={"Remove " + s.title}
+                  onClick={() => {
+                    setSources(sources.filter((_, j) => i !== j));
+                    setConsent(false);
+                  }}
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            ))}
+            {sources.length > 0 && (
+              <label className="consent">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                />{" "}
+                I approve sending this selected text to the external AI provider
+                for drafting.
+              </label>
+            )}
+            {captureError && (
+              <p className="capture-error" role="alert">
+                {captureError}
+              </p>
+            )}
+          </div>
+        )}
+        <div className="messages">
+          {!messages.length && (
+            <div className="agent-welcome">
+              <span className="welcome-orb">
+                <Sparkles size={30} />
+              </span>
+              <h2>How can I help your team?</h2>
+              <p>
+                Ask a question, work through a process, or turn what you know
+                into a draft playbook.
+              </p>
+              {inline && (
+                <div className="prompt-chips">
+                  {[
+                    "Draft a donor stewardship SOP",
+                    "Help me find a document",
+                    "Interview me about a process",
+                  ].map((p) => {
+                    const m = /SOP|Interview/.test(p) ? "draft" : "ask";
+                    return (
+                      <button
+                        key={p}
+                        onClick={() => {
+                          setMode(m);
+                          send(p, m);
+                        }}
+                      >
+                        {p}
+                        <ArrowUpRight size={13} />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              <small>
+                AI responses need review. Publishing always stays in your hands.
+              </small>
+            </div>
+          )}
+          {messages.map((m, i) => (
+            <div key={i} className={"message " + m.role}>
+              <span>
+                {m.role === "assistant" ? (
+                  <Sparkles size={16} />
+                ) : (
+                  <span className="mini-avatar">Y</span>
+                )}
+              </span>
+              <div>
+                {m.content}
+                {m.sources && m.sources.length > 0 && (
+                  <div className="source-citations">
+                    <strong>Sources</strong>
+                    {m.sources.map((source: any, j: number) => {
+                      const article = data?.articles.find(
+                        (a) => a.id === source.id,
+                      );
+                      return (
+                        <div key={source.id || j}>
+                          {article ? (
+                            <button
+                              onClick={() => {
+                                setActive(article.id);
+                                setPage("Knowledge Base");
+                                setAgent(false);
+                              }}
+                            >
+                              <BookOpen size={12} />
+                              {source.title || article.title}
+                            </button>
+                          ) : source.url ? (
+                            <a
+                              href={source.url}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <FileText size={12} />
+                              {source.title || source.id}
+                              <ArrowUpRight size={12} />
+                            </a>
+                          ) : (
+                            <span>
+                              <FileText size={12} />
+                              {source.title || source.id}
+                            </span>
+                          )}
+                          {source.synthetic && <small>Demo</small>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+          {busy && (
+            <div className="message assistant">
+              <LoaderCircle className="spin" size={16} />
+              <div>Working on that…</div>
+            </div>
+          )}
+        </div>
+        {tab === "voice" && (
+          <div className="voice-controls">
+            <button
+              className={listening ? "mic-button listening" : "mic-button"}
+              onClick={voice}
+              disabled={busy}
+            >
+              <Mic size={25} />
+            </button>
+            <strong>
+              {listening ? "Listening… tap to finish" : "Tap to speak"}
+            </strong>
+            <p>
+              {voiceNote ||
+                "Browser speech services may send audio to your browser vendor. Supported browsers can read responses aloud."}
+            </p>
+          </div>
+        )}
+        <form
+          className="agent-input"
+          onSubmit={(e) => {
+            e.preventDefault();
+            send();
+          }}
+        >
+          <textarea
+            aria-label="Message assistant"
+            placeholder={
+              mode === "draft"
+                ? "Describe the process you want to capture…"
+                : "Ask your assistant…"
+            }
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                send();
+              }
+            }}
+          />
+          <button
+            className="send"
+            disabled={busy || !input.trim()}
+            aria-label="Send message"
+          >
+            <ArrowUp size={19} />
+          </button>
+        </form>
+        <div className="agent-disclaimer">
+          Drafts autosave. A staff member reviews and publishes.
+        </div>
+      </section>
+    </>
+  );
   return (
     <div className="app">
       <aside className="sidebar">
@@ -389,7 +763,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
           </span>
           orgflow<span className="brand-dot">.</span>
         </button>
-        <button className="agent-launch" onClick={() => setAgent(true)}>
+        <button className="agent-launch" onClick={() => openAgent()}>
           <Sparkles size={18} /> Your AI assistant <span>⌘ J</span>
         </button>
         <p className="nav-label">WORKSPACE</p>
@@ -469,206 +843,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
           </div>
         ) : (
           <>
-            {page === "Home" && (
-              <div className="home-content">
-                <section className="hero">
-                  <div className="eyebrow">
-                    <Sparkles size={14} /> A LITTLE CLARITY FOR YOUR EVERYDAY
-                  </div>
-                  <h1>
-                    Good things start with
-                    <br />
-                    <span>a simple question.</span>
-                  </h1>
-                  <p>
-                    Find what you need. Capture what you know. Keep your team
-                    moving.
-                  </p>
-                  <form
-                    className="hero-chat"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const text = input;
-                      setAgent(true);
-                      send(text);
-                    }}
-                  >
-                    <textarea
-                      aria-label="Ask OrgFlow"
-                      placeholder="How can I help your team today?"
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          setAgent(true);
-                          send();
-                        }
-                      }}
-                    />
-                    <div className="chat-foot">
-                      <span>
-                        <Sparkles size={15} /> Grounded in your organization's
-                        knowledge
-                      </span>
-                      <button
-                        className="send"
-                        aria-label="Send question"
-                        disabled={busy || !input.trim()}
-                      >
-                        <ArrowUp size={19} />
-                      </button>
-                    </div>
-                  </form>
-                  <div className="prompt-chips">
-                    {[
-                      "Draft a donor stewardship SOP",
-                      "Help me find a document",
-                      "Interview me about a process",
-                    ].map((p) => (
-                      <button
-                        key={p}
-                        onClick={() => {
-                          setMode(
-                            p.includes("SOP") || p.includes("Interview")
-                              ? "draft"
-                              : "ask",
-                          );
-                          setAgent(true);
-                          send(
-                            p,
-                            p.includes("SOP") || p.includes("Interview")
-                              ? "draft"
-                              : "ask",
-                          );
-                        }}
-                      >
-                        {p}
-                        <ArrowUpRight size={13} />
-                      </button>
-                    ))}
-                  </div>
-                </section>
-                <div className="home-grid">
-                  <section className="card">
-                    <div className="section-heading">
-                      <h2>Pick up where you left off</h2>
-                      <button
-                        className="text-button"
-                        onClick={() => setPage("Files")}
-                      >
-                        All files <ChevronRight size={15} />
-                      </button>
-                    </div>
-                    <p className="section-sub">
-                      Recent documents from across your workspace
-                    </p>
-                    <div className="recent-list">
-                      {(data?.files || []).slice(0, 4).map((f) => (
-                        <a
-                          href={f.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="recent-file"
-                          key={f.id}
-                        >
-                          <span className="file-icon">
-                            <FileText size={20} />
-                          </span>
-                          <div>
-                            <strong>{f.name}</strong>
-                            <small>
-                              {f.synthetic ? "Demo · " : ""}
-                              {f.provider} · {f.originalPath}
-                            </small>
-                          </div>
-                          <span className="file-date">{date(f.updatedAt)}</span>
-                          <ArrowUpRight size={15} />
-                        </a>
-                      ))}
-                    </div>
-                    {!data?.files.length && (
-                      <p className="empty">
-                        Connect a provider to see your files.
-                      </p>
-                    )}
-                  </section>
-                  <section className="card events-card">
-                    <div className="section-heading">
-                      <h2>Coming up</h2>
-                      <div className="segmented">
-                        <button
-                          className={calendar === "agenda" ? "on" : ""}
-                          onClick={() => setCalendar("agenda")}
-                        >
-                          Agenda
-                        </button>
-                        <button
-                          className={calendar === "month" ? "on" : ""}
-                          onClick={() => setCalendar("month")}
-                        >
-                          Month
-                        </button>
-                      </div>
-                    </div>
-                    <p className="section-sub">
-                      Meetings & operational deadlines · sample calendar
-                    </p>
-                    {calendar === "agenda" ? (
-                      <div>
-                        {(data?.events || []).slice(0, 4).map((ev) => (
-                          <div className="event" key={ev.id}>
-                            <div className="event-date">
-                              <span>
-                                {new Date(ev.start).toLocaleDateString(
-                                  undefined,
-                                  { month: "short" },
-                                )}
-                              </span>
-                              <strong>{new Date(ev.start).getDate()}</strong>
-                            </div>
-                            <div>
-                              <strong>{ev.title}</strong>
-                              <small>
-                                <span className={"event-dot " + ev.kind} />
-                                {ev.kind === "deadline"
-                                  ? "Deadline"
-                                  : new Date(ev.start).toLocaleTimeString(
-                                      undefined,
-                                      { hour: "numeric", minute: "2-digit" },
-                                    )}
-                              </small>
-                            </div>
-                          </div>
-                        ))}
-                        {!data?.events.length && (
-                          <p className="empty">No upcoming events.</p>
-                        )}
-                      </div>
-                    ) : (
-                      <Calendar
-                        month={month}
-                        setMonth={setMonth}
-                        events={data?.events || []}
-                      />
-                    )}
-                  </section>
-                </div>
-                <div className="integration-note">
-                  <span className="tiny-spark">
-                    <Sparkles size={16} />
-                  </span>
-                  <div>
-                    <strong>Knowledge that stays with your team.</strong>
-                    <span>
-                      {" "}
-                      Original files stay in your connected tools. Your
-                      playbooks live here.
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
+            {inline && assistant}
             {page === "Files" && (
               <div className="page-content">
                 <div className="page-title">
@@ -1033,328 +1208,7 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
           </>
         )}
       </main>
-      {agent && (
-        <>
-          <div
-            className={docked ? "" : "modal-backdrop"}
-            onClick={() => !docked && setAgent(false)}
-          />
-          <section
-            className={docked ? "agent-window docked" : "agent-window"}
-            role="dialog"
-            aria-modal={!docked}
-            aria-label="OrgFlow assistant"
-          >
-            <div className="agent-header">
-              <span className="agent-symbol">
-                <Sparkles size={20} />
-              </span>
-              <div>
-                <strong>OrgFlow assistant</strong>
-                <small>Clarity, one conversation at a time.</small>
-              </div>
-              <button
-                className="icon-button"
-                title={docked ? "Center window" : "Dock bottom right"}
-                onClick={() => setDocked(!docked)}
-              >
-                <PanelBottomClose size={18} />
-              </button>
-              <button
-                className="icon-button"
-                aria-label="Close assistant"
-                onClick={() => {
-                  setAgent(false);
-                  recognition.current?.stop();
-                  window.speechSynthesis?.cancel();
-                }}
-              >
-                <X size={19} />
-              </button>
-            </div>
-            <div className="agent-tabs">
-              <div className="segmented">
-                <button
-                  className={tab === "chat" ? "on" : ""}
-                  onClick={() => setTab("chat")}
-                >
-                  <MessageSquare size={15} />
-                  Chat
-                </button>
-                <button
-                  className={tab === "voice" ? "on" : ""}
-                  onClick={() => setTab("voice")}
-                >
-                  <Mic size={15} />
-                  Voice
-                </button>
-              </div>
-              <select
-                aria-label="Assistant task"
-                value={mode}
-                onChange={(e) => setMode(e.target.value as any)}
-              >
-                <option value="ask">Ask a question</option>
-                <option value="draft">Draft a playbook</option>
-              </select>
-            </div>
-            <div className="capture-toolbar">
-              <button
-                className="text-button"
-                onClick={() => setCapture(!capture)}
-              >
-                <Plus size={14} /> Capture from sources{" "}
-                {sources.length > 0 && `(${sources.length})`}
-              </button>
-            </div>
-            {capture && (
-              <div className="capture-panel">
-                <p>
-                  Explicitly select source text to share with the AI provider.
-                  Private files are never read automatically.
-                </p>
-                <div className="capture-actions">
-                  <select
-                    aria-label="Source provider"
-                    value={captureProvider}
-                    onChange={(e) => setCaptureProvider(e.target.value)}
-                  >
-                    <option value="drive">Google Drive</option>
-                    <option value="gmail">Gmail</option>
-                  </select>
-                  <button
-                    onClick={async () => {
-                      try {
-                        const r = await api(
-                          "/sources/google?provider=" + captureProvider,
-                        );
-                        setSourceOptions(r.sources);
-                        setCaptureError("");
-                      } catch (e: any) {
-                        setCaptureError(e.message);
-                      }
-                    }}
-                  >
-                    List sources
-                  </button>
-                  <label className="upload-button">
-                    Upload text
-                    <input
-                      type="file"
-                      accept=".txt,.md,text/plain,text/markdown"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        if (file.size > 12000) {
-                          setCaptureError("Use a text file under 12 KB.");
-                          return;
-                        }
-                        setSources([
-                          ...sources,
-                          {
-                            id: "upload-" + Date.now(),
-                            title: file.name,
-                            text: await file.text(),
-                          },
-                        ]);
-                        setConsent(false);
-                        setMode("draft");
-                      }}
-                    />
-                  </label>
-                </div>
-                {sourceOptions.length > 0 && (
-                  <select
-                    aria-label="Select source to read"
-                    value=""
-                    onChange={async (e) => {
-                      if (!e.target.value) return;
-                      try {
-                        const r = await api(
-                          "/sources/google/" +
-                            captureProvider +
-                            "/" +
-                            encodeURIComponent(e.target.value),
-                        );
-                        setSources([...sources, r]);
-                        setConsent(false);
-                        setMode("draft");
-                        setCaptureError("");
-                      } catch (err: any) {
-                        setCaptureError(err.message);
-                      }
-                    }}
-                  >
-                    <option value="">Select a source to read…</option>
-                    {sourceOptions.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.title}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                {sources.map((s, i) => (
-                  <div className="selected-source" key={s.id}>
-                    <FileText size={13} />
-                    {s.title}
-                    <button
-                      aria-label={"Remove " + s.title}
-                      onClick={() => {
-                        setSources(sources.filter((_, j) => i !== j));
-                        setConsent(false);
-                      }}
-                    >
-                      <X size={13} />
-                    </button>
-                  </div>
-                ))}
-                {sources.length > 0 && (
-                  <label className="consent">
-                    <input
-                      type="checkbox"
-                      checked={consent}
-                      onChange={(e) => setConsent(e.target.checked)}
-                    />{" "}
-                    I approve sending this selected text to the external AI
-                    provider for drafting.
-                  </label>
-                )}
-                {captureError && (
-                  <p className="capture-error" role="alert">
-                    {captureError}
-                  </p>
-                )}
-              </div>
-            )}
-            <div className="messages">
-              {!messages.length && (
-                <div className="agent-welcome">
-                  <span className="welcome-orb">
-                    <Sparkles size={30} />
-                  </span>
-                  <h2>How can I help your team?</h2>
-                  <p>
-                    Ask a question, work through a process, or turn what you
-                    know into a draft playbook.
-                  </p>
-                  <small>
-                    AI responses need review. Publishing always stays in your
-                    hands.
-                  </small>
-                </div>
-              )}
-              {messages.map((m, i) => (
-                <div key={i} className={"message " + m.role}>
-                  <span>
-                    {m.role === "assistant" ? (
-                      <Sparkles size={16} />
-                    ) : (
-                      <span className="mini-avatar">Y</span>
-                    )}
-                  </span>
-                  <div>
-                    {m.content}
-                    {m.sources && m.sources.length > 0 && (
-                      <div className="source-citations">
-                        <strong>Sources</strong>
-                        {m.sources.map((source: any, j: number) => {
-                          const article = data?.articles.find(
-                            (a) => a.id === source.id,
-                          );
-                          return (
-                            <div key={source.id || j}>
-                              {article ? (
-                                <button
-                                  onClick={() => {
-                                    setActive(article.id);
-                                    setPage("Knowledge Base");
-                                    setAgent(false);
-                                  }}
-                                >
-                                  <BookOpen size={12} />
-                                  {source.title || article.title}
-                                </button>
-                              ) : source.url ? (
-                                <a
-                                  href={source.url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  <FileText size={12} />
-                                  {source.title || source.id}
-                                  <ArrowUpRight size={12} />
-                                </a>
-                              ) : (
-                                <span>
-                                  <FileText size={12} />
-                                  {source.title || source.id}
-                                </span>
-                              )}
-                              {source.synthetic && <small>Demo</small>}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {busy && (
-                <div className="message assistant">
-                  <LoaderCircle className="spin" size={16} />
-                  <div>Working on that…</div>
-                </div>
-              )}
-            </div>
-            {tab === "voice" && (
-              <div className="voice-controls">
-                <button
-                  className={listening ? "mic-button listening" : "mic-button"}
-                  onClick={voice}
-                  disabled={busy}
-                >
-                  <Mic size={25} />
-                </button>
-                <strong>
-                  {listening ? "Listening… tap to finish" : "Tap to speak"}
-                </strong>
-                <p>
-                  {voiceNote ||
-                    "Browser speech services may send audio to your browser vendor. Supported browsers can read responses aloud."}
-                </p>
-              </div>
-            )}
-            <form
-              className="agent-input"
-              onSubmit={(e) => {
-                e.preventDefault();
-                send();
-              }}
-            >
-              <textarea
-                aria-label="Message assistant"
-                placeholder={
-                  mode === "draft"
-                    ? "Describe the process you want to capture…"
-                    : "Ask your assistant…"
-                }
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-              />
-              <button
-                className="send"
-                disabled={busy || !input.trim()}
-                aria-label="Send message"
-              >
-                <ArrowUp size={19} />
-              </button>
-            </form>
-            <div className="agent-disclaimer">
-              Drafts autosave. A staff member reviews and publishes.
-            </div>
-          </section>
-        </>
-      )}
+      {!inline && agent && assistant}
     </div>
   );
 }
@@ -1419,7 +1273,13 @@ function Connections({
               </button>
             </>
           ) : (
-            <a className="text-button" href="/auth/google/start">
+            <a
+              className="text-button"
+              href={
+                "/auth/google/start?returnTo=" +
+                encodeURIComponent(location.pathname + location.search + location.hash)
+              }
+            >
               Connect <ArrowUpRight size={14} />
             </a>
           )}
