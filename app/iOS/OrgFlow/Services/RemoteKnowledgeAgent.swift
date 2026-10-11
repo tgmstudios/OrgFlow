@@ -32,6 +32,8 @@ nonisolated struct RemoteKnowledgeAgent: KnowledgeAgentProviding {
         let url: String?
         let provider: String?
         let orgflowPath: String?
+        let synthetic: Bool?
+        let selectedDraft: Bool?
     }
 
     private struct Response: Decodable {
@@ -76,11 +78,23 @@ nonisolated struct RemoteKnowledgeAgent: KnowledgeAgentProviding {
     }
 
     private static func citation(for source: Source) -> Citation {
-        let kind: String? = switch source.sourceType {
-        case "file metadata": [source.provider, source.orgflowPath].compactMap { $0?.isEmpty == false ? $0 : nil }.joined(separator: " · ")
-        default: source.status.map { $0.prefix(1).uppercased() + $0.dropFirst() }
+        // Say what kind of evidence this is: approved knowledge, an unapproved draft, sample content, or
+        // only a file's location (the agent never reads file contents).
+        var labels: [String] = []
+        if source.synthetic == true { labels.append("Sample") }
+        switch source.sourceType {
+        case "file metadata":
+            labels.append("File location only")
+            labels += [source.provider, source.orgflowPath].compactMap { $0?.isEmpty == false ? $0 : nil }
+        default:
+            if source.selectedDraft == true || source.status == "draft" {
+                labels.append("Unapproved draft")
+            } else if let status = source.status {
+                labels.append(status == "published snapshot" ? "Approved" : status.prefix(1).uppercased() + status.dropFirst())
+            }
         }
-        return Citation(id: source.id, title: source.title, snippet: kind?.isEmpty == false ? kind : nil, url: source.url.flatMap(URL.init(string:)))
+        let snippet = labels.isEmpty ? nil : labels.joined(separator: " · ")
+        return Citation(id: source.id, title: source.title, snippet: snippet, url: source.url.flatMap(URL.init(string:)))
     }
 
     /// Drops inline `[id]` / `[id, id]` markers that name known sources; other brackets are left alone.

@@ -13,3 +13,4 @@ dist/
 
 .monetize/
 .env.monetization.local
+/app/iOS/OrgFlow.xcodeproj/project.xcworkspace/xcuserdata

@@ -1,22 +1,25 @@
 import UIKit
 
-/// The primary Ask screen. A full-bleed composition around the Continuity Knot — a touchable,
+/// The primary screen. A full-bleed composition around the Continuity Knot — a touchable,
 /// voice-reactive object — that condenses into a header band when the conversation begins.
+/// Three modes share it: Ask (answers from approved knowledge), Capture (narrate a process into a
+/// playbook draft) and Handoff (narrate a role into a handoff and onboarding guide).
 final class AskViewController: UIViewController {
     private let coordinator: AskScreenCoordinator
 
     // Header
-    private let markView = ContinuityMarkView()
     private let wordmark = UILabel()
     private let workspaceLabel = UILabel()
     private let historyButton = UIButton(configuration: .glass())
     private let newPromptButton = UIButton(configuration: .glass())
+    private let libraryButton = UIButton(configuration: .glass())
 
     // Landing
     private let greetingLabel = UILabel()
     private let headlineLabel = UILabel()
     private let subtitleLabel = UILabel()
     private let heroStack = UIStackView()
+    private let modeControl = UISegmentedControl(items: AskMode.allCases.map(\.title))
     private let knotView = LivingThreadView()
     private let hintLabel = UILabel()
     private let suggestions = SuggestionCapsulesView(suggestions: Suggestion.defaults, horizontalInset: ContinuityTheme.Metrics.gutter)
@@ -43,6 +46,9 @@ final class AskViewController: UIViewController {
     private var lastTranscript: TranscriptUpdate?
     private var heldToTalk = false
     private var backdropFrame: CGRect = .zero
+    private var appliedMode: AskMode?
+    /// Ask suggestions: starters until the workspace's own are written on device.
+    private var askSuggestions = Suggestion.defaults
 
     init(coordinator: AskScreenCoordinator) {
         self.coordinator = coordinator
@@ -69,13 +75,21 @@ final class AskViewController: UIViewController {
     /// Replaces the starter capsules with questions written on device from this workspace's content.
     private func loadSuggestions() async {
         guard coordinator.user != nil,
-              let workspace = try? await OrgFlowAPI.shared.workspaceSummary(),
-              let generated = await SuggestionGenerator.suggestions(for: workspace) else { return }
-        suggestions.setSuggestions(generated, animated: true)
+              let workspace = try? await OrgFlowAPI.shared.workspace(),
+              let generated = await SuggestionGenerator.suggestions(for: workspace.summary) else { return }
+        askSuggestions = generated
+        if coordinator.mode == .ask { suggestions.setSuggestions(generated, animated: true) }
+    }
+
+    /// The view controller to present from: the top of whatever sheet is showing.
+    private var presenter: UIViewController {
+        var top: UIViewController = self
+        while let next = top.presentedViewController, !next.isBeingDismissed { top = next }
+        return top
     }
 
     private func presentSignIn() {
-        guard presentedViewController == nil else { return }
+        guard !(presenter is SignInViewController) else { return }
         let signIn = SignInViewController()
         signIn.onSignedIn = { [weak self] user in
             guard let self else { return }
@@ -84,12 +98,61 @@ final class AskViewController: UIViewController {
         }
         signIn.sheetPresentationController?.detents = [.large()]
         signIn.sheetPresentationController?.prefersGrabberVisible = true
-        present(signIn, animated: true)
+        presenter.present(signIn, animated: true)
+    }
+
+    private func presentLibrary() {
+        let library = LibraryViewController(workspace: nil)
+        library.onSignInRequested = { [weak self] in self?.presentSignIn() }
+        presenter.present(UINavigationController(rootViewController: library), animated: true)
+    }
+
+    private func presentArticle(id: String) {
+        let article = ArticleViewController(articleID: id)
+        article.onPublished = { [weak self] published in self?.coordinator.markPublished(published) }
+        presenter.present(UINavigationController(rootViewController: article), animated: true)
+    }
+
+    /// Capture and Handoff starters: tapping one begins the narration with its topic and starts listening.
+    private static func starters(for mode: AskMode) -> [Suggestion] {
+        switch mode {
+        case .ask: []
+        case .capture: [
+            Suggestion(symbol: "heart.text.square", text: "How we thank donors"),
+            Suggestion(symbol: "calendar", text: "Our month-end close"),
+            Suggestion(symbol: "person.badge.plus", text: "Onboarding a volunteer"),
+        ]
+        case .handoff: [
+            Suggestion(symbol: "calendar", text: "What I do each week"),
+            Suggestion(symbol: "person.2", text: "Who I work with"),
+            Suggestion(symbol: "folder", text: "Where everything lives"),
+        ]
+        }
+    }
+
+    private func applyMode(_ mode: AskMode, animated: Bool) {
+        modeControl.selectedSegmentIndex = mode.rawValue
+        let copy: (headline: String, subtitle: String, placeholder: String) = switch mode {
+        case .ask: ("Knowledge\nmoves forward.", "Ask what your organization already knows.", "Ask OrgFlow anything…")
+        case .capture: ("Show how the\nwork gets done.", "Talk through a process. OrgFlow drafts the playbook, and your team approves it.", "Describe a process, or hold the knot…")
+        case .handoff: ("Leave it in\ngood hands.", "Walk through your role. OrgFlow drafts a handoff and onboarding guide for whoever's next.", "Describe your role, or hold the knot…")
+        }
+        let update = {
+            let attributes = self.headlineLabel.attributedText?.attributes(at: 0, effectiveRange: nil) ?? [:]
+            self.headlineLabel.attributedText = NSAttributedString(string: copy.headline, attributes: attributes)
+            self.subtitleLabel.text = copy.subtitle
+        }
+        if animated {
+            UIView.transition(with: heroStack, duration: 0.3, options: [.transitionCrossDissolve, .allowUserInteraction], animations: update)
+        } else {
+            update()
+        }
+        composer.placeholder = copy.placeholder
+        suggestions.setSuggestions(mode == .ask ? askSuggestions : Self.starters(for: mode), animated: animated)
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        markView.animateDraw()
         refreshKnotBackdrop()
     }
 
@@ -129,7 +192,7 @@ final class AskViewController: UIViewController {
     }
 
     private func buildHeader() {
-        wordmark.attributedText = NSAttributedString(string: "Continuity", attributes: [
+        wordmark.attributedText = NSAttributedString(string: "OrgFlow", attributes: [
             .font: ContinuityTheme.Font.display(19, weight: .semibold),
             .foregroundColor: ContinuityTheme.Color.ink,
             .kern: -0.2,
@@ -141,16 +204,17 @@ final class AskViewController: UIViewController {
         configureCircleButton(historyButton, symbol: "clock.arrow.circlepath")
         historyButton.showsMenuAsPrimaryAction = true
         configureCircleButton(newPromptButton, symbol: "square.and.pencil")
+        configureCircleButton(libraryButton, symbol: "books.vertical")
         newPromptButton.alpha = 0
         newPromptButton.isHidden = true
 
         let names = UIStackView(arrangedSubviews: [wordmark, workspaceLabel])
         names.axis = .vertical
         names.spacing = 0
-        let brand = UIStackView(arrangedSubviews: [markView, names])
+        let brand = UIStackView(arrangedSubviews: [names])
         brand.spacing = 10
         brand.alignment = .center
-        let trailing = UIStackView(arrangedSubviews: [newPromptButton, historyButton])
+        let trailing = UIStackView(arrangedSubviews: [newPromptButton, libraryButton, historyButton])
         trailing.spacing = 10
 
         for sub in [brand, trailing] {
@@ -203,8 +267,16 @@ final class AskViewController: UIViewController {
         subtitleLabel.textColor = ContinuityTheme.Color.secondaryInk
         subtitleLabel.text = "Ask what your organization already knows."
 
+        modeControl.selectedSegmentIndex = AskMode.ask.rawValue
+        modeControl.setTitleTextAttributes([.font: ContinuityTheme.Font.text(14, weight: .semibold), .foregroundColor: ContinuityTheme.Color.ink], for: .selected)
+        modeControl.setTitleTextAttributes([.font: ContinuityTheme.Font.text(14, weight: .medium), .foregroundColor: ContinuityTheme.Color.secondaryInk], for: .normal)
+        let modeRow = UIStackView(arrangedSubviews: [modeControl, UIView()])
+        modeRow.axis = .horizontal
+
         heroStack.axis = .vertical
         heroStack.spacing = 12
+        heroStack.addArrangedSubview(modeRow)
+        heroStack.setCustomSpacing(22, after: modeRow)
         heroStack.addArrangedSubview(greetingLabel)
         heroStack.addArrangedSubview(headlineLabel)
         heroStack.addArrangedSubview(subtitleLabel)
@@ -232,9 +304,9 @@ final class AskViewController: UIViewController {
         knotBelowHero = knotView.topAnchor.constraint(equalTo: heroStack.bottomAnchor, constant: -8)
         knotBelowHeader = knotView.topAnchor.constraint(equalTo: headerBottom, constant: 2)
         NSLayoutConstraint.activate([
-            heroStack.topAnchor.constraint(equalTo: headerBottom, constant: 26),
+            heroStack.topAnchor.constraint(equalTo: headerBottom, constant: 18),
             heroStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: gutter),
-            heroStack.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -gutter),
+            heroStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -gutter),
 
             knotView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             knotView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -308,13 +380,44 @@ final class AskViewController: UIViewController {
         composer.onTextChange = { [weak self] text in self?.coordinator.draft = text }
 
         suggestions.onSelect = { [weak self] suggestion in
-            self?.composer.text = suggestion.text
-            self?.send(suggestion.text)
+            guard let self else { return }
+            if coordinator.mode == .ask {
+                composer.text = suggestion.text
+                send(suggestion.text)
+            } else {
+                // Begin the narration with the topic, then listen for the rest.
+                composer.text = suggestion.text + ": "
+                coordinator.draft = composer.text
+                dismissHint()
+                coordinator.toggleMicrophone()
+            }
         }
 
+        modeControl.addAction(UIAction { [weak self] _ in
+            guard let self, let mode = AskMode(rawValue: modeControl.selectedSegmentIndex) else { return }
+            UISelectionFeedbackGenerator().selectionChanged()
+            coordinator.setMode(mode)
+            // A refused switch (mid-answer) snaps back.
+            modeControl.selectedSegmentIndex = coordinator.mode.rawValue
+        }, for: .valueChanged)
+
+        // Swipe down anywhere on the landing to put the keyboard away (the conversation scrolls it away
+        // interactively). Recognized alongside the knot's own drag.
+        let swipe = UISwipeGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        swipe.direction = .down
+        swipe.cancelsTouchesInView = false
+        swipe.delegate = self
+        view.addGestureRecognizer(swipe)
+
+        libraryButton.addAction(UIAction { [weak self] _ in self?.presentLibrary() }, for: .primaryActionTriggered)
+
         conversationView.onRetry = { [weak self] id in self?.coordinator.retry(id) }
-        conversationView.onOpenCitation = { citation in
-            if let url = citation.url { UIApplication.shared.open(url) }
+        conversationView.onOpenCitation = { [weak self] citation in
+            if let url = citation.url {
+                UIApplication.shared.open(url)
+            } else {
+                self?.presentArticle(id: citation.id)
+            }
         }
 
         newPromptButton.addAction(UIAction { [weak self] _ in
@@ -330,6 +433,10 @@ final class AskViewController: UIViewController {
         }])
     }
 
+    @objc private func dismissKeyboard() {
+        composer.blur()
+    }
+
     private func dismissHint() {
         guard hintLabel.alpha > 0 else { return }
         UIView.animate(withDuration: 0.4) { self.hintLabel.alpha = 0 }
@@ -341,36 +448,77 @@ final class AskViewController: UIViewController {
                 self?.coordinator.newConversation()
             },
         ]
-        let recent = coordinator.recentPrompts.prefix(8).map { prompt in
-            UIAction(title: prompt, image: UIImage(systemName: "text.bubble")) { [weak self] _ in
-                self?.coordinator.newConversation()
-                self?.send(prompt)
+        let recent = coordinator.conversations.prefix(10).map { saved in
+            let symbol = switch saved.mode {
+            case .ask: "text.bubble"
+            case .capture: "list.bullet.rectangle"
+            case .handoff: "person.2.wave.2"
+            }
+            let when = saved.updatedAt.formatted(.relative(presentation: .named))
+            return UIAction(title: saved.title, subtitle: "\(saved.mode.title) · \(when)", image: UIImage(systemName: symbol)) { [weak self] _ in
+                self?.coordinator.restore(saved.id)
             }
         }
         if !recent.isEmpty {
-            elements.append(UIMenu(title: "Asked this session", options: .displayInline, children: recent))
+            let clear = UIAction(title: "Clear history", image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+                self?.coordinator.clearHistory()
+            }
+            elements.append(UIMenu(title: "Recent", options: .displayInline, children: recent + [clear]))
+        }
+
+        let available = PlaybookDrafter.isOnDeviceAvailable
+        let onDevice = UIAction(
+            title: "Draft on this iPhone",
+            subtitle: available ? "Capture and Handoff use Apple Intelligence" : "Needs Apple Intelligence",
+            image: UIImage(systemName: "iphone.gen3"),
+            attributes: available ? [] : .disabled,
+            state: PlaybookDrafter.prefersOnDevice && available ? .on : .off
+        ) { _ in
+            PlaybookDrafter.prefersOnDevice.toggle()
         }
         let account: UIAction = if let user = coordinator.user {
             UIAction(title: "Sign out", subtitle: user.email, image: UIImage(systemName: "rectangle.portrait.and.arrow.right")) { [weak self] _ in
                 guard let self else { return }
                 coordinator.signOut()
-                suggestions.setSuggestions(Suggestion.defaults, animated: true)
+                askSuggestions = Suggestion.defaults
+                if coordinator.mode == .ask { suggestions.setSuggestions(Suggestion.defaults, animated: true) }
             }
         } else {
             UIAction(title: "Sign in to OrgFlow", image: UIImage(systemName: "person.crop.circle")) { [weak self] _ in
                 self?.presentSignIn()
             }
         }
-        elements.append(UIMenu(options: .displayInline, children: [account]))
+        elements.append(UIMenu(options: .displayInline, children: [onDevice, account]))
         return elements
     }
 
     private func send(_ text: String) {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        if coordinator.needsSharingConsent {
+            confirmSharing { [weak self] in
+                self?.coordinator.grantSharingConsent()
+                self?.send(text)
+            }
+            return
+        }
         UIImpactFeedbackGenerator(style: .light, view: composer).impactOccurred()
         coordinator.submit(text)
         composer.reset()
         knotView.pulse()
+    }
+
+    /// Matches the web: a narration is only sent to the drafting AI after the person agrees.
+    private func confirmSharing(_ confirmed: @escaping () -> Void) {
+        let kind = coordinator.mode == .handoff ? "handoff guide" : "playbook"
+        let alert = UIAlertController(
+            title: "Share with the drafting AI?",
+            message: "Your narration is sent to OrgFlow's drafting AI to write a \(kind) draft. Nothing is published until someone approves it.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Share and draft", style: .default) { _ in confirmed() })
+        alert.preferredAction = alert.actions.last
+        presenter.present(alert, animated: true)
     }
 
     // MARK: - State
@@ -382,6 +530,10 @@ final class AskViewController: UIViewController {
         let conversation = coordinator.isConversationActive
         let transcript = coordinator.transcript
         workspaceLabel.text = coordinator.user?.name ?? "Demo workspace"
+        if coordinator.mode != appliedMode {
+            applyMode(coordinator.mode, animated: appliedMode != nil)
+            appliedMode = coordinator.mode
+        }
 
         // Transcript is shown live while capturing; once finalized it becomes editable draft text.
         if transcript != lastTranscript {
@@ -600,5 +752,11 @@ private final class ErrorNoticeView: UIView {
         titleLabel.text = error.title
         messageLabel.text = error.message
         actionButton.configuration?.title = error.recoveryTitle
+    }
+}
+
+extension AskViewController: UIGestureRecognizerDelegate {
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+        true
     }
 }

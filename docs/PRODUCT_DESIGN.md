@@ -39,3 +39,13 @@ The user requested subagents, frontend and backend implementation, reasonable as
 - ElevenLabs realtime voice through a private agent and an authenticated, short-lived signed session URL. The agent's API key remains server-side; the provider's data handling applies after a staff member starts a voice session.
 
 These implementation choices are agent assumptions, not independently confirmed human selections. Implementation status and validation results belong in shared memory and project READMEs.
+
+## iOS app (voice-first companion)
+
+Status: implemented, builds; not yet verified on device or with a real account.
+
+- Knot-centred home with three modes: Ask (answers from approved knowledge), Capture (narrate a process by voice to draft a playbook), and Handoff (narrate a role to draft a handoff guide with a first-30-days onboarding checklist).
+- Capture and Handoff produce drafts only. Agent-created content requires human approval before publication, consistent with the Knowledge Base rules above; Ask cannot use a draft until staff approve and publish it.
+- Drafting defaults to the backend agent (`mode: "draft"`). An optional "Draft on this iPhone" toggle (off by default, Apple Intelligence required) structures the narration on device; only the finished draft is sent to the server.
+- Library is read-and-approve: drafts awaiting review, articles, indexed files, and upcoming meetings and deadlines. There is no rich-text editing on iOS; editing stays on the web.
+- Provider connections (Google Drive, Gmail) stay on the web at orgflow.dev; the iOS app does not handle them.

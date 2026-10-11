@@ -14,8 +14,10 @@ final class AskScreenCoordinator {
     private(set) var transcript: TranscriptUpdate?
     /// False when on-device transcription is unavailable; voice then drives the visualizer only.
     private(set) var transcriptionAvailable = true
-    /// Prompts asked this session, newest first.
-    private(set) var recentPrompts: [String] = []
+    /// Ask, Capture or Handoff.
+    private(set) var mode: AskMode = .ask
+    /// Recent conversations on this device, newest first.
+    private(set) var conversations: [SavedConversation] = ConversationStore.load()
     /// Composer text. Preserved across errors and voice sessions.
     var draft: String = ""
 
@@ -31,6 +33,21 @@ final class AskScreenCoordinator {
     @ObservationIgnored private var draftBeforeVoice = ""
     @ObservationIgnored private var conversationID = UUID()
     @ObservationIgnored private var isEditing = false
+    /// The running capture session: what was narrated and the draft it is building.
+    @ObservationIgnored private var captureTurns: [PlaybookDrafter.Turn] = []
+    @ObservationIgnored private var captureArticleID: String?
+    /// Agreement to send this capture conversation's narration to the backend drafting AI.
+    @ObservationIgnored private var sharingConsented = false
+
+    /// Capture and Handoff narrations go to the backend drafter only with consent, once per
+    /// conversation. Drafting on device needs none.
+    var needsSharingConsent: Bool {
+        mode != .ask && !sharingConsented && !(PlaybookDrafter.prefersOnDevice && PlaybookDrafter.isOnDeviceAvailable)
+    }
+
+    func grantSharingConsent() {
+        sharingConsented = true
+    }
 
     /// The signed-in OrgFlow account, once known.
     private(set) var user: OrgFlowUser?
@@ -173,10 +190,8 @@ final class AskScreenCoordinator {
             voiceSession += 1
         }
         draft = ""
-        recentPrompts.removeAll { $0 == text }
-        recentPrompts.insert(text, at: 0)
         UserDefaults.standard.set(true, forKey: AskScreenCoordinator.hasAskedKey)
-        let entry = ConversationEntry(id: UUID(), prompt: text)
+        let entry = ConversationEntry(id: UUID(), prompt: text, mode: mode)
         entries.append(entry)
         run(entry.id)
     }
@@ -190,6 +205,11 @@ final class AskScreenCoordinator {
     }
 
     private func run(_ id: UUID) {
+        guard let entry = entries.first(where: { $0.id == id }) else { return }
+        if entry.mode == .ask { runAsk(id) } else { runCapture(entry) }
+    }
+
+    private func runAsk(_ id: UUID) {
         state = .thinking
         let history = entries
             .filter { $0.id != id && $0.status == .complete }
@@ -220,23 +240,136 @@ final class AskScreenCoordinator {
                     self.entries[index].status = .complete
                 }
                 self.state = self.isEditing ? .typing : .idle
-            } catch OrgFlowAPIError.signInRequired {
-                guard let self, !Task.isCancelled else { return }
-                if let index = self.entries.firstIndex(where: { $0.id == id }) {
-                    self.entries[index].status = .failed(OrgFlowAPIError.signInRequired.errorDescription ?? "")
-                }
-                self.user = nil
-                self.state = .error(.signInRequired)
-                self.onSignInRequested?()
+                self.persistConversation()
             } catch {
                 guard let self, !Task.isCancelled else { return }
-                let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-                if let index = self.entries.firstIndex(where: { $0.id == id }) {
-                    self.entries[index].status = .failed(message)
-                }
-                self.state = .error(.agentUnavailable(message))
+                self.fail(id, error)
             }
         }
+    }
+
+    /// Capture and Handoff: the narration becomes (or revises) a draft article awaiting approval.
+    /// Speaking again in the same conversation adds detail to the same draft.
+    private func runCapture(_ entry: ConversationEntry) {
+        state = .thinking
+        let id = entry.id
+        let turns = captureTurns + [PlaybookDrafter.Turn(role: "user", content: PlaybookDrafter.frame(entry.prompt, mode: entry.mode, isFirst: captureArticleID == nil))]
+        let articleID = captureArticleID
+        answerTask?.cancel()
+        answerTask = Task { [weak self] in
+            do {
+                let result = try await PlaybookDrafter.draft(turns: turns, mode: entry.mode, articleID: articleID)
+                guard let self, !Task.isCancelled, let index = self.entries.firstIndex(where: { $0.id == id }) else { return }
+                self.captureTurns = turns + [PlaybookDrafter.Turn(role: "assistant", content: result.message)]
+                self.captureArticleID = result.article.id
+                let origin = result.onDevice ? "Draft · written on this iPhone · awaiting review" : "Draft · awaiting review"
+                self.entries[index].draftArticleID = result.article.id
+                self.entries[index].citations = [Citation(id: result.article.id, title: result.article.title, snippet: origin, url: nil)]
+                self.entries[index].status = .streaming
+                self.state = .responding
+                let closing = articleID == nil
+                    ? "Open the draft to review and publish it, or keep talking to add detail."
+                    : "The draft is updated. Keep going, or open it to review and publish."
+                for chunk in Self.words(result.message + "\n\n" + closing) {
+                    self.entries[index].answer += chunk
+                    try await Task.sleep(for: .milliseconds(24))
+                }
+                self.entries[index].status = .complete
+                self.state = self.isEditing ? .typing : .idle
+                self.persistConversation()
+            } catch {
+                guard let self, !Task.isCancelled else { return }
+                self.fail(id, error)
+            }
+        }
+    }
+
+    private func fail(_ id: UUID, _ error: Error) {
+        let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        if let index = entries.firstIndex(where: { $0.id == id }) {
+            entries[index].status = .failed(message)
+        }
+        switch error as? OrgFlowAPIError {
+        case .signInRequired:
+            user = nil
+            state = .error(.signInRequired)
+            onSignInRequested?()
+        case .planRequired(let detail):
+            state = .error(.planRequired(detail))
+        default:
+            state = .error(.agentUnavailable(message))
+        }
+    }
+
+    private static func words(_ text: String) -> [String] {
+        var chunks: [String] = []
+        var current = ""
+        for character in text {
+            current.append(character)
+            if character.isWhitespace, current.count >= 3 {
+                chunks.append(current)
+                current = ""
+            }
+        }
+        if !current.isEmpty { chunks.append(current) }
+        return chunks
+    }
+
+    // MARK: - Modes and history
+
+    func setMode(_ newMode: AskMode) {
+        guard newMode != mode, state != .thinking, state != .responding else { return }
+        if state.isCapturing { Task { await stopListening() } }
+        if isConversationActive { newConversation() }
+        mode = newMode
+        resetCapture()
+    }
+
+    private func resetCapture() {
+        captureTurns = []
+        captureArticleID = nil
+        sharingConsented = false
+    }
+
+    private func persistConversation() {
+        let finished = entries.filter { $0.status == .complete }
+        guard !finished.isEmpty else { return }
+        conversations.removeAll { $0.id == conversationID }
+        conversations.insert(SavedConversation(id: conversationID, updatedAt: .now, mode: mode, entries: finished), at: 0)
+        ConversationStore.save(conversations)
+    }
+
+    /// Reopens a saved conversation; Capture conversations continue building the same draft.
+    func restore(_ id: UUID) {
+        guard let saved = conversations.first(where: { $0.id == id }), state != .thinking, state != .responding else { return }
+        answerTask?.cancel()
+        entries = saved.entries
+        conversationID = saved.id
+        mode = saved.mode
+        resetCapture()
+        if saved.mode != .ask {
+            for (index, entry) in saved.entries.enumerated() {
+                captureTurns.append(.init(role: "user", content: PlaybookDrafter.frame(entry.prompt, mode: saved.mode, isFirst: index == 0)))
+                captureTurns.append(.init(role: "assistant", content: entry.answer))
+            }
+            captureArticleID = saved.entries.last { $0.draftArticleID != nil }?.draftArticleID
+        }
+        state = isEditing ? .typing : .idle
+    }
+
+    /// After a draft is approved in the article sheet, its chip says so.
+    func markPublished(_ article: Article) {
+        for index in entries.indices {
+            entries[index].citations = entries[index].citations.map {
+                $0.id == article.id ? Citation(id: $0.id, title: article.displayTitle, snippet: "Published", url: $0.url) : $0
+            }
+        }
+        persistConversation()
+    }
+
+    func clearHistory() {
+        conversations = []
+        ConversationStore.save([])
     }
 
     func newConversation() {
@@ -244,6 +377,7 @@ final class AskScreenCoordinator {
         answerTask = nil
         entries = []
         conversationID = UUID()
+        resetCapture()
         state = isEditing ? .typing : .idle
     }
 
@@ -262,6 +396,9 @@ final class AskScreenCoordinator {
             Task { await startListening() }
         case .signInRequired:
             onSignInRequested?()
+        case .planRequired:
+            state = .idle
+            UIApplication.shared.open(OrgFlowAPI.shared.pricingURL)
         case .agentUnavailable:
             if let failed = entries.last(where: { if case .failed = $0.status { true } else { false } }) {
                 state = .idle

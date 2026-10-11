@@ -96,7 +96,14 @@ Official references consulted:
 - Superseded: the proposed NDJSON `POST /api/ask` contract. The iOS app now uses the existing `POST /api/agent` (`mode: "ask"`, `messages`) and reveals the JSON answer progressively on device; inline `[source id]` markers become citation chips.
 - Base URL comes from the Info.plist key `OrgFlowBaseURL` (default `https://orgflow.dev`). Auth is the backend's email/password session cookie (`/api/auth/login|signup|me|logout`); a 401 opens an in-app sign-in sheet and then retries the pending question.
 - Landing suggestions are generated on device with Apple Foundation Models from `/api/bootstrap` article and category titles (titles only, never leave the device); without the model it falls back to article titles.
-- Status: builds; not yet verified against production with a real account.
+- The iOS home screen has three modes in one place, mirroring the product brief: Ask (answers from approved knowledge), Capture (narrate a process by voice → draft process playbook), and Handoff (the brief's "Transfer": narrate your role → draft role handoff guide with a first-30-days onboarding checklist for the successor).
+- Capture/Handoff pipeline: on-device SpeechAnalyzer transcript → drafter → saved as a draft article (never published automatically) → staff open the draft and tap "Approve & publish" (`POST /api/articles/{id}/publish`). Speaking again in the same conversation revises the same draft.
+- Drafter default: backend `POST /api/agent` with `mode: "draft"` (Luminal), which can reference existing workspace knowledge. Optional setting "Draft on this iPhone" (off by default; only when Apple Intelligence is available) uses Apple Foundation Models on device to structure the narration into sections, then saves it via `POST /api/articles` or `PATCH /api/articles/{id}`; only the finished draft leaves the device. Falls back to the backend when the model is unavailable.
+- Library sheet (Knowledge / Files / Upcoming) reads `/api/bootstrap`: drafts awaiting review, articles by category with status badges (Published, Draft, Changes awaiting review, Sample), indexed files that open the original in its provider, and upcoming meetings/deadlines. Citation chips in answers open the article and are labelled Approved / Unapproved draft / Sample / File location only.
+- Google Drive and Gmail are connected on the web (orgflow.dev); the iOS app does not handle provider connection.
+- Billing: a 403 entitlement denial (`decision: "DENY"`) shows "Your plan doesn't include this" with a "See plans" action opening the hosted pricing URL from the `mai_pricing_url` cookie (fallback `https://orgflow.dev/a/`).
+- Housekeeping: conversation history persists on device (last 20, Application Support); visible branding is OrgFlow.
+- Status: builds; not yet verified on device or against production with a real account.
 
 ## Next session
 

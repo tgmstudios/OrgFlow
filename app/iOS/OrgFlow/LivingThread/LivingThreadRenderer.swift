@@ -441,7 +441,10 @@ final class LivingThreadRenderer: NSObject, MTKViewDelegate {
     private func stepForm(dt: Double, audio: AudioFeatureSnapshot) {
         if motion.mode == .listening {
             flowing = true
-            formRate += (0.12 - formRate) * (1 - exp(-dt / 1.2))
+            // Leave the resting knot promptly so the first words visibly loosen it, then settle into
+            // the steady pace for the forms that follow.
+            let target = formPosition < 1.4 ? 0.5 : 0.14
+            formRate += (target - formRate) * (1 - exp(-dt / 0.45))
             homeBlend = max(0, homeBlend - dt / 1.2)
             fill = min(1, fill + Double(audio.loudness) * dt * 0.22)
         } else {

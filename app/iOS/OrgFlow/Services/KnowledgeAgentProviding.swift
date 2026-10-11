@@ -1,6 +1,6 @@
 import Foundation
 
-nonisolated struct Citation: Sendable, Hashable, Identifiable, Decodable {
+nonisolated struct Citation: Sendable, Hashable, Identifiable, Codable {
     let id: String
     let title: String
     let snippet: String?

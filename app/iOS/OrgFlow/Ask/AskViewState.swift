@@ -24,6 +24,7 @@ enum AskError: Equatable {
     case captureFailed(String)
     case agentUnavailable(String)
     case signInRequired
+    case planRequired(String)
 
     var title: String {
         switch self {
@@ -32,6 +33,7 @@ enum AskError: Equatable {
         case .captureFailed: "Couldn't start the microphone"
         case .agentUnavailable: "Couldn't reach your knowledge"
         case .signInRequired: "Sign in to OrgFlow"
+        case .planRequired: "Your plan doesn't include this"
         }
     }
 
@@ -42,6 +44,7 @@ enum AskError: Equatable {
         case .captureFailed(let detail): detail
         case .agentUnavailable(let detail): detail
         case .signInRequired: "Your question is saved. Sign in and it will be asked right away."
+        case .planRequired(let detail): detail
         }
     }
 
@@ -51,13 +54,32 @@ enum AskError: Equatable {
         case .interrupted, .captureFailed: "Try again"
         case .agentUnavailable: "Retry"
         case .signInRequired: "Sign in"
+        case .planRequired: "See plans"
         }
     }
 }
 
-/// One prompt and its grounded answer.
-struct ConversationEntry: Identifiable, Equatable {
-    enum Status: Equatable {
+/// What the screen is doing with what you say: answering from knowledge, or capturing it.
+enum AskMode: Int, CaseIterable, Codable {
+    /// Ask: questions answered from approved knowledge.
+    case ask
+    /// Capture: narrate how a process works; OrgFlow drafts a playbook for approval.
+    case capture
+    /// Transfer: narrate your role before leaving; OrgFlow drafts a handoff and onboarding guide.
+    case handoff
+
+    var title: String {
+        switch self {
+        case .ask: "Ask"
+        case .capture: "Capture"
+        case .handoff: "Handoff"
+        }
+    }
+}
+
+/// One prompt and its grounded answer (or, for Capture and Handoff, the narration and its draft).
+struct ConversationEntry: Identifiable, Equatable, Codable {
+    enum Status: Equatable, Codable {
         case thinking
         case streaming
         case complete
@@ -66,6 +88,9 @@ struct ConversationEntry: Identifiable, Equatable {
 
     let id: UUID
     let prompt: String
+    var mode: AskMode = .ask
+    /// The draft article this narration produced or revised (Capture and Handoff).
+    var draftArticleID: String?
     var answer: String = ""
     var citations: [Citation] = []
     var status: Status = .thinking

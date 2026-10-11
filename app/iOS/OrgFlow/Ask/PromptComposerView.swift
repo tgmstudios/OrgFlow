@@ -19,6 +19,11 @@ final class PromptComposerView: UIView, UITextViewDelegate {
         }
     }
 
+    var placeholder: String {
+        get { placeholderLabel.text ?? "" }
+        set { placeholderLabel.text = newValue }
+    }
+
     var isListening: Bool = false {
         didSet {
             guard isListening != oldValue else { return }
@@ -151,7 +156,7 @@ final class PromptComposerView: UIView, UITextViewDelegate {
         textView.translatesAutoresizingMaskIntoConstraints = false
         fieldGlass.contentView.addSubview(textView)
 
-        placeholderLabel.text = "Ask Continuity anything…"
+        placeholderLabel.text = "Ask OrgFlow anything…"
         placeholderLabel.font = ContinuityTheme.Font.text(17)
         placeholderLabel.textColor = ContinuityTheme.Color.secondaryInk
         placeholderLabel.isUserInteractionEnabled = false

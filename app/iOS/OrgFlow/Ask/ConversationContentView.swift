@@ -159,6 +159,9 @@ private final class ConversationEntryView: UIView {
     private let answerContainer = UIView()
     private let answerTextView = UITextView()
     private let citationsSection = UIStackView()
+    private let youLabel = UILabel()
+    private let sourcesCaption = UILabel()
+    private let thinkingLabel = UILabel()
     private let flow = CitationFlowView()
     private let failedStack = UIStackView()
     private let failedLabel = UILabel()
@@ -203,7 +206,6 @@ private final class ConversationEntryView: UIView {
             rule.widthAnchor.constraint(equalToConstant: 14),
             rule.heightAnchor.constraint(equalToConstant: 1.5),
         ])
-        let youLabel = UILabel()
         youLabel.attributedText = ContinuityTheme.caption("You asked")
         let header = UIStackView(arrangedSubviews: [rule, youLabel, UIView()])
         header.axis = .horizontal
@@ -217,7 +219,6 @@ private final class ConversationEntryView: UIView {
         root.addArrangedSubview(promptGroup)
 
         // Thinking
-        let thinkingLabel = UILabel()
         thinkingLabel.text = "Finding the relevant knowledge\u{2026}"
         thinkingLabel.font = ContinuityTheme.Font.text(15)
         thinkingLabel.textColor = ContinuityTheme.Color.secondaryInk
@@ -235,7 +236,7 @@ private final class ConversationEntryView: UIView {
         hairline.translatesAutoresizingMaskIntoConstraints = false
 
         let answerCaption = UILabel()
-        answerCaption.attributedText = ContinuityTheme.caption("Continuity", color: ContinuityTheme.Color.teal)
+        answerCaption.attributedText = ContinuityTheme.caption("OrgFlow", color: ContinuityTheme.Color.teal)
 
         answerTextView.isEditable = false
         answerTextView.isScrollEnabled = false
@@ -248,7 +249,6 @@ private final class ConversationEntryView: UIView {
             .underlineStyle: NSUnderlineStyle.single.rawValue,
         ]
 
-        let sourcesCaption = UILabel()
         sourcesCaption.attributedText = ContinuityTheme.caption("Sources")
         citationsSection.axis = .vertical
         citationsSection.spacing = 10
@@ -328,8 +328,23 @@ private final class ConversationEntryView: UIView {
         entryID = entry.id
 
         if isFirst {
+            // Narrations are long, so they read as body text rather than a headline.
+            let narrated = entry.mode != .ask
+            let caption = switch entry.mode {
+            case .ask: "You asked"
+            case .capture: "You described"
+            case .handoff: "Your handoff"
+            }
+            youLabel.attributedText = ContinuityTheme.caption(caption)
+            thinkingLabel.text = switch entry.mode {
+            case .ask: "Finding the relevant knowledge\u{2026}"
+            case .capture: "Drafting the playbook\u{2026}"
+            case .handoff: "Drafting the handoff guide\u{2026}"
+            }
+            sourcesCaption.attributedText = ContinuityTheme.caption(narrated ? "Draft" : "Sources")
+            promptLabel.numberOfLines = narrated ? 8 : 0
             promptLabel.attributedText = NSAttributedString(string: entry.prompt, attributes: [
-                .font: ContinuityTheme.Font.display(24),
+                .font: narrated ? ContinuityTheme.Font.display(18) : ContinuityTheme.Font.display(24),
                 .foregroundColor: ContinuityTheme.Color.ink,
                 .paragraphStyle: {
                     let style = NSMutableParagraphStyle()

@@ -17,12 +17,15 @@ nonisolated enum OrgFlowAPIError: LocalizedError, Equatable {
     case signInRequired
     case unavailable
     case server(status: Int, message: String)
+    /// The account's plan doesn't include this action (billing entitlement denied).
+    case planRequired(message: String)
 
     var errorDescription: String? {
         switch self {
         case .signInRequired: "Sign in to OrgFlow to ask your organization's knowledge."
         case .unavailable: "Couldn't reach OrgFlow. Check your connection and try again."
         case .server(_, let message): message
+        case .planRequired(let message): message
         }
     }
 }
@@ -45,7 +48,11 @@ nonisolated struct OrgFlowAPI: Sendable {
 
     // MARK: Requests
 
-    private struct ErrorBody: Decodable { let error: String }
+    private struct ErrorBody: Decodable {
+        let error: String?
+        let message: String?
+        let decision: String?
+    }
 
     func send<Body: Encodable>(_ path: String, method: String = "POST", body: Body?, timeout: TimeInterval = 30) async throws -> Data {
         var request = URLRequest(url: baseURL.appending(path: path))
@@ -68,8 +75,11 @@ nonisolated struct OrgFlowAPI: Sendable {
         guard let http = response as? HTTPURLResponse else { throw OrgFlowAPIError.unavailable }
         if http.statusCode == 401 { throw OrgFlowAPIError.signInRequired }
         guard (200..<300).contains(http.statusCode) else {
-            let message = (try? JSONDecoder().decode(ErrorBody.self, from: data))?.error
-                ?? "OrgFlow returned an error (\(http.statusCode))."
+            let body = try? JSONDecoder().decode(ErrorBody.self, from: data)
+            if http.statusCode == 403, body?.decision == "DENY" {
+                throw OrgFlowAPIError.planRequired(message: body?.message ?? "Your plan does not include this action. Choose a plan to continue.")
+            }
+            let message = body?.error ?? body?.message ?? "OrgFlow returned an error (\(http.statusCode))."
             throw OrgFlowAPIError.server(status: http.statusCode, message: message)
         }
         return data
@@ -109,22 +119,49 @@ nonisolated struct OrgFlowAPI: Sendable {
 
     // MARK: Workspace
 
+    func workspace() async throws -> Workspace {
+        try JSONDecoder().decode(Workspace.self, from: await get("api/bootstrap"))
+    }
+
     func workspaceSummary() async throws -> WorkspaceSummary {
-        struct Named: Decodable {
-            let name: String?
-            let title: String?
-            let publishedTitle: String?
-        }
-        struct Bootstrap: Decodable {
-            let categories: [Named]
-            let articles: [Named]
-            let files: [Named]
-        }
-        let bootstrap = try JSONDecoder().decode(Bootstrap.self, from: await get("api/bootstrap"))
-        return WorkspaceSummary(
-            categories: bootstrap.categories.compactMap(\.name),
-            articles: bootstrap.articles.compactMap { $0.publishedTitle ?? $0.title },
-            files: bootstrap.files.compactMap { $0.name ?? $0.title }
-        )
+        try await workspace().summary
+    }
+
+    /// Saves a new draft article. Drafts are never visible to Ask until a person publishes them.
+    func createArticle(title: String, categoryID: String, content: RichTextNode) async throws -> Article {
+        struct Body: Encodable { let title: String; let categoryId: String; let content: RichTextNode }
+        return try JSONDecoder().decode(Article.self, from: await send("api/articles", body: Body(title: title, categoryId: categoryID, content: content)))
+    }
+
+    /// Edits a draft (or turns a published article back into a draft with pending changes).
+    func updateArticle(id: String, title: String? = nil, content: RichTextNode? = nil, categoryID: String? = nil) async throws -> Article {
+        struct Body: Encodable { let title: String?; let content: RichTextNode?; let categoryId: String? }
+        return try JSONDecoder().decode(Article.self, from: await send("api/articles/\(id)", method: "PATCH", body: Body(title: title, content: content, categoryId: categoryID)))
+    }
+
+    /// Human approval: publishes the current draft so Ask can use it.
+    func publishArticle(id: String) async throws -> Article {
+        struct Empty: Encodable {}
+        return try JSONDecoder().decode(Article.self, from: await send("api/articles/\(id)/publish", body: Empty()))
+    }
+
+    /// Asks the backend agent to write (and save) a draft article from an interview or narration.
+    /// `articleID` revises an existing article's draft instead of creating a new one.
+    func draftArticle(messages: [(role: String, content: String)], articleID: String? = nil) async throws -> (message: String, draft: Article) {
+        struct Message: Encodable { let role: String; let content: String }
+        struct Body: Encodable { let mode = "draft"; let messages: [Message]; let articleId: String? }
+        struct Response: Decodable { let message: String; let draft: Article }
+        let body = Body(messages: messages.map { Message(role: $0.role, content: String($0.content.prefix(6000))) }, articleId: articleID)
+        let response = try JSONDecoder().decode(Response.self, from: await send("api/agent", body: body, timeout: 90))
+        return (response.message, response.draft)
+    }
+
+    // MARK: Billing
+
+    /// The hosted pricing page minted at sign-in (cookie `mai_pricing_url`), else the web app.
+    var pricingURL: URL {
+        let cookie = session.configuration.httpCookieStorage?.cookies(for: baseURL)?.first { $0.name == "mai_pricing_url" }
+        if let value = cookie?.value.removingPercentEncoding, let url = URL(string: value), url.scheme == "https" { return url }
+        return baseURL.appending(path: "a/")
     }
 }
