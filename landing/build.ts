@@ -32,7 +32,7 @@ export async function buildLanding() {
       .replace('<div id="root"></div>', `<div id="root">${markup}</div>`)
       .replace(
         "</head>",
-        '<link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/fonts/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin></head>',
+        '<link rel="preload" href="/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/fonts/newsreader-latin.woff2" as="font" type="font/woff2" crossorigin></head>',
       ),
   );
   console.log(`Built ${result.outputs.length} landing bundles`);
