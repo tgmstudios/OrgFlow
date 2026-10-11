@@ -1,9 +1,15 @@
 {
-  "name": "c0mpiled-ts",
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-20-bullseye",
+  "name": "c0mpiled",
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+  "features": {
+    "ghcr.io/shyim/devcontainers-features/bun:0": {
+      "version": "1.4.3"
+    }
+  },
   "customizations": {
     "vscode": {
       "extensions": [
+        "oven.bun-vscode",
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode"
       ],
@@ -13,6 +19,6 @@
       }
     }
   },
-  "postCreateCommand": "npm install",
-  "remoteUser": "node"
+  "postCreateCommand": "bun install",
+  "remoteUser": "vscode"
 }

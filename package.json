@@ -3,17 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "module": "src/index.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "dev": "tsx watch src/index.ts",
-    "start": "node dist/index.js",
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
     "lint": "eslint .",
-    "test": "node --test"
+    "test": "bun test",
+    "typecheck": "bun check"
   },
   "devDependencies": {
-    "@types/node": "^20.14.0",
-    "eslint": "^9.13.0",
-    "tsx": "^4.19.0",
-    "typescript": "^5.6.0"
+    "@types/bun": "latest",
+    "eslint": "^9.13.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
   }
 }

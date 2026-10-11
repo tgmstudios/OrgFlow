@@ -2,6 +2,6 @@ export function hello(name: string): string {
   return `Hello, ${name}!`;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.main) {
   console.log(hello("world"));
 }
