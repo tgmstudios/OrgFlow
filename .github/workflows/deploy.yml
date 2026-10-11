@@ -66,6 +66,33 @@ jobs:
                 chmod 600 "$env_file"
               '
 
+      - name: Configure production billing
+        env:
+          MONETIZATION_APP_ID: ${{ secrets.PROD_MONETIZATION_APP_ID }}
+          MONETIZATION_REGISTRY_TOKEN: ${{ secrets.MONETIZATION_REGISTRY_TOKEN }}
+        run: |
+          # Sandbox identity: real metering and checkout, no real charges. Enforcement stays off
+          # until the plans carry quotas and are published.
+          printf '%s\n' \
+            "MONETIZATION_ENDPOINT=https://us-west-2.alpha.monetization.aws.dev" \
+            "MONETIZATION_REGION=us-west-2" \
+            "MONETIZATION_APP_ID=$MONETIZATION_APP_ID" \
+            "MONETIZATION_ENFORCE=false" \
+            "MONETIZATION_REGISTRY_TOKEN=$MONETIZATION_REGISTRY_TOKEN" \
+            "APP_BASE_PATH=/a" \
+            | ssh "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" '
+                set -e
+                umask 077
+                env_file=/opt/app/backend/.env
+                touch "$env_file"
+                while IFS= read -r entry; do
+                  key=${entry%%=*}
+                  sed -i "/^${key}=/d" "$env_file"
+                  printf "%s\\n" "$entry" >> "$env_file"
+                done
+                chmod 600 "$env_file"
+              '
+
       - name: Install dependencies and restart services
         run: |
           ssh "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" '
@@ -78,6 +105,7 @@ jobs:
             for svc in landing frontend backend; do
               cd /opt/app/$svc
               ~/.bun/bin/bun install --frozen-lockfile
+              if [ "$svc" = backend ]; then bash /opt/app/deploy/install-monetization-sdk.sh; fi
               sudo systemctl restart $svc
             done
             sudo systemctl reload nginx
