@@ -8,8 +8,10 @@ import {
   EVENT_ASK,
   EVENT_DRAFT,
   EVENT_GOOGLE_IMPORT,
+  BillingUnavailable,
   clearSessionCookies,
   entitlementGate,
+  hostedUrl,
   meter,
   sessionCookies,
 } from "./monetization";
@@ -209,6 +211,20 @@ export function createApp(
             new URL(`./node_modules/swagger-ui-dist/${name}`, import.meta.url),
           ),
         );
+      }
+      if (req.method === "GET" && path === "/api/billing/session") {
+        const user = await auth.currentUser(req);
+        if (!user) throw new ApiError(401, "Sign in required");
+        const surface = new URL(req.url).searchParams.get("surface");
+        if (surface !== "pricing" && surface !== "portal")
+          throw new ApiError(400, "surface must be pricing or portal");
+        try {
+          return json({ url: await hostedUrl(surface, user.id) });
+        } catch (error) {
+          if (error instanceof BillingUnavailable)
+            throw new ApiError(503, error.message);
+          throw error;
+        }
       }
       if (req.method === "GET" && path === "/api/bootstrap") {
         const value = await bootstrap(store);

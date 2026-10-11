@@ -147,6 +147,44 @@ export async function sessionCookies(
   }
 }
 
+export class BillingUnavailable extends Error {}
+
+/**
+ * Mint one hosted page URL on demand. This is the fallback when the sign-in cookie is missing
+ * (already-signed-in sessions, the 24h cookie expiring before the 7-day app session, a restart).
+ */
+export async function hostedUrl(
+  surface: "pricing" | "portal",
+  userId: string,
+  client?: Client,
+): Promise<string> {
+  if (!userId) throw new Error("userId is required");
+  if (!(await monetizationConfigured()))
+    throw new BillingUnavailable("Billing is not configured on this server.");
+  const sdkClient = client ?? (await getMonetize());
+  const returnUrl = appReturnUrl();
+  try {
+    if (surface === "pricing")
+      return (
+        await sdkClient.createPricingSession(userId, {
+          returnUrl: `${returnUrl}?checkout=success`,
+          refreshUrl: `${returnUrl}?checkout=expired`,
+          sessionDurationSeconds: 3600,
+        })
+      ).pricingUrl;
+    return (
+      await sdkClient.createBillingPortalSession(userId, {
+        returnUrl,
+        refreshUrl: `${returnUrl}?portal=expired`,
+        sessionDurationSeconds: 3600,
+      })
+    ).billingPortalUrl;
+  } catch (error) {
+    console.error("could not mint hosted billing session", { surface, error });
+    throw new BillingUnavailable("Billing could not be opened right now. Please try again.");
+  }
+}
+
 export const clearSessionCookies = (req: Request) => [
   cookie(req, PRICING_COOKIE, "", 0),
   cookie(req, PORTAL_COOKIE, "", 0),

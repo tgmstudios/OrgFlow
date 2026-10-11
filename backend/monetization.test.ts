@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, mock, beforeEach } from "bun:test";
 import {
+  BillingUnavailable,
+  hostedUrl,
   clearSessionCookies,
   entitlementGate,
   meter,
@@ -105,5 +107,23 @@ describe("monetization", () => {
     const cleared = clearSessionCookies(req);
     expect(cleared).toHaveLength(2);
     expect(cleared.every((c) => c.includes("Max-Age=0"))).toBe(true);
+  });
+
+  it("mints a pricing or portal URL on demand", async () => {
+    const client = fake();
+    expect(await hostedUrl("pricing", "user-1", client as any)).toContain("pricing");
+    expect(await hostedUrl("portal", "user-1", client as any)).toContain("portal");
+  });
+
+  it("reports a clean error when minting fails or billing is unconfigured", async () => {
+    const client = fake();
+    client.createPricingSession.mockRejectedValueOnce(new Error("denied"));
+    await expect(hostedUrl("pricing", "user-1", client as any)).rejects.toBeInstanceOf(
+      BillingUnavailable,
+    );
+    delete process.env.MONETIZATION_APP_ID;
+    await expect(hostedUrl("portal", "user-1", client as any)).rejects.toBeInstanceOf(
+      BillingUnavailable,
+    );
   });
 });
