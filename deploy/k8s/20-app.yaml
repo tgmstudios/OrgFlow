@@ -21,7 +21,7 @@ spec:
       securityContext: { runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000 }
       initContainers:
         - name: migrate
-          image: IMAGE
+          image: ghcr.io/tgmstudios/orgflow@sha256:30636495de11ef67dd6033ccbee6bf4e711686b653e15c38ebe05ae9789077e3
           workingDir: /app/backend
           command: ["sh", "-c", "until bun -e 'const s=require(\"net\").connect(5432,\"postgres\");s.on(\"connect\",()=>process.exit(0));s.on(\"error\",()=>process.exit(1))'; do sleep 2; done; bunx --bun prisma migrate deploy"]
           env:
@@ -33,7 +33,7 @@ spec:
           securityContext: { allowPrivilegeEscalation: false }
       containers:
         - name: backend
-          image: IMAGE
+          image: ghcr.io/tgmstudios/orgflow@sha256:30636495de11ef67dd6033ccbee6bf4e711686b653e15c38ebe05ae9789077e3
           workingDir: /app/backend
           command: ["bun", "run", "index.ts"]
           env:
@@ -59,7 +59,7 @@ spec:
           securityContext: { allowPrivilegeEscalation: false }
           volumeMounts: [{ name: data, mountPath: /app/backend/data }]
         - name: frontend
-          image: IMAGE
+          image: ghcr.io/tgmstudios/orgflow@sha256:30636495de11ef67dd6033ccbee6bf4e711686b653e15c38ebe05ae9789077e3
           workingDir: /app/frontend
           command: ["bun", "run", "index.ts"]
           env:
@@ -75,7 +75,7 @@ spec:
             limits: { cpu: 250m, memory: 192Mi }
           securityContext: { allowPrivilegeEscalation: false }
         - name: landing
-          image: IMAGE
+          image: ghcr.io/tgmstudios/orgflow@sha256:30636495de11ef67dd6033ccbee6bf4e711686b653e15c38ebe05ae9789077e3
           workingDir: /app/landing
           command: ["bun", "run", "serve.ts"]
           env:

@@ -24,6 +24,26 @@ spec:
           - { path: /auth, pathType: Prefix, backend: { service: { name: orgflow, port: { name: api } } } }
           - { path: /docs, pathType: Prefix, backend: { service: { name: orgflow, port: { name: api } } } }
           - { path: /swagger, pathType: Exact, backend: { service: { name: orgflow, port: { name: api } } } }
-          - { path: /openapi.json, pathType: Exact, backend: { service: { name: orgflow, port: { name: api } } } }
           - { path: /health, pathType: Exact, backend: { service: { name: orgflow, port: { name: api } } } }
           - { path: /, pathType: Prefix, backend: { service: { name: orgflow, port: { name: landing } } } }
+
+---
+# Separate Ingress: ingress-nginx only accepts a literal "." path with regex mode, which must not apply to the other paths.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: orgflow-openapi
+  namespace: orgflow
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [orgflow-east.tgm.one]
+      secretName: orgflow-tls
+  rules:
+    - host: orgflow-east.tgm.one
+      http:
+        paths:
+          - { path: /openapi\.json, pathType: ImplementationSpecific, backend: { service: { name: orgflow, port: { name: api } } } }
