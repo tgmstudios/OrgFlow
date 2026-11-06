@@ -1,0 +1,102 @@
+# One pod, three Bun processes from one image (same topology as the production EC2 host: nginx -> 3001/3002/3003).
+# Secret `orgflow-app` holds optional integrations (LUMINAL_API_KEY, ELEVENLABS_*, GOOGLE_*) and TOKEN_ENCRYPTION_KEY.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: { name: orgflow-data, namespace: orgflow }
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn
+  resources: { requests: { storage: 1Gi } }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: orgflow, namespace: orgflow }
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector: { matchLabels: { app.kubernetes.io/name: orgflow } }
+  template:
+    metadata: { labels: { app.kubernetes.io/name: orgflow } }
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000 }
+      initContainers:
+        - name: migrate
+          image: IMAGE
+          workingDir: /app/backend
+          command: ["sh", "-c", "until bun -e 'const s=require(\"net\").connect(5432,\"postgres\");s.on(\"connect\",()=>process.exit(0));s.on(\"error\",()=>process.exit(1))'; do sleep 2; done; bunx --bun prisma migrate deploy"]
+          env:
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: orgflow-db, key: DATABASE_URL } }
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          securityContext: { allowPrivilegeEscalation: false }
+      containers:
+        - name: backend
+          image: IMAGE
+          workingDir: /app/backend
+          command: ["bun", "run", "index.ts"]
+          env:
+            - { name: NODE_ENV, value: production }
+            - { name: HOST, value: 0.0.0.0 }
+            - { name: PORT, value: "3003" }
+            - { name: FRONTEND_ORIGIN, value: "https://orgflow-east.tgm.one" }
+            - { name: FRONTEND_REDIRECT_URL, value: "https://orgflow-east.tgm.one/a/" }
+            - { name: GOOGLE_REDIRECT_URI, value: "https://orgflow-east.tgm.one/auth/google/callback" }
+            - { name: APP_BASE_PATH, value: /a }
+            - { name: MONETIZATION_ENFORCE, value: "false" }
+            - { name: TOKEN_KEY_FILE, value: /app/backend/data/token.key }
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: orgflow-db, key: DATABASE_URL } }
+          envFrom:
+            - secretRef: { name: orgflow-app, optional: true }
+          ports: [{ name: api, containerPort: 3003 }]
+          readinessProbe: { httpGet: { path: /health, port: api }, periodSeconds: 10 }
+          livenessProbe: { httpGet: { path: /health, port: api }, initialDelaySeconds: 30, periodSeconds: 20, failureThreshold: 6 }
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          securityContext: { allowPrivilegeEscalation: false }
+          volumeMounts: [{ name: data, mountPath: /app/backend/data }]
+        - name: frontend
+          image: IMAGE
+          workingDir: /app/frontend
+          command: ["bun", "run", "index.ts"]
+          env:
+            - { name: NODE_ENV, value: production }
+            - { name: HOST, value: 0.0.0.0 }
+            - { name: PORT, value: "3002" }
+            - { name: FRONTEND_BASE_PATH, value: /a }
+            - { name: BACKEND_URL, value: "http://127.0.0.1:3003" }
+          ports: [{ name: web, containerPort: 3002 }]
+          readinessProbe: { httpGet: { path: /a/, port: web }, periodSeconds: 10 }
+          resources:
+            requests: { cpu: 20m, memory: 64Mi }
+            limits: { cpu: 250m, memory: 192Mi }
+          securityContext: { allowPrivilegeEscalation: false }
+        - name: landing
+          image: IMAGE
+          workingDir: /app/landing
+          command: ["bun", "run", "serve.ts"]
+          env:
+            - { name: HOST, value: 0.0.0.0 }
+            - { name: PORT, value: "3001" }
+          ports: [{ name: landing, containerPort: 3001 }]
+          readinessProbe: { httpGet: { path: /, port: landing }, periodSeconds: 10 }
+          resources:
+            requests: { cpu: 10m, memory: 48Mi }
+            limits: { cpu: 200m, memory: 128Mi }
+          securityContext: { allowPrivilegeEscalation: false }
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: orgflow-data }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: orgflow, namespace: orgflow }
+spec:
+  selector: { app.kubernetes.io/name: orgflow }
+  ports:
+    - { name: landing, port: 3001, targetPort: landing }
+    - { name: web, port: 3002, targetPort: web }
+    - { name: api, port: 3003, targetPort: api }

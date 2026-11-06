@@ -1,0 +1,9 @@
+**/node_modules
+**/dist
+.git
+app
+docs
+"Submission Video"
+OrgFlow_Showcase_Package.zip
+backend/.env
+backend/data

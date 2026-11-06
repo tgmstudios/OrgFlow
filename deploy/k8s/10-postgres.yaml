@@ -1,0 +1,50 @@
+# Single-replica PostgreSQL 17 + pgvector. Secret `orgflow-db` (POSTGRES_PASSWORD, DATABASE_URL) is created out of band.
+apiVersion: v1
+kind: Service
+metadata: { name: postgres, namespace: orgflow }
+spec:
+  clusterIP: None
+  selector: { app.kubernetes.io/name: postgres }
+  ports: [{ name: pg, port: 5432, targetPort: pg }]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: { name: postgres, namespace: orgflow }
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector: { matchLabels: { app.kubernetes.io/name: postgres } }
+  template:
+    metadata: { labels: { app.kubernetes.io/name: postgres } }
+    spec:
+      securityContext: { fsGroup: 999 }
+      containers:
+        - name: postgres
+          image: pgvector/pgvector:pg17
+          ports: [{ name: pg, containerPort: 5432 }]
+          env:
+            - { name: POSTGRES_DB, value: orgflow }
+            - { name: POSTGRES_USER, value: orgflow }
+            - { name: PGDATA, value: /var/lib/postgresql/data/pgdata }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: orgflow-db, key: POSTGRES_PASSWORD } }
+          args: ["-c", "shared_buffers=64MB", "-c", "max_connections=40", "-c", "work_mem=4MB"]
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "orgflow", "-d", "orgflow"] }
+            periodSeconds: 10
+          livenessProbe:
+            exec: { command: ["pg_isready", "-U", "orgflow", "-d", "orgflow"] }
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 6
+          resources:
+            requests: { cpu: 50m, memory: 192Mi }
+            limits: { cpu: 500m, memory: 384Mi }
+          securityContext: { allowPrivilegeEscalation: false }
+          volumeMounts: [{ name: data, mountPath: /var/lib/postgresql/data }]
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: longhorn
+        resources: { requests: { storage: 5Gi } }
