@@ -77,7 +77,7 @@ spec:
           podSelector: { matchLabels: { k8s-app: kube-dns } }
       ports: [{ protocol: UDP, port: 53 }, { protocol: TCP, port: 53 }]
 ---
-# Provider HTTPS (Luminal, ElevenLabs, Google, Monetization, ghcr is node-side): public internet on 443 only, excluding
+# Provider HTTPS (Luminal, ElevenLabs, Google, Stripe, ghcr is node-side): public internet on 443 only, excluding
 # private/cluster ranges and the public Kubernetes API endpoint. The CI API path is unaffected (it never goes through pods).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

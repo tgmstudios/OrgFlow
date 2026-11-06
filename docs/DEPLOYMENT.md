@@ -19,7 +19,7 @@ Production is **https://orgflow.dev** on the TGM OKE East cluster (Oracle Cloud,
 
 ## Secrets / integration keys
 
-GitHub Actions secrets (write-only): `EAST_KUBE_SERVER`, `EAST_KUBE_CA_B64`, `EAST_KUBE_TOKEN` (deployer SA token), `PROD_GOOGLE_CLIENT_ID`, `PROD_GOOGLE_CLIENT_SECRET`, `PROD_ELEVENLABS_API_KEY`, `PROD_ELEVENLABS_AGENT_ID`, `PROD_MONETIZATION_APP_ID`, `MONETIZATION_REGISTRY_TOKEN`, `PROD_LUMINAL_API_KEY` (**not set yet; Ask/draft/Discover/handoff return 503 `AI_NOT_CONFIGURED` until it is**). `GOOGLE_REDIRECT_URI` is pinned in `20-app.yaml` to `https://orgflow.dev/auth/google/callback`, so `PROD_GOOGLE_REDIRECT_URI` is unused. `EC2_HOST`, `EC2_SSH_KEY`, `EC2_USER` are obsolete and should be deleted by a repo admin.
+GitHub Actions secrets (write-only): `EAST_KUBE_SERVER`, `EAST_KUBE_CA_B64`, `EAST_KUBE_TOKEN` (deployer SA token), `PROD_GOOGLE_CLIENT_ID`, `PROD_GOOGLE_CLIENT_SECRET`, `PROD_ELEVENLABS_API_KEY`, `PROD_ELEVENLABS_AGENT_ID`, `PROD_STRIPE_SECRET_KEY`, `PROD_STRIPE_PRICE_ID`, `PROD_LUMINAL_API_KEY` (**not set yet; Ask/draft/Discover/handoff return 503 `AI_NOT_CONFIGURED` until it is**). `GOOGLE_REDIRECT_URI` is pinned in `20-app.yaml` to `https://orgflow.dev/auth/google/callback`, so `PROD_GOOGLE_REDIRECT_URI` is unused. `EC2_HOST`, `EC2_SSH_KEY`, `EC2_USER` are obsolete and should be deleted by a repo admin.
 
 ## Pipeline (`.github/workflows/deploy.yml`)
 

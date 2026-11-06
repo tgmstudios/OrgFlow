@@ -505,24 +505,11 @@ const currentPage = () => {
     ) ?? "Home"
   );
 };
-/**
- * Open a hosted AWS Monetization page. Uses the URL cookie set at sign-in when present, and
- * otherwise asks the server for a fresh one (already-signed-in sessions, expired cookie).
- */
+/** Open a Stripe-hosted page (Checkout or customer portal); the server mints a fresh URL. */
 async function openHosted(
-  cookieName: string,
   surface: "pricing" | "portal",
   onError: (message: string) => void,
 ) {
-  const match = document.cookie
-    .split("; ")
-    .find((c) => c.startsWith(cookieName + "="));
-  if (match) {
-    window.location.assign(
-      decodeURIComponent(match.slice(cookieName.length + 1)),
-    );
-    return;
-  }
   try {
     const { url } = await api(`/billing/session?surface=${surface}`);
     window.location.assign(url);
@@ -1553,14 +1540,10 @@ function App({ user, onLogout }: { user: User; onLogout: () => void }) {
             <span className="info">i</span>
           </div>
           <div className="account-row billing-row">
-            <button onClick={() => openHosted("mai_pricing_url", "pricing", setError)}>
+            <button onClick={() => openHosted("pricing", setError)}>
               Plans &amp; upgrade
             </button>
-            <button
-              onClick={() =>
-                openHosted("mai_billing_portal_url", "portal", setError)
-              }
-            >
+            <button onClick={() => openHosted("portal", setError)}>
               Manage subscription
             </button>
           </div>

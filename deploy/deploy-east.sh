@@ -3,7 +3,7 @@
 # for a manual deploy, so both paths are identical.
 #   KUBECONFIG=<namespace-scoped or operator kubeconfig> DIGEST=sha256:<64 hex> [DEPLOYED_SHA=<git sha>] deploy/deploy-east.sh
 # Optional integration keys in the environment (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, ELEVENLABS_API_KEY,
-# ELEVENLABS_AGENT_ID, MONETIZATION_APP_ID, MONETIZATION_REGISTRY_TOKEN, LUMINAL_API_KEY) are merged into Secret
+# ELEVENLABS_AGENT_ID, STRIPE_SECRET_KEY, STRIPE_PRICE_ID, LUMINAL_API_KEY) are merged into Secret
 # orgflow-app (patch only; TOKEN_ENCRYPTION_KEY and other keys are never touched). Empty values are skipped.
 set -euo pipefail
 NS=orgflow
@@ -13,7 +13,7 @@ cd "$(dirname "$0")/.."
 echo "Rollback reference (current image):"
 kubectl -n "$NS" get deployment orgflow -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
 
-keys=(GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET ELEVENLABS_API_KEY ELEVENLABS_AGENT_ID MONETIZATION_APP_ID MONETIZATION_REGISTRY_TOKEN LUMINAL_API_KEY)
+keys=(GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET ELEVENLABS_API_KEY ELEVENLABS_AGENT_ID STRIPE_SECRET_KEY STRIPE_PRICE_ID LUMINAL_API_KEY)
 json='{"stringData":{}}'; sent=()
 for k in "${keys[@]}"; do
   if [ -n "${!k:-}" ]; then json=$(jq -c --arg k "$k" --arg v "${!k}" '.stringData[$k]=$v' <<<"$json"); sent+=("$k"); else echo "not provided, skipped: $k"; fi

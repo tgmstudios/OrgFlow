@@ -58,8 +58,8 @@ The product name and exact browser title are permanently locked to OrgFlow. See 
 ## Business
 
 16. **Pricing tiers by organization size** (brief: nonprofit-friendly monthly tiers). Amounts and seat
-    bands are undecided; billing runs in the AWS Monetization sandbox with enforcement off
-    (`MONETIZATION_ENFORCE=false`). Default: no limits enforced.
+    bands are undecided; billing runs on Stripe with enforcement off
+    (`BILLING_ENFORCE=false`). Default: no limits enforced.
 17. **Which actions are billable?** Currently metered: Ask, draft, Google import/indexing. Discover and
     handoff drafts go through the draft path. Default: as listed.
 18. **Demo plan.** Judging time and demo script are not recorded. Default: the walkthrough in

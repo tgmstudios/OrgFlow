@@ -27,7 +27,7 @@ Status: PostgreSQL/Prisma production cutover is deployed and verified; AI paths 
 | Ask | Answers grounded in approved articles plus consented email/document excerpts (BM25 retrieval), labeled by source type. | Web agent, iOS Ask; `backend/agent.ts`, `retrieval.ts` |
 | Transfer | People records, mark leaving, AI handoff guide from owned playbooks, sent emails and notes, successor onboarding checklist. | Web (People, Knowledge map), iOS Handoff; `backend/operations.ts` |
 
-Platform: organizations with isolation (new org at sign-up or invite code; default shared demo workspace, "Center Valley Pantry", with labeled samples), admin/member roles, audit log, billing through the AWS Monetization sandbox (enforcement off).
+Platform: organizations with isolation (new org at sign-up or invite code; default shared demo workspace, "Center Valley Pantry", with labeled samples), admin/member roles, audit log, billing through Stripe (enforcement off).
 
 ## Quick start
 

@@ -12,7 +12,6 @@ COPY backend backend
 COPY frontend frontend
 COPY landing landing
 COPY demo-content demo-content
-COPY .env.monetization .env.monetization
 COPY deploy/landing-serve.ts landing/serve.ts
 RUN cd backend && DATABASE_URL=postgresql://build:build@localhost:5432/build bunx --bun prisma generate \
  && cd ../frontend && bun run build \

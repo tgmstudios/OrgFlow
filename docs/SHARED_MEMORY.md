@@ -56,7 +56,7 @@ Backend (`backend/`, Bun, port 3003)
 - Articles with draft/publish snapshots, owners, `reviewDueAt` (default 90 days, `REVIEW_INTERVAL_DAYS`), review confirmation. Runnable checklists, people and Transfer (handoff guide, onboarding run), Discover candidates.
 - Consented Google indexing of recent Docs and Gmail text; BM25 retrieval (`retrieval.ts`); Ask cites approved articles plus labelled excerpts. Google OAuth read-only with PKCE; tokens sealed (AES-256-GCM) in the database and keyed by the browser session cookie, so restarts keep connections (previously: memory only, restart requires reconnect).
 - Storage: Prisma/PostgreSQL only (`DATABASE_URL` required); production is PostgreSQL 17 + pgvector on OKE East (the earlier RDS data was not migrated). External `/health` reports `storage: postgresql`; `/a/` returns HTTP 200. The old EC2 SQLite backup is not recoverable from this repo (host retired). Embedding provider and vector index are not implemented. See [PGVECTOR.md](PGVECTOR.md).
-- Billing: AWS Monetization sandbox; enforcement off (`MONETIZATION_ENFORCE=false` in the deploy workflow). Metered: Ask, draft, Google sync/indexing.
+- Billing: Stripe (secrets `PROD_STRIPE_SECRET_KEY`, `PROD_STRIPE_PRICE_ID`); enforcement off (`BILLING_ENFORCE=false` in `20-app.yaml`). Metered: Ask, draft, Google sync/indexing.
 - API contract for the new routes: Swagger at `/docs` and `/openapi.json`.
 
 Web (`frontend/`, React/Bun, port 3002; production at https://orgflow.dev/a/)
@@ -80,7 +80,7 @@ AI providers
 
 Deployment
 - Production (since 2026-11-06): OKE East Kubernetes, namespace `orgflow`, https://orgflow.dev (DNS-only CNAME to `ingress-east.tgm.one`, Cloudflare). Postgres 17 + pgvector StatefulSet, one 3-container app pod from one arm64 image pinned by digest, default-deny NetworkPolicies, namespace-scoped CI deployer. Full detail: [DEPLOYMENT.md](DEPLOYMENT.md). The AWS EC2 host and RDS (account 255260119952) are retired; **their data was not migrated** (East DB started fresh; SQLite/RDS content not recovered, not verified).
-- Monetization: AWS App Monetization app `01a12cef6e537c4288f0b6931dcaeeca` (account 255260119952, us-west-2 control plane, sandbox ARN in `PROD_MONETIZATION_APP_ID`); 3 draft plans without quotas, enforcement off, seller/Stripe registration not done yet.
+- Billing: Stripe (replaced AWS App Monetization); one monthly price, enforcement off. Set `PROD_STRIPE_SECRET_KEY` and `PROD_STRIPE_PRICE_ID` in GitHub secrets.
 - Pushing to `main` runs verify, builds the arm64 image, then deploys by digest via `.github/workflows/deploy.yml`. **The deploy job is blocked** until a runner that can reach the East API (allowlisted) is approved; CI-built digests are deployed by an operator with `deploy/deploy-east.sh`. Production OAuth redirect `https://orgflow.dev/auth/google/callback`; whether it is saved in the Google client is not verified. Google app is in Testing. Google project `orgflow-20261011`. `PROD_LUMINAL_API_KEY` is not set, so AI routes return 503.
 - Microsoft 365, calendar sync (events are synthetic), extraction caching and embeddings: not built.
 

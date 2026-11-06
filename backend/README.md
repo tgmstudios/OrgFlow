@@ -22,7 +22,7 @@ From the repo root, `bun run dev` starts backend and frontend together.
 - `agent.ts`: Ask and draft agent (`POST /api/agent`), citation validation.
 - `google.ts`: read-only Google OAuth (PKCE), Drive metadata sync, Docs/Gmail readers and indexing.
 - `auth.ts`: email/password accounts (Argon2id), HttpOnly session cookie, roles, invite codes, login rate limit.
-- `monetization.ts`: AWS Monetization sandbox entitlement checks and metering.
+- `billing.ts`: Stripe Checkout/portal sessions, subscription entitlement checks and optional meter events.
 - `elevenlabs.ts`: ephemeral WebRTC token for the private voice agent (`GET /api/voice/session-token`).
 - `samples.ts`: labelled sample playbooks and people for the shared demo workspace (added once; new organizations start empty).
 - `store.ts`: Prisma/PostgreSQL persistence. `migrate-sqlite-to-postgres.ts`: one-time legacy import. `uploads.ts`: image uploads. `openapi.ts`: API description.
@@ -38,7 +38,7 @@ Copy `.env.example` to `.env` (Git-ignored, mode 0600; Bun loads it automaticall
 - Secrets: `TOKEN_ENCRYPTION_KEY` (seals stored Google sessions)
 - Storage and origins: `DATABASE_URL`, `FRONTEND_ORIGIN`, `FRONTEND_REDIRECT_URL`, `HOST`, `PORT`
 
-Also read by the code, not in `.env.example`: `REVIEW_INTERVAL_DAYS`, `MONETIZATION_APP_ID`, `MONETIZATION_ENFORCE`.
+Also read by the code, not in `.env.example`: `REVIEW_INTERVAL_DAYS`, `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `BILLING_ENFORCE`, `STRIPE_METER_EVENTS`.
 
 ## Behavior notes
 

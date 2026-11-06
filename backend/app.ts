@@ -16,12 +16,10 @@ import {
   EVENT_DRAFT,
   EVENT_GOOGLE_IMPORT,
   BillingUnavailable,
-  clearSessionCookies,
   entitlementGate,
   hostedUrl,
   meter,
-  sessionCookies,
-} from "./monetization";
+} from "./billing";
 class ApiError extends Error {
   constructor(
     public status: number,
@@ -95,11 +93,7 @@ export function createApp(
   const requireAuth = options.requireAuth ?? true;
   // Workspace data is scoped to the signed-in user's organization (see workspace.ts).
   const store = scopedStore(baseStore);
-  const auth = createAuth(store, {
-    sessionCookies: (req, user) => sessionCookies(req, user.id),
-    clearCookies: clearSessionCookies,
-    refreshWhenMissing: "mai_pricing_url",
-  });
+  const auth = createAuth(store);
   const google = createGoogleHandler({
     vault: storeVault(baseStore),
     getAccount: async (request) => {
@@ -278,7 +272,7 @@ export function createApp(
         if (surface !== "pricing" && surface !== "portal")
           throw new ApiError(400, "surface must be pricing or portal");
         try {
-          return json({ url: await hostedUrl(surface, user.id) });
+          return json({ url: await hostedUrl(surface, user.id, user.email) });
         } catch (error) {
           if (error instanceof BillingUnavailable)
             throw new ApiError(503, error.message);

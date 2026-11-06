@@ -121,8 +121,8 @@ jobs:
           GOOGLE_CLIENT_SECRET: ${{ secrets.PROD_GOOGLE_CLIENT_SECRET }}
           ELEVENLABS_API_KEY: ${{ secrets.PROD_ELEVENLABS_API_KEY }}
           ELEVENLABS_AGENT_ID: ${{ secrets.PROD_ELEVENLABS_AGENT_ID }}
-          MONETIZATION_APP_ID: ${{ secrets.PROD_MONETIZATION_APP_ID }}
-          MONETIZATION_REGISTRY_TOKEN: ${{ secrets.MONETIZATION_REGISTRY_TOKEN }}
+          STRIPE_SECRET_KEY: ${{ secrets.PROD_STRIPE_SECRET_KEY }}
+          STRIPE_PRICE_ID: ${{ secrets.PROD_STRIPE_PRICE_ID }}
           LUMINAL_API_KEY: ${{ secrets.PROD_LUMINAL_API_KEY }}
         run: deploy/deploy-east.sh
       - name: Verify public health

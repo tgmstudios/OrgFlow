@@ -44,7 +44,7 @@ spec:
             - { name: FRONTEND_REDIRECT_URL, value: "https://orgflow.dev/a/" }
             - { name: GOOGLE_REDIRECT_URI, value: "https://orgflow.dev/auth/google/callback" }
             - { name: APP_BASE_PATH, value: /a }
-            - { name: MONETIZATION_ENFORCE, value: "false" }
+            - { name: BILLING_ENFORCE, value: "false" }
             - { name: TOKEN_KEY_FILE, value: /app/backend/data/token.key }
             - name: DATABASE_URL
               valueFrom: { secretKeyRef: { name: orgflow-db, key: DATABASE_URL } }
