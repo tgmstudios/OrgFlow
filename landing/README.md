@@ -23,7 +23,7 @@ Review at viewport widths 1440, 1024, 768, and 375 pixels. Exercise the hero’s
 
 `App.tsx` contains the six section page, navigation, pricing, and FAQ. `GuidedDemo.tsx` contains the focused default journey. `Demo.tsx` retains the richer optional workspace, and both use the fictional sources in `sample-data.ts`. `style.css`, `refinement.css`, `demo.css`, and `guided-demo.css` provide responsive layout and motion. `index.html` provides page metadata, and `public/` contains the favicon, social preview artwork, crawler files, and licensed local fonts. `main.tsx` hydrates the prerendered React page.
 
-`build.ts` creates minified browser bundles in ignored `dist/` with root asset URLs, copies `public/`, and prerenders the page into static HTML. `index.ts` rebuilds before starting the static server on loopback port 3001. This supports the existing service's direct `bun run index.ts` entrypoint and the deployment pipeline, which excludes `dist/` during synchronization. It does not require a separate landing build step or a `NODE_ENV` override. A failed build stops startup.
+`build.ts` creates minified browser bundles in ignored `dist/` with root asset URLs, copies `public/`, and prerenders the page into static HTML. `index.ts` rebuilds before starting the static server on loopback port 3001. This supports the existing service's direct `bun run index.ts` entrypoint and the deployment pipeline, (historical EC2 sync behavior). It does not require a separate landing build step or a `NODE_ENV` override. A failed build stops startup.
 
 `server.ts` serves only existing files from `dist/`, supports GET and HEAD, rejects traversal and unsupported methods, and returns 404 for missing assets and reserved product routes. Hashed JavaScript and CSS receive immutable caching. HTML and other assets require revalidation. `server.test.ts` checks these contracts with temporary synthetic fixtures.
 
@@ -44,11 +44,11 @@ git diff origin/main...HEAD -- landing/
 git log -1 --oneline
 ```
 
-After the finished landing commit is reviewed, an authorized maintainer can push this branch and open a pull request targeting `main`. Review the current base and confirm that the PR contains only the intended landing changes and the required shared memory handoff. Do not push directly to `main`. Merging a PR into `main` triggers the existing production deployment, so merge only after deployment is authorized.
+After the finished landing commit is reviewed, an authorized maintainer can push this branch and open a pull request targeting `main`. Review the current base and confirm that the PR contains only the intended landing changes and the required shared memory handoff. Do not push directly to `main`. Merging a PR into `main` triggers the production build and deploy, so merge only after deployment is authorized.
 
-The existing Nginx routing remains authoritative: `/` goes to port 3001, `/a/` to 3002, and `/api/`, `/auth/`, `/docs`, `/swagger`, `/openapi.json`, and `/health` to 3003. The landing does not proxy or implement those product routes. No Nginx, backend, frontend, AWS, or payment configuration changes are required.
+Routing is the Kubernetes ingress (`deploy/k8s/30-ingress.yaml`): `/` goes to port 3001, `/a/` to 3002, and `/api`, `/auth`, `/docs`, `/swagger`, and `/health` to 3003. The landing does not proxy or implement those product routes. No Nginx, backend, frontend, AWS, or payment configuration changes are required.
 
-The existing workflow synchronizes source, installs each service with `bun install --frozen-lockfile`, builds the application, and restarts services. Landing builds itself at startup. After an authorized deployment, inspect the live homepage and its assets, then verify `/a/`, an application deep link, backend health, Swagger, and OpenAPI. Confirm the application's sign-in flow separately without adding private content to the demonstration workspace.
+The deploy workflow builds one arm64 image (frozen-lockfile installs; the landing bundle is built in the image and served by `deploy/landing-serve.ts`) and rolls it out by digest; see [deployment](../docs/DEPLOYMENT.md). The earlier EC2/Nginx notes in this file are historical. After an authorized deployment, inspect the live homepage and its assets, then verify `/a/`, an application deep link, backend health, Swagger, and OpenAPI. Confirm the application's sign-in flow separately without adding private content to the demonstration workspace.
 
 ## Simplicity refinement handoff
 

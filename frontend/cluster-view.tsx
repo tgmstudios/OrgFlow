@@ -26,6 +26,7 @@ const W = 980,
   CY = H / 2;
 const NONE = "unassigned";
 type Pt = { x: number; y: number };
+type Sz = { w: number; h: number };
 type Tone = "teal" | "iris" | "apricot" | "muted";
 type Doc = {
   key: string;
@@ -68,7 +69,7 @@ const chip = (d: Doc) => {
 function layout(clusters: Cluster[], members: Map<string, Doc[]>, pinned: Record<string, Pt>) {
   const pos: Record<string, Pt> = { root: { x: CX, y: CY } };
   const n = clusters.length;
-  const free: { key: string; half: Pt; owner: Pt }[] = [];
+  const free: { key: string; half: Sz; owner: Pt }[] = [];
   clusters.forEach((c, i) => {
     const a = -Math.PI / 2 + Math.PI / Math.max(n, 1) + (i / Math.max(n, 1)) * Math.PI * 2;
     const p = pinned[c.id] ?? { x: CX + 320 * Math.cos(a), y: CY + 196 * Math.sin(a) };

@@ -17,7 +17,7 @@ Keep SHARED_MEMORY.md current and short: rewrite rather than append logs, and di
 - `backend/`: Bun API (articles, organizations, Google indexing, Discover, checklists, people/Transfer, Ask/draft agent, billing); see [backend/README.md](backend/README.md).
 - `frontend/`: React/Bun web app served at `/a/`; see [frontend/README.md](frontend/README.md).
 - `app/iOS/`: UIKit iOS app (Ask, Capture, Handoff, Library, Metal knot); Xcode project `OrgFlow.xcodeproj`.
-- `deploy/` and `.github/workflows/deploy.yml`: Nginx config and deployment. Pushing to `main` deploys production; confirm with the human first.
+- `deploy/k8s/`, `deploy/deploy-east.sh`, `.github/workflows/deploy.yml`: OKE East Kubernetes manifests and deploy (see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)); `deploy/legacy-ec2/` is retired. Pushing to `main` builds and deploys production; confirm with the human first. Never print secrets, loosen NetworkPolicies/RBAC, or open the East API to make a deploy work.
 - `docs/`: product docs. `landing/`: separate placeholder.
 
 Commands from the repo root: `bun run install:app`, `bun run dev`, `bun run typecheck`, `bun run test`, `bun run build`.
@@ -25,7 +25,7 @@ Commands from the repo root: `bun run install:app`, `bun run dev`, `bun run type
 ## Conventions
 
 - Use Bun, not Node. Bun conventions are in `backend/CLAUDE.md` (the same text is in `frontend/CLAUDE.md` and `landing/CLAUDE.md`).
-- Never put secrets, tokens, private email content or donor data in code, docs, memory or logs. Credentials live only in Git-ignored `backend/.env` and GitHub Actions secrets.
+- Never put secrets, tokens, private email content or donor data in code, docs, memory or logs. Credentials live only in Git-ignored `backend/.env`, GitHub Actions secrets and Kubernetes Secrets.
 - AI output is always a draft; publishing is an explicit human action.
 
 <!-- BEGIN AWS Agent Toolkit rules -->

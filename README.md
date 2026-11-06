@@ -44,12 +44,12 @@ bun run dev           # backend :3003 and frontend :3002
 - Web app: http://localhost:3002 (production: https://orgflow.dev/a/)
 - Landing page: `cd landing && bun install && bun run dev`, then http://localhost:3001 (production: https://orgflow.dev)
 - Swagger UI: http://localhost:3003/docs; OpenAPI: `/openapi.json`; health: `/health`
-- Verify: `bun run typecheck`, `bun run test`, `bun run build`
+- Verify (same as CI): `bun run typecheck`, `bun run test`, `bun run build`; landing: `cd landing && bun run typecheck && bun run test`
 - iOS: open `app/iOS/OrgFlow.xcodeproj` in Xcode, run on a simulator or device (deployment target iOS 27). It talks to `OrgFlowBaseURL` in `app/iOS/OrgFlow/Info.plist` (default `https://orgflow.dev`); point it at your own backend to test local changes.
 
 `bun run dev` fails with "DATABASE_URL is required" when the database is not running or `DATABASE_URL` is not set, and with "Cannot find package" when dependencies are out of date (rerun `bun run install:app`). To stop the database: `(cd backend && docker compose down)`; add `-v` to delete its data.
 
-Without `LUMINAL_API_KEY`, Ask, drafting, Discover and handoff return an `AI_NOT_CONFIGURED` error. PostgreSQL is required for all app runs; local development uses the pgvector Docker image described above. Pushing to `main` deploys production (`.github/workflows/deploy.yml`, `deploy/`).
+Without `LUMINAL_API_KEY`, Ask, drafting, Discover and handoff return an `AI_NOT_CONFIGURED` error. PostgreSQL is required for all app runs; local development uses the pgvector Docker image described above. Production runs on Kubernetes (OKE East); pushing to `main` verifies, builds an arm64 image and deploys it by digest. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for architecture, secrets, migrations, rollback and the current API-reachability prerequisite.
 
 ## Demo walkthrough
 

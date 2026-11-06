@@ -1,5 +1,6 @@
 # OrgFlow single image: backend (3003), frontend (3002) and landing (3001) are selected by the container command.
-# Build for linux/arm64 (OKE east nodes): docker buildx build --platform linux/arm64 -t ghcr.io/tgmstudios/orgflow:<tag> .
+# Built by CI (.github/workflows/deploy.yml) for linux/arm64 (OKE east nodes) and deployed by digest; see docs/DEPLOYMENT.md.
+# Local: docker buildx build --platform linux/arm64 -t orgflow:local .
 FROM oven/bun:1
 LABEL org.opencontainers.image.source="https://github.com/tgmstudios/OrgFlow"
 WORKDIR /app

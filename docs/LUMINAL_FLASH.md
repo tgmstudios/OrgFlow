@@ -10,4 +10,4 @@ Status: the text model is used server-side and implemented; image generation and
 - **Verification:** a basic text request and synthetic Ask/draft calls succeeded earlier. Ask with email excerpts was verified on synthetic data. Discover and handoff drafting were not verified live (provider returned 503). Credit balance, expiry and rate limits are not verified.
 - **Not built:** quote-level evidence validation, extraction caching, usage dashboards.
 
-Keep the key only in Git-ignored `backend/.env` and production secrets.
+Keep the key only in Git-ignored `backend/.env` locally and, in production, in GitHub secret `PROD_LUMINAL_API_KEY` (merged into Kubernetes Secret `orgflow-app` by the deploy).

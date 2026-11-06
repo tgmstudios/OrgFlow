@@ -1,4 +1,4 @@
-# Path routing mirrors deploy/nginx.conf on the production EC2 host. DNS record orgflow.dev is created manually
+# Path routing (the retired EC2 host used the same split: / -> 3001, /a -> 3002, api paths -> 3003). DNS record orgflow.dev is created manually
 # (external-dns on this cluster runs with --dry-run).
 apiVersion: networking.k8s.io/v1
 kind: Ingress

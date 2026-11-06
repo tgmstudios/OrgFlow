@@ -1,4 +1,4 @@
-# One pod, three Bun processes from one image (same topology as the production EC2 host: nginx -> 3001/3002/3003).
+# One pod, three Bun processes from one image (landing 3001, web 3002, api 3003; routed by the ingress).
 # Secret `orgflow-app` holds optional integrations (LUMINAL_API_KEY, ELEVENLABS_*, GOOGLE_*) and TOKEN_ENCRYPTION_KEY.
 apiVersion: v1
 kind: PersistentVolumeClaim

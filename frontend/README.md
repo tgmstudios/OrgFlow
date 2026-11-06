@@ -11,7 +11,7 @@ NODE_ENV=production bun index.ts   # serves the bundle at /a/
 bun test server.test.ts
 ```
 
-`/api`, `/auth`, `/docs`, `/swagger` and `/openapi.json` proxy to the backend (`BACKEND_URL` overrides; `PORT` overrides the bind port; loopback by default). Production routing and service environment live in `../deploy/`.
+`/api`, `/auth`, `/docs`, `/swagger` and `/openapi.json` proxy to the backend (`BACKEND_URL` overrides; `PORT` overrides the bind port; loopback by default). Production routing is the Kubernetes ingress and the pod spec in `../deploy/k8s/` (see [deployment](../docs/DEPLOYMENT.md)).
 
 ## Files
 

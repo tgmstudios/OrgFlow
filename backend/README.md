@@ -34,6 +34,7 @@ Copy `.env.example` to `.env` (Git-ignored, mode 0600; Bun loads it automaticall
 - AI: `LUMINAL_API_KEY`, `LUMINAL_BASE_URL`, `LUMINAL_MODEL`, `LUMINAL_IMAGES_BASE_URL`, `LUMINAL_IMAGES_MODEL`
 - Voice: `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`
 - Google: `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` (see [Google setup](../docs/GOOGLE_SETUP.md))
+- Production: variables come from the Deployment and Kubernetes Secrets `orgflow-db`/`orgflow-app` ([deployment](../docs/DEPLOYMENT.md)).
 - Secrets: `TOKEN_ENCRYPTION_KEY` (seals stored Google sessions)
 - Storage and origins: `DATABASE_URL`, `FRONTEND_ORIGIN`, `FRONTEND_REDIRECT_URL`, `HOST`, `PORT`
 

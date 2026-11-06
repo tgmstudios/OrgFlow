@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# LEGACY (retired AWS EC2 host, decommissioned at the OKE East cutover). Kept for history only; not used by CI or Kubernetes.
 # Install the private-beta AWS Monetization SDK into backend/node_modules.
 # `bun install` cannot resolve it from the public registry, and the tarball is self-contained,
 # so fetch it with the registry token and extract it in place. Never fails the deploy: without

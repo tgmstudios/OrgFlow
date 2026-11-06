@@ -1,21 +1,63 @@
 name: Deploy
-# Production is OKE East (namespace `orgflow`, https://orgflow.dev). Pushing to main builds the arm64 image and rolls it out
-# with a namespace-scoped ServiceAccount (Role `orgflow-deployer`, see deploy/k8s/05-ci-rbac.yaml). The old EC2 rsync/SSH
-# deploy no longer exists. Cluster-level objects (RBAC, network policies, ingress, postgres) are applied by an operator,
-# not by this workflow. Docs: docs/OKE-EAST-DEPLOYMENT.md in the operator vault.
+# OrgFlow production = OKE East, namespace `orgflow`, https://orgflow.dev (docs/DEPLOYMENT.md).
+#   verify  : frozen installs, typecheck, tests, builds, manifest/shell checks (PRs and pushes; no secrets, hosted runner)
+#   image   : one linux/arm64 build per commit, pushed to GHCR by sha tag; the digest is the release identity
+#   deploy  : deploy/deploy-east.sh with the namespace-scoped `orgflow-deployer` token (rollout by digest, migration init container)
+# The Kubernetes API (138.2.213.132:6443) only accepts a short IP allowlist, so GitHub-hosted runners cannot reach it.
+# Set repository variable DEPLOY_RUNNER to an approved runner label that can (see docs/DEPLOYMENT.md); until then the
+# deploy job fails fast in its preflight with that exact explanation, and an operator deploys the CI-built digest with
+# deploy/deploy-east.sh. Cluster objects (RBAC, NetworkPolicies, ingress, postgres) are applied by an operator, not CI.
 on:
+  pull_request:
+    paths-ignore: ["**/*.md", "docs/**", "app/**", "Submission Video/**", "OrgFlow_Showcase_Package.zip"]
   push:
     branches: [main]
     paths-ignore: ["**/*.md", "docs/**", "app/**", "Submission Video/**", "OrgFlow_Showcase_Package.zip"]
   workflow_dispatch:
+    inputs:
+      digest:
+        description: "Deploy/roll back to this existing image digest (sha256:...) without building. Empty = build this ref."
+        required: false
+        default: ""
 concurrency:
-  group: production-deploy
-  cancel-in-progress: false
+  group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.ref) || 'production-deploy' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 permissions:
   contents: read
   packages: write
 jobs:
+  verify:
+    if: inputs.digest == ''
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: "1.4.3" }
+      - name: Install (frozen lockfiles, same as the Dockerfile)
+        run: |
+          bun install --cwd backend --frozen-lockfile
+          bun install --cwd frontend --frozen-lockfile
+          bun install --cwd landing --frozen-lockfile
+          cd backend && DATABASE_URL=postgresql://build:build@localhost:5432/build bunx --bun prisma generate
+      - run: bun run typecheck
+      - run: bun run test
+      - name: Landing typecheck and tests
+        run: cd landing && bun run typecheck && bun run test
+      - name: Production builds
+        run: bun run build && cd landing && bun run build.ts
+      - name: Validate manifests and scripts
+        run: |
+          bash -n deploy/deploy-east.sh
+          python3 - <<'PY'
+          import glob, yaml
+          for f in sorted(glob.glob("deploy/k8s/*.yaml")):
+              docs = [d for d in yaml.safe_load_all(open(f)) if d]
+              assert docs, f
+              print(f, [d["kind"] for d in docs])
+          PY
   image:
+    needs: verify
+    if: github.event_name != 'pull_request' && inputs.digest == ''
     runs-on: ubuntu-24.04-arm
     outputs:
       digest: ${{ steps.build.outputs.digest }}
@@ -30,25 +72,41 @@ jobs:
           context: .
           platforms: linux/arm64
           push: true
-          tags: |
-            ghcr.io/tgmstudios/orgflow:${{ github.sha }}
-            ghcr.io/tgmstudios/orgflow:latest
+          tags: ghcr.io/tgmstudios/orgflow:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Release identity
+        run: |
+          echo "image digest: ${{ steps.build.outputs.digest }}"
+          echo "### Image" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`ghcr.io/tgmstudios/orgflow@${{ steps.build.outputs.digest }}\` (linux/arm64, ${GITHUB_SHA})" >> "$GITHUB_STEP_SUMMARY"
   deploy:
-    needs: image
-    runs-on: ubuntu-24.04
+    needs: [image]
+    # Runs after a successful build, or directly for a dispatch with an explicit digest (rollback / redeploy of a CI artifact).
+    if: always() && github.event_name != 'pull_request' && (needs.image.result == 'success' || (inputs.digest != '' && needs.image.result == 'skipped'))
+    runs-on: ${{ vars.DEPLOY_RUNNER || 'ubuntu-24.04' }}
     env:
-      DIGEST: ${{ needs.image.outputs.digest }}
+      DIGEST: ${{ inputs.digest || needs.image.outputs.digest }}
+      DEPLOYED_SHA: ${{ github.sha }}
       KUBE_SERVER: ${{ secrets.EAST_KUBE_SERVER }}
       KUBE_TOKEN: ${{ secrets.EAST_KUBE_TOKEN }}
       KUBE_CA_B64: ${{ secrets.EAST_KUBE_CA_B64 }}
     steps:
       - uses: actions/checkout@v4
+      - name: Preflight (digest format, API reachability)
+        run: |
+          set -euo pipefail
+          [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "::error::bad image digest '$DIGEST'"; exit 1; }
+          host=${KUBE_SERVER#https://}
+          if ! timeout 15 bash -c "exec 3<>/dev/tcp/${host%%:*}/${host##*:}" 2>/dev/null; then
+            echo "::error title=Kubernetes API unreachable::This runner cannot reach the OKE East API ($host). The API security list allows only an IP allowlist, so GitHub-hosted runners cannot deploy. Set repo variable DEPLOY_RUNNER to an approved runner label on an allowlisted host, or deploy image ghcr.io/tgmstudios/orgflow@${DIGEST} with deploy/deploy-east.sh (docs/DEPLOYMENT.md)."
+            echo "### Deploy blocked: API unreachable from this runner" >> "$GITHUB_STEP_SUMMARY"
+            echo "Image built and published: \`ghcr.io/tgmstudios/orgflow@${DIGEST}\`. Deploy it with \`deploy/deploy-east.sh\` from an allowlisted host." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
       - name: Configure kubectl (namespace-scoped token)
         run: |
           set -euo pipefail
-          [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "bad digest"; exit 1; }
           umask 077
           kc="$RUNNER_TEMP/kubeconfig"
           echo "$KUBE_CA_B64" | base64 -d > "$RUNNER_TEMP/ca.crt"
@@ -57,7 +115,7 @@ jobs:
           kubectl config --kubeconfig "$kc" set-context east --cluster=east --user=deployer --namespace=orgflow >/dev/null
           kubectl config --kubeconfig "$kc" use-context east >/dev/null
           echo "KUBECONFIG=$kc" >> "$GITHUB_ENV"
-      - name: Merge integration keys into Secret orgflow-app (patch only, existing keys kept)
+      - name: Roll out by digest (integration keys merged into orgflow-app)
         env:
           GOOGLE_CLIENT_ID: ${{ secrets.PROD_GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.PROD_GOOGLE_CLIENT_SECRET }}
@@ -66,29 +124,7 @@ jobs:
           MONETIZATION_APP_ID: ${{ secrets.PROD_MONETIZATION_APP_ID }}
           MONETIZATION_REGISTRY_TOKEN: ${{ secrets.MONETIZATION_REGISTRY_TOKEN }}
           LUMINAL_API_KEY: ${{ secrets.PROD_LUMINAL_API_KEY }}
-        run: |
-          set -euo pipefail
-          # Only non-empty values are sent; TOKEN_ENCRYPTION_KEY and anything else in the Secret are never touched.
-          # PROD_GOOGLE_REDIRECT_URI is not injected: the Deployment manifest pins GOOGLE_REDIRECT_URI to https://orgflow.dev.
-          keys=(GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET ELEVENLABS_API_KEY ELEVENLABS_AGENT_ID MONETIZATION_APP_ID MONETIZATION_REGISTRY_TOKEN LUMINAL_API_KEY)
-          json='{"stringData":{}}'; sent=()
-          for k in "${keys[@]}"; do
-            if [ -n "${!k:-}" ]; then json=$(jq -c --arg k "$k" --arg v "${!k}" '.stringData[$k]=$v' <<<"$json"); sent+=("$k"); else echo "::notice::$k not provided, skipped"; fi
-          done
-          if [ "${#sent[@]}" -gt 0 ]; then
-            printf '%s' "$json" | kubectl -n orgflow patch secret orgflow-app --type merge --patch-file /dev/stdin >/dev/null
-          fi
-          echo "keys patched: ${sent[*]:-none}"
-          echo "SENT_KEYS=${sent[*]:-}" >> "$GITHUB_ENV"
-      - name: Roll out image by digest
-        run: |
-          set -euo pipefail
-          sed -E "s#ghcr.io/tgmstudios/orgflow@sha256:[0-9a-f]{64}#ghcr.io/tgmstudios/orgflow@${DIGEST}#g" deploy/k8s/20-app.yaml > "$RUNNER_TEMP/20-app.yaml"
-          kubectl -n orgflow apply -f "$RUNNER_TEMP/20-app.yaml"
-          # Integration keys reach the pod through envFrom at start; restart so a changed Secret is picked up even if the image is unchanged.
-          kubectl -n orgflow patch deployment orgflow --type merge -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"orgflow.dev/deployed-sha\":\"${GITHUB_SHA}\"}}}}}"
-          kubectl -n orgflow rollout status deployment/orgflow --timeout=420s
-          kubectl -n orgflow get deployment orgflow -o jsonpath='{.spec.template.spec.containers[*].image}{"\n"}'
+        run: deploy/deploy-east.sh
       - name: Verify public health
         run: |
           set -euo pipefail
@@ -96,7 +132,5 @@ jobs:
             ok=0; for i in $(seq 1 20); do c=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$u" || true); [ "$c" = 200 ] && { ok=1; break; }; sleep 6; done
             echo "$u -> $c"; [ "$ok" = 1 ]
           done
-          curl -fsS --max-time 10 https://orgflow.dev/health
-          echo
-          # Unauthenticated provider-config probes: 401 means the route exists behind auth; 503 means not configured.
-          echo "voice token (unauth) -> $(curl -s -o /dev/null -w '%{http_code}' --max-time 10 https://orgflow.dev/api/voice/session-token)"
+          curl -fsS --max-time 10 https://orgflow.dev/health; echo
+          echo "voice token (unauth, 401 = configured behind auth, 503 = not configured) -> $(curl -s -o /dev/null -w '%{http_code}' --max-time 10 https://orgflow.dev/api/voice/session-token)"

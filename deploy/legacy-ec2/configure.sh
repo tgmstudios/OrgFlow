@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# LEGACY (retired AWS EC2 host, decommissioned at the OKE East cutover). Kept for history only; not used by CI or Kubernetes.
 set -euo pipefail
 # Run from the deployed checkout on the existing EC2 server.
 install -d /etc/systemd/system/frontend.service.d /etc/systemd/system/backend.service.d

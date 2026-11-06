@@ -8,12 +8,12 @@ Use PostgreSQL with pgvector for semantic retrieval over indexed file/email chun
 
 - The app currently chunks indexed text and retrieves it with BM25 (`backend/retrieval.ts`). No embeddings are generated.
 - Luminal is used for chat completions only; its embeddings support is not verified (`docs/LUMINAL_FLASH.md`).
-- The app requires PostgreSQL and uses Prisma. A PostgreSQL 17 pgvector Docker service is provided for local development. Production runs on private RDS PostgreSQL 18.6 with pgvector enabled; 36 legacy SQLite entities were imported and verified.
-- The production cutover is deployed. The deployment workflow succeeded; external `/health` reports `storage: postgresql` and `/a/` returns HTTP 200.
+- The app requires PostgreSQL and uses Prisma. A PostgreSQL 17 pgvector Docker service is provided for local development. Production (OKE East, 2026-11-06) runs `pgvector/pgvector:pg17` as a StatefulSet in namespace `orgflow`. The earlier AWS RDS 18.6 data (36 imported entities) was NOT migrated to East; the East database started fresh.
+- East `/health` reports `storage: postgresql` and `/a/` returns HTTP 200.
 
 ## Deployment implication
 
-The first Prisma migration enables `vector` and creates the app entity table. Production data and schema are on RDS, with the original SQLite snapshot retained on EC2 for rollback.
+The first Prisma migration enables `vector` and creates the app entity table. Migrations run in the pod's `migrate` init container on each rollout (see [DEPLOYMENT.md](DEPLOYMENT.md)).
 
 ## Decisions needed before embedding data
 
