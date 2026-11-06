@@ -1,0 +1,48 @@
+# Namespace-scoped deploy identity for GitHub Actions. No ClusterRole/ClusterRoleBinding. Every grant is limited to
+# namespace `orgflow` and, where the API allows, to named objects. The token Secret is non-expiring but revocable
+# (delete the Secret or the ServiceAccount). Rotate by deleting the token Secret, re-applying, and re-running the
+# "issue credential" step in docs.
+apiVersion: v1
+kind: ServiceAccount
+metadata: { name: orgflow-deployer, namespace: orgflow, labels: { app.kubernetes.io/part-of: orgflow } }
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: orgflow-deployer-token
+  namespace: orgflow
+  annotations: { kubernetes.io/service-account.name: orgflow-deployer }
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: { name: orgflow-deployer, namespace: orgflow }
+rules:
+  # Apply deploy/k8s/20-app.yaml (image digest rollout) and watch the rollout. No create/delete, no pods, no exec.
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["orgflow"]
+    verbs: ["get", "patch", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["list"]   # `kubectl rollout status` lists with a metadata.name field selector; list cannot be resourceName-scoped
+  - apiGroups: [""]
+    resources: ["services"]
+    resourceNames: ["orgflow"]
+    verbs: ["get", "patch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    resourceNames: ["orgflow-data"]
+    verbs: ["get", "patch"]
+  # Merge integration keys into the app Secret. patch only: the credential cannot read orgflow-app or orgflow-db.
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["orgflow-app"]
+    verbs: ["patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: { name: orgflow-deployer, namespace: orgflow }
+subjects: [{ kind: ServiceAccount, name: orgflow-deployer, namespace: orgflow }]
+roleRef: { apiGroup: rbac.authorization.k8s.io, kind: Role, name: orgflow-deployer }

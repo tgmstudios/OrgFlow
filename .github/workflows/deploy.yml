@@ -1,27 +1,31 @@
 name: Deploy
-# Production is OKE East (namespace orgflow, https://orgflow.dev). The former EC2 rsync/SSH deploy was removed at cutover.
-# This workflow only builds and publishes the arm64 image; rollout is `kubectl apply -f deploy/k8s` with the pinned digest.
-# TODO(approval needed): in-cluster rollout from CI requires a scoped cluster credential stored as a GitHub secret.
+# Production is OKE East (namespace `orgflow`, https://orgflow.dev). Pushing to main builds the arm64 image and rolls it out
+# with a namespace-scoped ServiceAccount (Role `orgflow-deployer`, see deploy/k8s/05-ci-rbac.yaml). The old EC2 rsync/SSH
+# deploy no longer exists. Cluster-level objects (RBAC, network policies, ingress, postgres) are applied by an operator,
+# not by this workflow. Docs: docs/OKE-EAST-DEPLOYMENT.md in the operator vault.
 on:
   push:
     branches: [main]
-    paths: [Dockerfile, .dockerignore, backend/**, frontend/**, landing/**, deploy/landing-serve.ts, demo-content/**, .github/workflows/deploy.yml]
+    paths-ignore: ["**/*.md", "docs/**", "app/**", "Submission Video/**", "OrgFlow_Showcase_Package.zip"]
   workflow_dispatch:
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
 permissions:
   contents: read
   packages: write
 jobs:
   image:
     runs-on: ubuntu-24.04-arm
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
     steps:
       - uses: actions/checkout@v4
       - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
       - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - id: build
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/arm64
@@ -29,3 +33,70 @@ jobs:
           tags: |
             ghcr.io/tgmstudios/orgflow:${{ github.sha }}
             ghcr.io/tgmstudios/orgflow:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+  deploy:
+    needs: image
+    runs-on: ubuntu-24.04
+    env:
+      DIGEST: ${{ needs.image.outputs.digest }}
+      KUBE_SERVER: ${{ secrets.EAST_KUBE_SERVER }}
+      KUBE_TOKEN: ${{ secrets.EAST_KUBE_TOKEN }}
+      KUBE_CA_B64: ${{ secrets.EAST_KUBE_CA_B64 }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure kubectl (namespace-scoped token)
+        run: |
+          set -euo pipefail
+          [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "bad digest"; exit 1; }
+          umask 077
+          kc="$RUNNER_TEMP/kubeconfig"
+          echo "$KUBE_CA_B64" | base64 -d > "$RUNNER_TEMP/ca.crt"
+          kubectl config --kubeconfig "$kc" set-cluster east --server="$KUBE_SERVER" --certificate-authority="$RUNNER_TEMP/ca.crt" --embed-certs=true >/dev/null
+          kubectl config --kubeconfig "$kc" set-credentials deployer --token="$KUBE_TOKEN" >/dev/null
+          kubectl config --kubeconfig "$kc" set-context east --cluster=east --user=deployer --namespace=orgflow >/dev/null
+          kubectl config --kubeconfig "$kc" use-context east >/dev/null
+          echo "KUBECONFIG=$kc" >> "$GITHUB_ENV"
+      - name: Merge integration keys into Secret orgflow-app (patch only, existing keys kept)
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.PROD_GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.PROD_GOOGLE_CLIENT_SECRET }}
+          ELEVENLABS_API_KEY: ${{ secrets.PROD_ELEVENLABS_API_KEY }}
+          ELEVENLABS_AGENT_ID: ${{ secrets.PROD_ELEVENLABS_AGENT_ID }}
+          MONETIZATION_APP_ID: ${{ secrets.PROD_MONETIZATION_APP_ID }}
+          MONETIZATION_REGISTRY_TOKEN: ${{ secrets.MONETIZATION_REGISTRY_TOKEN }}
+          LUMINAL_API_KEY: ${{ secrets.PROD_LUMINAL_API_KEY }}
+        run: |
+          set -euo pipefail
+          # Only non-empty values are sent; TOKEN_ENCRYPTION_KEY and anything else in the Secret are never touched.
+          # PROD_GOOGLE_REDIRECT_URI is not injected: the Deployment manifest pins GOOGLE_REDIRECT_URI to https://orgflow.dev.
+          keys=(GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET ELEVENLABS_API_KEY ELEVENLABS_AGENT_ID MONETIZATION_APP_ID MONETIZATION_REGISTRY_TOKEN LUMINAL_API_KEY)
+          json='{"stringData":{}}'; sent=()
+          for k in "${keys[@]}"; do
+            if [ -n "${!k:-}" ]; then json=$(jq -c --arg k "$k" --arg v "${!k}" '.stringData[$k]=$v' <<<"$json"); sent+=("$k"); else echo "::notice::$k not provided, skipped"; fi
+          done
+          if [ "${#sent[@]}" -gt 0 ]; then
+            printf '%s' "$json" | kubectl -n orgflow patch secret orgflow-app --type merge --patch-file /dev/stdin >/dev/null
+          fi
+          echo "keys patched: ${sent[*]:-none}"
+          echo "SENT_KEYS=${sent[*]:-}" >> "$GITHUB_ENV"
+      - name: Roll out image by digest
+        run: |
+          set -euo pipefail
+          sed -E "s#ghcr.io/tgmstudios/orgflow@sha256:[0-9a-f]{64}#ghcr.io/tgmstudios/orgflow@${DIGEST}#g" deploy/k8s/20-app.yaml > "$RUNNER_TEMP/20-app.yaml"
+          kubectl -n orgflow apply -f "$RUNNER_TEMP/20-app.yaml"
+          # Integration keys reach the pod through envFrom at start; restart so a changed Secret is picked up even if the image is unchanged.
+          kubectl -n orgflow patch deployment orgflow --type merge -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"orgflow.dev/deployed-sha\":\"${GITHUB_SHA}\"}}}}}"
+          kubectl -n orgflow rollout status deployment/orgflow --timeout=420s
+          kubectl -n orgflow get deployment orgflow -o jsonpath='{.spec.template.spec.containers[*].image}{"\n"}'
+      - name: Verify public health
+        run: |
+          set -euo pipefail
+          for u in https://orgflow.dev/health https://orgflow.dev/a/ https://orgflow.dev/; do
+            ok=0; for i in $(seq 1 20); do c=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$u" || true); [ "$c" = 200 ] && { ok=1; break; }; sleep 6; done
+            echo "$u -> $c"; [ "$ok" = 1 ]
+          done
+          curl -fsS --max-time 10 https://orgflow.dev/health
+          echo
+          # Unauthenticated provider-config probes: 401 means the route exists behind auth; 503 means not configured.
+          echo "voice token (unauth) -> $(curl -s -o /dev/null -w '%{http_code}' --max-time 10 https://orgflow.dev/api/voice/session-token)"

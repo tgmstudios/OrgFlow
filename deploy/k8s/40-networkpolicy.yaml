@@ -1,0 +1,93 @@
+# Enforced by the cluster's kube-router netpol-enforcer (kube-system DaemonSet; CNI is Flannel). Follows the cluster's
+# `tgm.one/netpol: oke` convention (default deny both directions + narrow allows). Ingress controllers are ordinary pods
+# (not hostNetwork) in ingress-nginx, so their traffic arrives with the controller pod IP. Kubelet probes come from node
+# IPs / cni gateway addresses, as in the other namespaces.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: default-deny-ingress, namespace: orgflow, labels: { tgm.one/netpol: oke } }
+spec: { podSelector: {}, policyTypes: [Ingress] }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: default-deny-egress, namespace: orgflow, labels: { tgm.one/netpol: oke } }
+spec: { podSelector: {}, policyTypes: [Egress] }
+---
+# Public traffic: ingress-nginx -> landing 3001, frontend 3002, backend 3003 (app pod only).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: allow-ingress-controller-to-app, namespace: orgflow, labels: { tgm.one/netpol: oke } }
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: orgflow } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: ingress-nginx } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: ingress-nginx } }
+      ports: [{ protocol: TCP, port: 3001 }, { protocol: TCP, port: 3002 }, { protocol: TCP, port: 3003 }]
+---
+# Kubelet HTTP probes against the app pod only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: allow-node-probes-to-app, namespace: orgflow, labels: { tgm.one/netpol: oke } }
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: orgflow } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - ipBlock: { cidr: 10.0.10.0/24 }
+        - ipBlock: { cidr: 10.244.0.128/32 }
+        - ipBlock: { cidr: 10.244.0.129/32 }
+        - ipBlock: { cidr: 10.244.0.0/32 }
+        - ipBlock: { cidr: 10.244.0.1/32 }
+        - ipBlock: { cidr: 10.244.1.0/32 }
+        - ipBlock: { cidr: 10.244.1.1/32 }
+      ports: [{ protocol: TCP, port: 3001 }, { protocol: TCP, port: 3002 }, { protocol: TCP, port: 3003 }]
+---
+# Database: only the app pod reaches Postgres 5432. No other ingress to postgres exists.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: allow-app-to-postgres-ingress, namespace: orgflow, labels: { tgm.one/netpol: oke } }
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: postgres } }
+  policyTypes: [Ingress]
+  ingress:
+    - from: [{ podSelector: { matchLabels: { app.kubernetes.io/name: orgflow } } }]
+      ports: [{ protocol: TCP, port: 5432 }]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: allow-app-to-postgres-egress, namespace: orgflow, labels: { tgm.one/netpol: oke } }
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: orgflow } }
+  policyTypes: [Egress]
+  egress:
+    - to: [{ podSelector: { matchLabels: { app.kubernetes.io/name: postgres } } }]
+      ports: [{ protocol: TCP, port: 5432 }]
+---
+# Cluster DNS (CoreDNS in kube-system) over UDP and TCP 53 for app pods only; postgres has no egress at all.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: allow-dns-egress, namespace: orgflow, labels: { tgm.one/netpol: oke } }
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: orgflow } }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } }
+          podSelector: { matchLabels: { k8s-app: kube-dns } }
+      ports: [{ protocol: UDP, port: 53 }, { protocol: TCP, port: 53 }]
+---
+# Provider HTTPS (Luminal, ElevenLabs, Google, Monetization, ghcr is node-side): public internet on 443 only, excluding
+# private/cluster ranges and the public Kubernetes API endpoint. The CI API path is unaffected (it never goes through pods).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: allow-provider-https-egress, namespace: orgflow, labels: { tgm.one/netpol: oke } }
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: orgflow } }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10, 169.254.0.0/16, 138.2.213.132/32]
+      ports: [{ protocol: TCP, port: 443 }]
