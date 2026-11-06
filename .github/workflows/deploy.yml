@@ -1,128 +1,31 @@
 name: Deploy
-
+# Production is OKE East (namespace orgflow, https://orgflow.dev). The former EC2 rsync/SSH deploy was removed at cutover.
+# This workflow only builds and publishes the arm64 image; rollout is `kubectl apply -f deploy/k8s` with the pinned digest.
+# TODO(approval needed): in-cluster rollout from CI requires a scoped cluster credential stored as a GitHub secret.
 on:
   push:
     branches: [main]
+    paths: [Dockerfile, .dockerignore, backend/**, frontend/**, landing/**, deploy/landing-serve.ts, demo-content/**, .github/workflows/deploy.yml]
   workflow_dispatch:
-
-concurrency:
-  group: production-deploy
-  cancel-in-progress: false
-
+permissions:
+  contents: read
+  packages: write
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+  image:
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.9.0
+      - uses: docker/login-action@v3
         with:
-          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
-
-      - name: Trust host key
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
-
-      - name: Sync code to instance
-        run: |
-          for app in landing frontend backend app deploy demo-content; do
-            [ -d "$app" ] || continue
-            rsync -az --delete \
-              --exclude 'node_modules' \
-              --exclude '.git' \
-              --exclude '.env*' \
-              --exclude 'data/' \
-              --exclude 'dist/' \
-              "$app/" "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/opt/app/$app/"
-          done
-
-      - name: Configure production Google OAuth
-        env:
-          GOOGLE_CLIENT_ID: ${{ secrets.PROD_GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.PROD_GOOGLE_CLIENT_SECRET }}
-          GOOGLE_REDIRECT_URI: ${{ secrets.PROD_GOOGLE_REDIRECT_URI }}
-          ELEVENLABS_API_KEY: ${{ secrets.PROD_ELEVENLABS_API_KEY }}
-          ELEVENLABS_AGENT_ID: ${{ secrets.PROD_ELEVENLABS_AGENT_ID }}
-        run: |
-          printf '%s\n' \
-            "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" \
-            "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" \
-            "GOOGLE_REDIRECT_URI=$GOOGLE_REDIRECT_URI" \
-            "ELEVENLABS_API_KEY=$ELEVENLABS_API_KEY" \
-            "ELEVENLABS_AGENT_ID=$ELEVENLABS_AGENT_ID" \
-            "FRONTEND_ORIGIN=https://orgflow.dev" \
-            "FRONTEND_REDIRECT_URL=https://orgflow.dev/a/" \
-            | ssh "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" '
-                set -e
-                umask 077
-                env_file=/opt/app/backend/.env
-                touch "$env_file"
-                while IFS= read -r entry; do
-                  key=${entry%%=*}
-                  sed -i "/^${key}=/d" "$env_file"
-                  printf "%s\\n" "$entry" >> "$env_file"
-                done
-                chmod 600 "$env_file"
-              '
-
-      - name: Configure production billing
-        env:
-          MONETIZATION_APP_ID: ${{ secrets.PROD_MONETIZATION_APP_ID }}
-          MONETIZATION_REGISTRY_TOKEN: ${{ secrets.MONETIZATION_REGISTRY_TOKEN }}
-        run: |
-          # Sandbox identity: real metering and checkout, no real charges. Enforcement stays off
-          # until the plans carry quotas and are published.
-          printf '%s\n' \
-            "MONETIZATION_ENDPOINT=https://us-west-2.alpha.monetization.aws.dev" \
-            "MONETIZATION_REGION=us-west-2" \
-            "MONETIZATION_APP_ID=$MONETIZATION_APP_ID" \
-            "MONETIZATION_ENFORCE=false" \
-            "MONETIZATION_REGISTRY_TOKEN=$MONETIZATION_REGISTRY_TOKEN" \
-            "APP_BASE_PATH=/a" \
-            | ssh "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" '
-                set -e
-                umask 077
-                env_file=/opt/app/backend/.env
-                touch "$env_file"
-                while IFS= read -r entry; do
-                  key=${entry%%=*}
-                  sed -i "/^${key}=/d" "$env_file"
-                  printf "%s\\n" "$entry" >> "$env_file"
-                done
-                chmod 600 "$env_file"
-              '
-
-      - name: Install dependencies and restart services
-        run: |
-          ssh "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" '
-            set -e
-            export PATH="$HOME/.bun/bin:$PATH"
-            cd /opt/app/frontend
-            ~/.bun/bin/bun install --frozen-lockfile
-            ~/.bun/bin/bun run build
-            sudo bash /opt/app/deploy/configure.sh
-            for svc in landing frontend backend; do
-              cd /opt/app/$svc
-              ~/.bun/bin/bun install --frozen-lockfile
-              if [ "$svc" = backend ]; then
-                ~/.bun/bin/bun run prisma:generate
-                ~/.bun/bin/bun run prisma:migrate:deploy
-                bash /opt/app/deploy/install-monetization-sdk.sh
-              fi
-              sudo systemctl restart $svc
-            done
-            sudo systemctl reload nginx
-            for url in http://127.0.0.1:3002/a/ http://127.0.0.1:3003/health; do
-              ready=0
-              for attempt in $(seq 1 15); do
-                if curl --fail --silent "$url" > /dev/null; then
-                  ready=1
-                  break
-                fi
-                sleep 2
-              done
-              [ "$ready" -eq 1 ]
-            done
-          '
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ghcr.io/tgmstudios/orgflow:${{ github.sha }}
+            ghcr.io/tgmstudios/orgflow:latest

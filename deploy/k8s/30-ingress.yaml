@@ -1,4 +1,4 @@
-# Path routing mirrors deploy/nginx.conf on the production EC2 host. DNS record orgflow-east.tgm.one is created manually
+# Path routing mirrors deploy/nginx.conf on the production EC2 host. DNS record orgflow.dev is created manually
 # (external-dns on this cluster runs with --dry-run).
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -13,10 +13,10 @@ metadata:
 spec:
   ingressClassName: nginx
   tls:
-    - hosts: [orgflow-east.tgm.one]
+    - hosts: [orgflow.dev, www.orgflow.dev]
       secretName: orgflow-tls
   rules:
-    - host: orgflow-east.tgm.one
+    - host: orgflow.dev
       http:
         paths:
           - { path: /a, pathType: Prefix, backend: { service: { name: orgflow, port: { name: web } } } }
@@ -40,10 +40,31 @@ metadata:
 spec:
   ingressClassName: nginx
   tls:
-    - hosts: [orgflow-east.tgm.one]
+    - hosts: [orgflow.dev, www.orgflow.dev]
       secretName: orgflow-tls
   rules:
-    - host: orgflow-east.tgm.one
+    - host: orgflow.dev
       http:
         paths:
           - { path: /openapi\.json, pathType: ImplementationSpecific, backend: { service: { name: orgflow, port: { name: api } } } }
+
+---
+# www -> apex redirect
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: orgflow-www-redirect
+  namespace: orgflow
+  annotations:
+    nginx.ingress.kubernetes.io/permanent-redirect: "https://orgflow.dev"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [orgflow.dev, www.orgflow.dev]
+      secretName: orgflow-tls
+  rules:
+    - host: www.orgflow.dev
+      http:
+        paths:
+          - { path: /, pathType: Prefix, backend: { service: { name: orgflow, port: { name: landing } } } }

@@ -40,9 +40,9 @@ spec:
             - { name: NODE_ENV, value: production }
             - { name: HOST, value: 0.0.0.0 }
             - { name: PORT, value: "3003" }
-            - { name: FRONTEND_ORIGIN, value: "https://orgflow-east.tgm.one" }
-            - { name: FRONTEND_REDIRECT_URL, value: "https://orgflow-east.tgm.one/a/" }
-            - { name: GOOGLE_REDIRECT_URI, value: "https://orgflow-east.tgm.one/auth/google/callback" }
+            - { name: FRONTEND_ORIGIN, value: "https://orgflow.dev" }
+            - { name: FRONTEND_REDIRECT_URL, value: "https://orgflow.dev/a/" }
+            - { name: GOOGLE_REDIRECT_URI, value: "https://orgflow.dev/auth/google/callback" }
             - { name: APP_BASE_PATH, value: /a }
             - { name: MONETIZATION_ENFORCE, value: "false" }
             - { name: TOKEN_KEY_FILE, value: /app/backend/data/token.key }
