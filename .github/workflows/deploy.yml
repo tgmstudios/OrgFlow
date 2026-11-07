@@ -4,7 +4,8 @@ name: Deploy
 #   image   : one linux/arm64 build per commit, pushed to GHCR by sha tag; the digest is the release identity
 #   deploy  : deploy/deploy-east.sh with the namespace-scoped `orgflow-deployer` token (rollout by digest, migration init container)
 # The Kubernetes API (138.2.213.132:6443) only accepts a short IP allowlist, so GitHub-hosted runners cannot reach it.
-# Set repository variable DEPLOY_RUNNER to an approved runner label that can (see docs/DEPLOYMENT.md); until then the
+# Repository variable DEPLOY_RUNNER = `orgflow-runners`: an OrgFlow-only ARC scale set (deploy/runner/, zero idle) on the
+# allowlisted on-prem cluster (docs/DEPLOYMENT.md). If unset the deploy job runs on a hosted runner and the
 # deploy job fails fast in its preflight with that exact explanation, and an operator deploys the CI-built digest with
 # deploy/deploy-east.sh. Cluster objects (RBAC, NetworkPolicies, ingress, postgres) are applied by an operator, not CI.
 on:
@@ -83,7 +84,7 @@ jobs:
   deploy:
     needs: [image]
     # Runs after a successful build, or directly for a dispatch with an explicit digest (rollback / redeploy of a CI artifact).
-    if: always() && github.event_name != 'pull_request' && (needs.image.result == 'success' || (inputs.digest != '' && needs.image.result == 'skipped'))
+    if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && (needs.image.result == 'success' || (inputs.digest != '' && needs.image.result == 'skipped'))
     runs-on: ${{ vars.DEPLOY_RUNNER || 'ubuntu-24.04' }}
     env:
       DIGEST: ${{ inputs.digest || needs.image.outputs.digest }}
@@ -103,6 +104,21 @@ jobs:
             echo "### Deploy blocked: API unreachable from this runner" >> "$GITHUB_STEP_SUMMARY"
             echo "Image built and published: \`ghcr.io/tgmstudios/orgflow@${DIGEST}\`. Deploy it with \`deploy/deploy-east.sh\` from an allowlisted host." >> "$GITHUB_STEP_SUMMARY"
             exit 1
+          fi
+      - name: Tooling (kubectl, jq) if the runner image lacks them
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/bin"; echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+          arch=$(uname -m); case "$arch" in x86_64) a=amd64;; aarch64) a=arm64;; *) echo "unsupported $arch"; exit 1;; esac
+          if ! command -v kubectl >/dev/null; then
+            v=v1.33.5
+            curl -fsSL -o "$RUNNER_TEMP/bin/kubectl" "https://dl.k8s.io/release/$v/bin/linux/$a/kubectl"
+            echo "$(curl -fsSL "https://dl.k8s.io/release/$v/bin/linux/$a/kubectl.sha256")  $RUNNER_TEMP/bin/kubectl" | sha256sum -c -
+            chmod +x "$RUNNER_TEMP/bin/kubectl"
+          fi
+          if ! command -v jq >/dev/null; then
+            curl -fsSL -o "$RUNNER_TEMP/bin/jq" "https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-$a"
+            chmod +x "$RUNNER_TEMP/bin/jq"
           fi
       - name: Configure kubectl (namespace-scoped token)
         run: |

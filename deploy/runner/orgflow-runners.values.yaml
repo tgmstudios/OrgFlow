@@ -1,0 +1,24 @@
+# ARC runner scale set for tgmstudios/OrgFlow ONLY (deploy job; label = runnerScaleSetName).
+# Lives in the existing on-prem ARC namespace (egress IP is on the OKE East API allowlist).
+# Zero idle runners: minRunners 0, one ephemeral pod per queued deploy job, maxRunners 1.
+# No Docker-in-Docker, no privileged container: the deploy job only needs kubectl/jq/curl.
+# githubConfigSecret reuses the existing registration secret (key github_token) -- value is never read or copied.
+githubConfigUrl: https://github.com/tgmstudios/OrgFlow
+githubConfigSecret: tgmstudios-github-auth
+runnerScaleSetName: orgflow-runners
+minRunners: 0
+maxRunners: 1
+template:
+  spec:
+    automountServiceAccountToken: false
+    nodeSelector:
+      kubernetes.io/arch: amd64
+      kubernetes.io/os: linux
+    containers:
+      - name: runner
+        image: ghcr.io/actions/actions-runner:2.337.0
+        imagePullPolicy: IfNotPresent
+        command: ["sh", "-c", "/home/runner/run.sh"]
+        resources:
+          requests: { cpu: 100m, memory: 256Mi, ephemeral-storage: 1Gi }
+          limits: { cpu: "1", memory: 1Gi, ephemeral-storage: 4Gi }
